@@ -1,0 +1,10 @@
+//#include <dds/DdsDcpsCore.idl>
+
+module Chat {
+
+  @topic
+  struct UserMessage {
+    string message;
+  };
+
+};

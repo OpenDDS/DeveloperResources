@@ -1,0 +1,5 @@
+workspace {
+  exclude {
+    server/node_modules
+  }
+}
