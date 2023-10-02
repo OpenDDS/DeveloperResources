@@ -1,6 +1,6 @@
 project: dcpslib {
-  idlflags      += -Wb,stub_export_include=Chat_Export.h \
-                   -Wb,stub_export_macro=Chat_Export
+  idlflags      += -Wb,export_include=Chat_Export.h \
+                   -Wb,export_macro=Chat_Export
   dcps_ts_flags += -Wb,export_macro=Chat_Export
   dynamicflags  += CHAT_BUILD_DLL
 
