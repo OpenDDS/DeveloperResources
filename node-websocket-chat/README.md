@@ -34,7 +34,7 @@ There are a number of ways of implementing publish/subscribe and each approach i
 For example, the instances themselves could just store the events in a database and poll the database for events they need to deliver to their clients.
 Using a database in this way may be sub-optimal so it may be necessary to introduce a broker to store-and-forward events among the instances.
 
-Applications like Redis, RabbitMQ, Apache Kafka, and even MQTT implement the necessary functionality while adding yet another service to be deployed.
+Services like Redis, RabbitMQ, Apache Kafka, and even MQTT implement the necessary functionality while adding yet another service to be deployed.
 Cloud vendor provide brokers for a fee; for example, Amazon SNS, Google Cloud Pub/Sub, and Azure Service Bus, Event Hub, and Event Grid.
 
 A broker-less approach would have the instances form a messaging routing network, e.g., a minimum spanning tree, amongst themselves.
