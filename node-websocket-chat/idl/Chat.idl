@@ -1,4 +1,3 @@
-//#include <dds/DdsDcpsCore.idl>
 
 module Chat {
 
