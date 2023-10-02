@@ -98,7 +98,7 @@ Together, these changes result in the following flow for a message:
 
 Thus, there is two levels of fan-out.
 First, a message is distributed to all of the server instances.
-Then, it is distributed to all of the clients of a server instance.
+Then, it is distributed to all of the clients of each server instance.
 
 ## Building and Running
 
