@@ -34,14 +34,17 @@ There are a number of ways of implementing publish/subscribe and each approach i
 For example, the instances themselves could just store the events in a database and poll the database for events they need to deliver to their clients.
 Using a database in this way may be sub-optimal so it may be necessary to introduce a broker to store-and-forward events among the instances.
 
-Services like Redis, RabbitMQ, Apache Kafka, and even MQTT implement the necessary functionality while adding yet another service to be deployed.
+Services like [Redis](https://redis.io/), [RabbitMQ](https://www.rabbitmq.com/), [Apache Kafka](https://kafka.apache.org/), and even [MQTT](https://mqtt.org/) implement the necessary functionality while adding yet another service to be deployed.
 Cloud vendor provide brokers for a fee; for example, Amazon SNS, Google Cloud Pub/Sub, and Azure Service Bus, Event Hub, and Event Grid.
 
 A broker-less approach would have the instances form a messaging routing network, e.g., a minimum spanning tree, amongst themselves.
 This approach favors efficiency and low cost at the expense of complexity.
-Some of the complexity can be mitigated by using an application framework or middleware that was designed for publish/subscribe like OpenDDS.
-The rest of this article shows how to implement a "websocket backend" with OpenDDS using a simple chat application as an example.
+Some of the complexity can be mitigated by using an application framework or middleware that was designed for publish/subsc[OpenDDS](https://opendds.org/)ribe like .
+OpenDDS is an open-source implementation of OMG's [Data Distribution Service Specification](https://www.omg.org/spec/DDS/).
+Using OpenDDS one can create peer-to-peer publish/subscribe systems.
+For more information on OpendDDS, see the [OpenDDS Developer's Guide](https://opendds.readthedocs.io/en/latest-release/devguide/index.html).
 
+The rest of this article shows how to implement a "websocket backend" with OpenDDS using a simple chat application as an example.
 The chat application is based on https://karlhadwen.medium.com/node-js-websocket-tutorial-real-time-chat-room-using-multiple-clients-44a8e26a953e which supports multiple clients but not multiple servers.
 The first section describes how the client was extended so the user can specify a server anticipating multiple servers.
 The second section describes how the server was extended with OpenDDS so that the servers can communicate with one another.
