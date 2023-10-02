@@ -1,3 +1,6 @@
+*.dylib
 *~
+.depend.*
+.shobj**
 GNUmakefile*
 node_modules
