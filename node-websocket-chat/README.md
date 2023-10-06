@@ -42,7 +42,7 @@ This approach favors efficiency and low cost at the expense of complexity.
 Some of the complexity can be mitigated by using an application framework or middleware that was designed for publish/subscribe like [OpenDDS](https://opendds.org/).
 OpenDDS is an open-source implementation of OMG's [Data Distribution Service Specification](https://www.omg.org/spec/DDS/).
 Using OpenDDS one can create peer-to-peer publish/subscribe systems.
-For more information on OpendDDS, see the [OpenDDS Developer's Guide](https://opendds.readthedocs.io/en/latest-release/devguide/index.html).
+For more information on OpendDDS, see the [OpenDDS Developer's Guide](https://opendds.readthedocs.io/en/latest-release/devguide/introduction.html).
 
 The rest of this article shows how to implement a "websocket backend" with OpenDDS using a simple chat application as an example.
 The chat application is based on https://karlhadwen.medium.com/node-js-websocket-tutorial-real-time-chat-room-using-multiple-clients-44a8e26a953e which supports multiple clients but not multiple servers.
