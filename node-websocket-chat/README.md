@@ -8,8 +8,8 @@ This design can simplify the client and be more efficient as it avoids the const
 
 Without websockets, a web server or API can often be made stateless which has a number of benefits including horizontal scalability.
 The session created by a websocket means that each instance of a web server is responsible for delivering content to its connected clients.
-An event generated in one instance of a webserver may need to be delivered to clients connected to a different instance.
-Thus, websockets create a data distribution problem for the different instances of a webserver.
+An event generated in one instance of a web server may need to be delivered to clients connected to a different instance.
+Thus, websockets create a data distribution problem for the different instances of a web server.
 
 
     +------------+     +------------+
