@@ -32,7 +32,7 @@ However, the basic problem remains:  instances need to send messages to other in
 Logically, the web server instances and their connected clients are part of a publish/subscribe system.
 There are a number of ways of implementing publish/subscribe and each approach is a tradeoff between cost, efficiency, complexity, and a number of other concerns.
 For example, the instances themselves could just store the events in a database and poll the database for events they need to deliver to their clients.
-Using a database in this way may be sub-optimal so it may be necessary to introduce a broker to store-and-forward events among the instances.
+Polling a database in this way may lead to unacceptable load and excessive delays in message delivery so it may be necessary to introduce a broker to store-and-forward events among the instances.
 
 Services like [Redis](https://redis.io/), [RabbitMQ](https://www.rabbitmq.com/), [Apache Kafka](https://kafka.apache.org/), and even [MQTT](https://mqtt.org/) implement the necessary functionality while adding yet another service to be deployed.
 Cloud vendor provide brokers for a fee; for example, Amazon SNS, Google Cloud Pub/Sub, and Azure Service Bus, Event Hub, and Event Grid.
