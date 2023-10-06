@@ -1,8 +1,8 @@
-# A Chat Application with Node, OpenDDS, and Websockets
+# A Chat Application with Node, OpenDDS, and WebSockets
 
 ## Introduction
 
-Websockets allow web servers to deliver content to clients without having the client request it and are often used as an alternative to polling.
+WebSockets allow web servers to deliver content to clients without having the client request it and are often used as an alternative to polling.
 A client can set up a websocket and listen for events instead of periodically requesting data from the server.
 This design can simplify the client and be more efficient as it avoids the constant creation of new TCP connections.
 
@@ -185,7 +185,7 @@ Then, it is distributed to all of the clients of each server instance.
 
 ## Conclusion
 
-Websockets allow clients and servers to efficiently and dynamically exchange messages but create a data distribution problem when multiple server instances are used.
+WebSockets allow clients and servers to efficiently and dynamically exchange messages but create a data distribution problem when multiple server instances are used.
 This article explores the idea of using OpenDDS to distribute data between web server instances using websockets.
 Specifically, the article extends a chat application using OpenDDS with RTPS Discovery so that multiple servers can be used.
 This article assumes that the web servers can send messages to each other via multicast to bootstrap RTPS Discovery.
