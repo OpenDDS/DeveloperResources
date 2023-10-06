@@ -130,7 +130,7 @@ Then, it is distributed to all of the clients of each server instance.
 
 7. Update `LD_LIBRARY_PATH`
 
-        export LD_LIBRARY_PATH="${CHAT_ROOT}/idl"
+        export LD_LIBRARY_PATH="${CHAT_ROOT}/idl:${LD_LIBRARY_PATH}"
     
 8. Install node modules.
 
