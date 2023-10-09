@@ -1,0 +1,13 @@
+ChatC.cpp
+ChatC.h
+ChatC.inl
+ChatS.cpp
+ChatS.h
+ChatTypeSupport.idl
+ChatTypeSupportC.cpp
+ChatTypeSupportC.h
+ChatTypeSupportC.inl
+ChatTypeSupportImpl.cpp
+ChatTypeSupportImpl.h
+ChatTypeSupportS.cpp
+ChatTypeSupportS.h

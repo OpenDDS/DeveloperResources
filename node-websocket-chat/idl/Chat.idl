@@ -1,0 +1,9 @@
+
+module Chat {
+
+  @topic
+  struct UserMessage {
+    string message;
+  };
+
+};

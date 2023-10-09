@@ -1,0 +1,49 @@
+<h1>Real Time Messaging</h1>
+<p>Port: <input type="text" id="port" placeholder="7000" value="7000" style="display: block; margin-bottom: 10px; padding: 10px;"><button id="connect" title="Connect" style="height: 30px;">Connect</button></p>
+<pre id="messages" style="height: 400px; overflow: scroll"></pre>
+<input type="text" id="messageBox" placeholder="Type your message here" style="display: block; width: 100%; margin-bottom: 10px; padding: 10px;" />
+<button id="send" title="Send Message!" style="height: 30px;">Send Message</button>
+
+<script>
+  (function() {
+    const portBox = document.querySelector('#port');
+    const connectBtn = document.querySelector('#connect');
+    const sendBtn = document.querySelector('#send');
+    const messages = document.querySelector('#messages');
+    const messageBox = document.querySelector('#messageBox');
+
+    let ws;
+
+    function showMessage(message) {
+      messages.textContent += `\n\n${message}`;
+      messages.scrollTop = messages.scrollHeight;
+      messageBox.value = '';
+    }
+
+    connectBtn.onclick = function () {
+      if (ws) {
+        ws.onerror = ws.onopen = ws.onclose = null;
+        ws.close();
+      }
+
+      ws = new WebSocket('ws://localhost:' + portBox.value);
+      ws.onopen = () => {
+        console.log('Connection opened!');
+      }
+      ws.onmessage = ({ data }) => showMessage(data);
+      ws.onclose = function() {
+        ws = null;
+      }
+    }
+
+    sendBtn.onclick = function() {
+    if (!ws) {
+      showMessage("No WebSocket connection :(");
+      return ;
+    }
+
+    ws.send(messageBox.value);
+    // Don't show the message.
+  }
+})();
+</script>
