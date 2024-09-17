@@ -1,0 +1,12 @@
+project: opendds_cxx11 {
+
+  includes += ../idl
+  libpaths += ../idl
+  libs += tms
+
+  Source_Files {
+    Handshaking.cpp
+    DeviceInfoDataReaderListenerImpl.cpp
+    HeartbeatDataReaderListenerImpl.cpp
+  }
+}

@@ -1,0 +1,5340 @@
+
+/**
+ * OMG DDS Interface Definition Language for the Tactical Microgrid Standard (TMS) and distributed with MIL-STD-3071
+ * DISTRIBUTION STATEMENT A. Approved for Public Release: Distribution Unlimited
+ */
+
+/* Value slightly greater than pi, used as a limit for radian measurements. */
+#define RADIAN_MAX 3.1416
+
+module tms {
+
+
+   /** TMS Topic Names */
+   module topic {
+
+      /**
+       * Liveliness heartbeat for all devices.
+       * Version: 1.0.0
+       * Section: DISCOVERY
+       * QoS Profile: Medium
+       * Data Trigger: Periodic 1 s
+       * Data Type: tms.Heartbeat
+       */
+      const string TOPIC_HEARTBEAT = "Heartbeat";
+
+      /**
+       * Product information for the device. Used to discover TMS compliant devices.
+       * Version: 1.0.0
+       * Section: DISCOVERY
+       * QoS Profile: PublishLast
+       * Data Trigger: At Start
+       * Data Type: tms.DeviceInfo
+       */
+      const string TOPIC_DEVICE_INFO = "DeviceInfo";
+
+      /**
+       * Device image as an icon.
+       * Version: 1.0.0
+       * Section: DISCOVERY
+       * QoS Profile: PublishLast
+       * Data Trigger: At Start
+       * Data Type: tms.DeviceIcon
+       */
+      const string TOPIC_DEVICE_ICON = "DeviceIcon";
+
+      /**
+       * Device and Platform Identity Nickname.
+       * Version: 1.0.0
+       * Section: DISCOVERY
+       * QoS Profile: PublishLast
+       * Data Trigger: At Start, On Change
+       * Data Type: tms.IdentityNicknameState
+       */
+      const string TOPIC_IDENTITY_NICKNAME_STATE = "IdentityNicknameState";
+
+      /**
+       * Request to change a Device or Platform Identity Nickname.
+       * Version: 1.0.0
+       * Section: DISCOVERY
+       * QoS Profile: Command
+       * Data Trigger: As Needed
+       * Data Type: tms.IdentityNicknameRequest
+       * Reply Topic: Reply
+       * Reply Topic: IdentityNicknameState
+       */
+      const string TOPIC_IDENTITY_NICKNAME_REQUEST = "IdentityNicknameRequest";
+
+      /**
+       * Power connections manually entered by a microgrid operator.
+       * Version: 1.0.0
+       * Section: TOPOLOGY
+       * QoS Profile: PublishLast
+       * Data Trigger: At Start, On Change
+       * Data Type: tms.PowerConnectionState
+       */
+      const string TOPIC_OPERATOR_POWER_CONNECTION_STATE = "OperatorPowerConnectionState";
+
+      /**
+       * Power connections discovered by a power device, usually through a smart cable or operator entry.
+       * Version: 1.0.0
+       * Section: TOPOLOGY
+       * QoS Profile: PublishLast
+       * Data Trigger: At Start, On Change
+       * Data Type: tms.PowerConnectionState
+       */
+      const string TOPIC_DISCOVERED_POWER_CONNECTION_STATE = "DiscoveredPowerConnectionState";
+
+      /**
+       * Power connections used by the microgrid controller.  May include operator connections, discovered connections, and other connections inferred by the MC.
+       * Version: 1.0.0
+       * Section: TOPOLOGY
+       * QoS Profile: PublishLast
+       * Data Trigger: At Start, On Change
+       * Data Type: tms.PowerConnectionState
+       */
+      const string TOPIC_MICROGRID_POWER_CONNECTION_STATE = "MicrogridPowerConnectionState";
+
+      /**
+       * Reports a device diagnostics state including information and alarm states.
+       * Version: 1.0.0
+       * Section: DIAGNOSTIC
+       * QoS Profile: PublishLast
+       * Data Trigger: At Start, On Change
+       * Data Type: tms.ActiveDiagnosticState
+       */
+      const string TOPIC_ACTIVE_DIAGNOSTIC_STATE = "ActiveDiagnosticState";
+
+      /**
+       * Reports changes to a device clock(s). A device must support relative time and can optionally support absolute time.
+       * Version: 1.0.0
+       * Section: STATUS
+       * QoS Profile: PublishLast
+       * Data Trigger: At Start, On Change
+       * Data Type: tms.ClockState
+       */
+      const string TOPIC_CLOCK_STATE = "ClockState";
+
+      /**
+       * The selected master Microgrid Controller for a specific power device.
+       * Version: 1.0.0
+       * Section: STATUS
+       * QoS Profile: PublishLast
+       * Data Trigger: At Start, On Change
+       * Data Type: tms.ActiveMicrogridControllerState
+       */
+      const string TOPIC_ACTIVE_MICROGRID_CONTROLLER_STATE = "ActiveMicrogridControllerState";
+
+      /**
+       * Reports power measurements for alternating current power device ports.
+       * Version: 1.0.0
+       * Section: POWER_DEVICE
+       * QoS Profile: Medium
+       * Data Trigger: Periodic 1 s
+       * Data Type: tms.ac.MeasurementUpdate
+       */
+      const string TOPIC_AC_MEASUREMENT_UPDATE = "AcMeasurementUpdate";
+
+      /**
+       * Reports dynamic state changes for a power device ports.
+       * Version: 1.0.0
+       * Section: POWER_DEVICE
+       * QoS Profile: PublishLast
+       * Data Trigger: At Start, On Change
+       * Data Type: tms.PowerPortState
+       */
+      const string TOPIC_POWER_PORT_STATE = "PowerPortState";
+
+      /**
+       * Request to change the circuit continuity of a single power port
+       * Version: 1.0.0
+       * Section: DIST_DEVICE
+       * QoS Profile: Command
+       * Data Trigger: As Needed
+       * Data Type: tms.PowerSwitchRequest
+       * Reply Topic: Reply
+       * Reply Topic: PowerPortState
+       */
+      const string TOPIC_POWER_SWITCH_REQUEST = "PowerSwitchRequest";
+
+      /**
+       * Reports the operational state of a Source or Storage device
+       * Version: 1.0.0
+       * Section: SOURCE_DEVICE
+       * QoS Profile: PublishLast
+       * Data Trigger: At Start, On Change
+       * Data Type: tms.EnergyStartStopState
+       */
+      const string TOPIC_ENERGY_START_STOP_STATE = "EnergyStartStopState";
+
+      /**
+       * Request to change the EnergyStartStopLevel of a Source or Storage device.
+       * Version: 1.0.0
+       * Section: SOURCE_DEVICE
+       * QoS Profile: Command
+       * Data Trigger: As Needed
+       * Data Type: tms.EnergyStartStopRequest
+       * Reply Topic: Reply
+       * Reply Topic: EnergyStartStopState
+       */
+      const string TOPIC_ENERGY_START_STOP_REQUEST = "EnergyStartStopRequest";
+
+      /**
+       * Reports the active load sharing status of an alternating current Source / Storage device.
+       * Version: 1.0.0
+       * Section: SOURCE_DEVICE
+       * QoS Profile: PublishLast
+       * Data Trigger: At Start, On Change
+       * Data Type: tms.ac.LoadSharingState
+       */
+      const string TOPIC_AC_LOAD_SHARING_STATE = "AcLoadSharingState";
+
+      /**
+       * Request to change the AC load sharing status of a Source / Storage device.
+       * Version: 1.0.0
+       * Section: SOURCE_DEVICE
+       * QoS Profile: Command
+       * Data Trigger: As Needed
+       * Data Type: tms.ac.LoadSharingRequest
+       * Reply Topic: Reply
+       * Reply Topic: AcLoadSharingState
+       */
+      const string TOPIC_AC_LOAD_SHARING_REQUEST = "AcLoadSharingRequest";
+
+      /**
+       * Reports dynamic state changes of control device hardware.
+       * Version: 1.0.0
+       * Section: SOURCE_DEVICE
+       * QoS Profile: Slow
+       * Data Trigger: Periodic 10 s
+       * Data Type: tms.ControlHardwareUpdate
+       */
+      const string TOPIC_CONTROL_HARDWARE_UPDATE = "ControlHardwareUpdate";
+
+      /**
+       * Reports dynamic state of power hardware components.
+       * Version: 1.0.0
+       * Section: SOURCE_DEVICE
+       * QoS Profile: Slow
+       * Data Trigger: Periodic 10 s
+       * Data Type: tms.PowerHardwareUpdate
+       */
+      const string TOPIC_POWER_HARDWARE_UPDATE = "PowerHardwareUpdate";
+
+      /**
+       * The dynamic state of a Storage device.
+       * Version: 1.0.0
+       * Section: STORAGE_DEVICE
+       * QoS Profile: Slow
+       * Data Trigger: Periodic 10 s
+       * Data Type: tms.StorageUpdate
+       */
+      const string TOPIC_STORAGE_UPDATE = "StorageUpdate";
+
+      /**
+       * The reply to a request.
+       * Version: 1.0.0
+       * Section: RESPONSE
+       * QoS Profile: Reply
+       * Data Trigger: Within 0.1 s
+       * Data Type: tms.Reply
+       */
+      const string TOPIC_REPLY = "Reply";
+
+      /**
+       * The active power device control parameters for this power device.
+       * Version: 1.0.0
+       * Section: DEVICE_PARAMETERS
+       * QoS Profile: PublishLast
+       * Data Trigger: At Start, On Change
+       * Data Type: tms.ControlParameterState
+       */
+      const string TOPIC_CONTROL_PARAMETER_STATE = "ControlParameterState";
+
+      /**
+       * Request to change the device control parameters as defined by the DeviceInfo.controlParameters.
+       * Version: 1.0.0
+       * Section: DEVICE_PARAMETERS
+       * QoS Profile: Command
+       * Data Trigger: As Needed
+       * Data Type: tms.ControlParameterRequest
+       * Reply Topic: Reply
+       * Reply Topic: ControlParameterState
+       */
+      const string TOPIC_CONTROL_PARAMETER_REQUEST = "ControlParameterRequest";
+
+      /**
+       * The active metric parameter values for this power device.
+       * Version: 1.0.0
+       * Section: DEVICE_PARAMETERS
+       * QoS Profile: PublishLast
+       * Data Trigger: At Start, On Change
+       * Data Type: tms.MetricParameterState
+       */
+      const string TOPIC_METRIC_PARAMETER_STATE = "MetricParameterState";
+
+      /**
+       * Provide the operator's response to an authorization request.
+       * Version: 1.0.0
+       * Section: BLACK_START
+       * QoS Profile: Response
+       * Data Trigger: As Needed
+       * Data Type: tms.AuthorizationToEnergizeReply
+       */
+      const string TOPIC_AUTHORIZATION_TO_ENERGIZE_REPLY = "AuthorizationToEnergizeReply";
+
+      /**
+       * Request authorization to execute a request when a black start is detected.
+       * Version: 1.0.0
+       * Section: BLACK_START
+       * QoS Profile: Command
+       * Data Trigger: As Needed
+       * Data Type: tms.AuthorizationToEnergizeRequest
+       * Reply Topic: Reply
+       * Reply Topic: AuthorizationToEnergizeReply
+       */
+      const string TOPIC_AUTHORIZATION_TO_ENERGIZE_REQUEST = "AuthorizationToEnergizeRequest";
+
+      /**
+       * Report the outcome of a request that required authorization.
+       * Version: 1.0.0
+       * Section: BLACK_START
+       * QoS Profile: Response
+       * Data Trigger: Within 0.1 s
+       * Data Type: tms.AuthorizationToEnergizeResult
+       */
+      const string TOPIC_AUTHORIZATION_TO_ENERGIZE_RESULT = "AuthorizationToEnergizeResult";
+
+      /**
+       * The last published OperatorIntent received by a Microgrid Controller
+       * Version: 1.0.0
+       * Section: OPERATOR_INTENT
+       * QoS Profile: PublishLast
+       * Data Trigger: At Start, On Change
+       * Data Type: tms.OperatorIntentState
+       */
+      const string TOPIC_OPERATOR_INTENT_STATE = "OperatorIntentState";
+
+      /**
+       * Operator defined microgrid control directives that influence how the microgrid behaves.
+       * Version: 1.0.0
+       * Section: OPERATOR_INTENT
+       * QoS Profile: Command
+       * Data Trigger: As Needed
+       * Data Type: tms.OperatorIntentRequest
+       * Reply Topic: OperatorIntentState
+       */
+      const string TOPIC_OPERATOR_INTENT_REQUEST = "OperatorIntentRequest";
+
+      /**
+       * Grounding Circuit states.
+       * Version: 1.0.0
+       * Section: GROUNDING_CIRCUIT
+       * QoS Profile: PublishLast
+       * Data Trigger: At Start, On Change
+       * Data Type: tms.GroundingCircuitState
+       */
+      const string TOPIC_DEVICE_GROUNDING_STATE = "GroundingCircuitState";
+
+      /**
+       * Grounding Circuit request.
+       * Version: 1.0.0
+       * Section: GROUNDING_CIRCUIT
+       * QoS Profile: Command
+       * Data Trigger: As Needed
+       * Data Type: tms.GroundingCircuitRequest
+       * Reply Topic: Reply
+       * Reply Topic: GroundingCircuitState
+       */
+      const string TOPIC_GROUNDING_CIRCUIT_REQUEST = "GroundingCircuitRequest";
+
+      /**
+       * Reports power measurements for direct current power device ports.
+       * Version: 1.0.0
+       * Section: DC_POWER_DEVICE
+       * QoS Profile: Medium
+       * Data Trigger: Periodic 1 s
+       * Data Type: tms.dc.MeasurementUpdate
+       */
+      const string TOPIC_DC_MEASUREMENT_UPDATE = "DcMeasurementUpdate";
+
+      /**
+       * Request to change the DC load sharing status of a device.
+       * Version: 1.0.0
+       * Section: DC_POWER_DEVICE
+       * QoS Profile: Command
+       * Data Trigger: As Needed
+       * Data Type: tms.dc.LoadSharingRequest
+       * Reply Topic: Reply
+       * Reply Topic: DcLoadSharingState
+       */
+      const string TOPIC_DC_LOAD_SHARING_REQUEST = "DcLoadSharingRequest";
+
+      /**
+       * Summarized power measurements for AC.  Fast updates useful for controlling power balance.
+       * Version: 1.0.0
+       * Section: SOURCE_DEVICE
+       * QoS Profile: Continuous
+       * Data Trigger: Periodic 0.1 s
+       * Data Type: tms.ac.MeasurementUpdate
+       */
+      const string TOPIC_AC_SUMMARY_MEASUREMENT_UPDATE = "AcSummaryMeasurementUpdate";
+
+      /**
+       * Reports the active direct current load sharing status of a device.
+       * Version: 1.0.0
+       * Section: DC_POWER_DEVICE
+       * QoS Profile: PublishLast
+       * Data Trigger: At Start, On Change
+       * Data Type: tms.dc.LoadSharingState
+       */
+      const string TOPIC_DC_LOAD_SHARING_STATE = "DcLoadSharingState";
+
+      /**
+       * Summarized power measurements for DC.  Fast updates useful for controlling power balance.
+       * Version: 1.0.0
+       * Section: SOURCE_DEVICE
+       * QoS Profile: Continuous
+       * Data Trigger: Periodic 0.1 s
+       * Data Type: tms.dc.MeasurementUpdate
+       */
+      const string TOPIC_DC_SUMMARY_MEASUREMENT_UPDATE = "DcSummaryMeasurementUpdate";
+   };  //end module topic
+
+   const string TMS_VERSION = "2.0.1";
+
+
+
+   const uint32 TopicName_MINLEN = 1;
+   const uint32 TopicName_MAXLEN = 64;
+   /**
+    * Specifies a communications data topic.
+    * Minimum length: 1
+    * Maximum length: 64
+    */
+   typedef string <TopicName_MAXLEN> TopicName;
+
+
+   const uint32 TopicList_MINLEN = 0;
+   const uint32 TopicList_MAXLEN = 64;
+   /**
+    * Specifies a list of communications data topics.
+    * Minimum length: 0
+    * Maximum length: 64
+    */
+   typedef sequence<TopicName, TopicList_MAXLEN> TopicList;
+
+
+   /**
+    * Indicate whether a cable has been sensed in a power port.
+    */
+   @extensibility(APPENDABLE)
+   enum CableSenseStatus {
+       CS_UNKNOWN, // Cable presence is neither confirmed nor denied through active detection. Cable sense is not available, either due to device design or failure.
+       CS_DISCONNECTED, // Sensing indicates that a cable is not connected. CST_MEASUREMENT devices must use CS_UNKNOWN instead of this value.
+       CS_CONNECTED // Sensing indicates that a cable is connected.
+   }; // enum CableSenseStatus
+
+
+   /**
+    * Indicate whether electricity can flow through a connection.
+    */
+   @extensibility(APPENDABLE)
+   enum CircuitContinuity {
+       CC_UNKNOWN, // No information is available, either due to design or malfunction.
+       CC_OPEN, // Electrical or mechanical sensors indicate that continuity has been broken.
+       CC_CLOSED, // Electrical or mechanical sensors indicate that continuity has been established.
+       CC_INCONSISTENT // Electrical or mechanical sensors indicate that continuity has been established on some wires and broken on other wires.
+   }; // enum CircuitContinuity
+
+
+   /**
+    * Indicate how the monotonic clock is initialized.
+    */
+   @extensibility(APPENDABLE)
+   enum ClockMonotonicPersistenceType {
+       CMPT_UNKNOWN, // Fault detection indicates that initialization may be inconsistent.
+       CMPT_RESET, // Clock initializes to 0.
+       CMPT_ACCUMULATE, // Clock initializes to a value stored shortly before shutdown. This is effectively an aggregate runtime meter.
+       CMPT_OTHER // Another clock initialization scheme is used.
+   }; // enum ClockMonotonicPersistenceType
+
+
+   /**
+    * Indicate the desired circuit continuity of a switch.
+    */
+   @extensibility(APPENDABLE)
+   enum DesiredCircuitContinuity {
+       DCC_UNKNOWN, // Unknown value. This is a generic placeholder representing the case in which an appropriate value could not be determined.
+       DCC_OPEN, // Transition to CC_OPEN.
+       DCC_CLOSED, // Transition to CC_CLOSED. Predicated on AuthorizationToEnergizeRequest.
+       DCC_SYNC_CLOSED, // Transition to CC_CLOSED when synchronization is achieved. May close to a dead circuit, predicated on AuthorizationToEnergizeRequest. May act as DCC_CLOSED_INTERNAL when the internal circuit is dead.
+       DCC_CLOSED_INTERNAL, // Transition to CC_CLOSED. One side of the switch must be a circuit enclosed inside a device with protective guards.
+       DCC_NO_CHANGE // No transition. May be used instead of DCC_CLOSED in non-active settings groups.
+   }; // enum DesiredCircuitContinuity
+
+
+   /**
+    * Identify the role filled by a device.
+    */
+   @extensibility(APPENDABLE)
+   enum DeviceRole {
+       ROLE_UNKNOWN, // Unknown value. This is a generic placeholder representing the case in which an appropriate value could not be determined.  Never transmitted in this version of the standard.
+       ROLE_MICROGRID_CONTROLLER, // Microgrid controller, a control service.
+       ROLE_SOURCE, // Source power device.
+       ROLE_LOAD, // Load power device.
+       ROLE_STORAGE, // Storage power device.
+       ROLE_DISTRIBUTION, // Distribution power device.
+       ROLE_MICROGRID_DASHBOARD, // Microgrid dashboard, a control service.
+       ROLE_CONVERSION, // Conversion power device.
+       ROLE_MONITOR // Monitor microgrid, read-only access.
+   }; // enum DeviceRole
+
+
+   /**
+    * Describe how a DTC affects the availability of the device
+    */
+   @extensibility(APPENDABLE)
+   enum DtcSeverity {
+       SEV_UNKNOWN, // Unknown value.  Never transmitted in this version of the standard.
+       SEV_1_CLEAR, // DTC has cleared. Never transmitted in this version of the standard.
+       SEV_2_INFORMATIVE, // Informational only. No performance impact is expected.
+       SEV_3_PREVENTATIVE, // Preventative maintenance has been scheduled.
+       SEV_4_DEGRADED, // Poor configuration or operation resulting in degraded performance, including reduced efficiency and increased emissions.
+       SEV_5_WARNING, // Increased wear and premature failure likely.
+       SEV_6_MINOR, // The device may be failing to meet operating performance criteria. The DTC may represent cause or effect.
+       SEV_7_MAJOR, // This condition may cause protection logic to enter a controlled shutdown sequence. A corrective action may be required before the device can be restarted.
+       SEV_8_CRITICAL, // A loss of essential functionality has been detected. Routine maintenance or repair may be required.
+       SEV_9_FATAL, // A loss of essential functionality has been detected. Permanent damage may have occurred.
+       SEV_10_HUMAN_SAFETY // Potential user safety risk.
+   }; // enum DtcSeverity
+
+
+   /**
+    * Start/stop operating level of a SRC or STOR device.
+    */
+   @extensibility(APPENDABLE)
+   enum EnergyStartStopLevel {
+       ESSL_UNKNOWN, // Unknown value. This is a generic placeholder representing the case in which an appropriate value could not be determined.
+       ESSL_ANY, // Wildcard value.  Allows the EnergyStartStopRequest.fromLevel to match any EnergyStartStopState.presentLevel.  Invalid for other uses.
+       ESSL_OFF, // Device controller is operational.  Energy and power component temperatures are ambient.  Energy component is disabled.  Power component is disabled.  Synchronization is not maintained.  Power port switch is open.
+       ESSL_WARM, // Device controller is operational.  Energy and power component temperatures are regulated.  Energy component is disabled.  Power component is disabled.  Synchronization is not maintained.  Power port switch is open.
+       ESSL_IDLE, // Device controller is operational.  Energy and power component temperatures are regulated.  Energy component is enabled but not ready to operate at rated capacity.  Power component is disabled.  Synchronization is not maintained.  Power port switch is open.
+       ESSL_READY, // Device controller is operational.  Energy and power component temperatures are regulated.  Energy component is enabled and ready to operate at rated capcity.  Power component is enabled.  Synchronization is not maintained.  Power port switch is open.
+       ESSL_READY_SYNCED, // Device controller is operational.  Energy and power component temperatures are regulated.  Energy component is enabled and ready to operate at rated capcity.  Power component is enabled.  Synchronization is maintained.  Power port switch is open.
+       ESSL_OPERATIONAL // Device controller is operational.  Energy and power component temperatures are regulated.  Energy component is enabled and ready to operate at rated capcity.  Power component is enabled.  Synchronization is maintained.  Power port switch is closed.
+   }; // enum EnergyStartStopLevel
+
+
+   const uint32 EnergyStartStopLevelSequence_MINLEN = 0;
+   const uint32 EnergyStartStopLevelSequence_MAXLEN = 8;
+   /**
+    * A sequence of EnergyStartStopLevel, allowing each operating level to be listed once.
+    * Minimum length: 0
+    * Maximum length: 8
+    */
+   typedef sequence<EnergyStartStopLevel, EnergyStartStopLevelSequence_MAXLEN> EnergyStartStopLevelSequence;
+
+
+   /**
+    * Ground fault detection.
+    */
+   @extensibility(APPENDABLE)
+   enum GroundFaultDetection {
+       GFD_UNKNOWN, // Unknown value. This is a generic placeholder representing the case in which an appropriate value could not be determined.
+       GFD_NOT_APPLICABLE, // No ground fault detector is present on the device.
+       GFD_NONE, // No ground fault detected.
+       GFD_ANY, // Ground fault detected. Multiple lines detected or specific line unknown.
+       GFD_A, // Ground fault detected on phase A.
+       GFD_B, // Ground fault detected on phase B.
+       GFD_C, // Ground fault detected on phase C.
+       GFD_DCPOS, // Ground fault detected on DC+.
+       GFD_DCNEG // Ground fault detected on DC-.
+   }; // enum GroundFaultDetection
+
+
+   /**
+    * Describe the design type of a grounding circuit.
+    */
+   @extensibility(APPENDABLE)
+   enum GroundingDesignType {
+       GROUNDING_UNKNOWN, // Unknown value. This is a generic placeholder representing the case in which an appropriate value could not be determined.
+       GROUNDING_UNGROUNDED, // No grounding.
+       GROUNDING_SOLID, // Solidly grounded.
+       GROUNDING_HIGH_RESISTANCE, // High-resistance grounded system. Generally designed for 1-10 A ground fault current.
+       GROUNDING_LOW_RESISTANCE, // Low-resistance grounded system. Generally designed to limit equipment damage.
+       GROUNDING_REACTANCE // Reactance grounded system. Generally limits ground fault current to rated line current.
+   }; // enum GroundingDesignType
+
+
+   /**
+    * Indicate the microgrid level operating mode
+    */
+   @extensibility(APPENDABLE)
+   enum OperatingMode {
+       OPM_UNKNOWN, // Unknown value. This is a generic placeholder representing the case in which an appropriate value could not be determined.
+       OPM_NORMAL, // Normal operating mode.
+       OPM_EMERGENCY, // Emergency operating mode.
+       OPM_SILENT_WATCH // Silent watch mode.
+   }; // enum OperatingMode
+
+
+   /**
+    * Specify the type of Operator priority.
+    */
+   @extensibility(APPENDABLE)
+   enum OperatorPriorityType {
+       OPT_UNKNOWN, // Unknown value. This is a generic placeholder representing the case in which an appropriate value could not be determined.
+       OPT_NEVER_OPERATE, // Transition the device to the lowest supported EnergyStartStopLevel or open the power port.
+       OPT_ALWAYS_OPERATE, // Transition the device to EnergyStartStopLevel ESSL_OPERATIONAL or close the power port.
+       OPT_NUMERIC_RANK // Priority based on OperatorPriority.numericRank.
+   }; // enum OperatorPriorityType
+
+
+   /**
+    * Specify the type of Operator Intent.
+    */
+   @extensibility(APPENDABLE)
+   enum OperatorIntentType {
+       OIT_UNKNOWN, // Unknown value. This is a generic placeholder representing the case in which an appropriate value could not be determined.
+       OIT_DEFAULT_INTENT, // Microgrid Controller defined default operator intent.
+       OIT_OPERATOR_DEFINED // Microgrid Dashboard activated operator intent.
+   }; // enum OperatorIntentType
+
+
+   /**
+    * Indicate how a power connection was detected.
+    */
+   @extensibility(APPENDABLE)
+   enum PowerConnectionDetectionType {
+       PCDT_UNKNOWN, // Unknown value. This is a generic placeholder representing the case in which an appropriate value could not be determined.
+       PCDT_OPERATOR, // Operator entry. PowerConnectionId portA and portB are present.
+       PCDT_CABLE_ID, // Identification embedded in a smart cable.  PowerConnectionId portA is present.  PowerConnectionId portB is absent for power device connections.  PortB is present for MC power connections. PowerPortStatus.cableId must be present
+       PCDT_PROBE, // Active probe signal sent down the line.   PowerConnectionId portA is present, portB is absent.
+       PCDT_CORRELATION, // Correlation of power measurements was used.  PowerConnectionId portA and portB are present.
+       PCDT_COMMUNICATIONS, // Power line carrier or similar network communications was used.  PowerConnectionId portA and portB are present.
+       PCDT_HISTORY // Device reset or other event has lost continuous monitoring of the connection. This connection was detected before the event and has neither been confirmed nor denied since.
+   }; // enum PowerConnectionDetectionType
+
+
+   /**
+    * Indicator of success or failure. Intended to support automatic handling.
+    */
+   @extensibility(APPENDABLE)
+   enum ReplyCode {
+       REPLY_UNKNOWN, // Unknown value. This is a generic placeholder representing the case in which an appropriate value could not be determined.
+       REPLY_OK, // The request has succeeded.
+       REPLY_BAD_REQUEST, // Some value in the request was invalid.
+       REPLY_METHOD_NOT_ALLOWED, // A request method is not supported for the requested resource.
+       REPLY_CONFLICT, // Indicates that the request could not be processed because of conflict in the current state of the resource.
+       REPLY_GONE, // Indicates that the resource requested is no longer available and will not be available again. This should be used when a resource has been intentionally removed and the resource should be purged.
+       REPLY_PRECONDITION_FAILED, // The request does not meet one of the preconditions.
+       REPLY_INTERNAL_SERVER_ERROR, // A generic error message, given when an unexpected condition was encountered and no more specific message is suitable.
+       REPLY_NOT_IMPLEMENTED, // The request either does not recognize the request method, or it lacks the ability to fulfil the request.
+       REPLY_SERVICE_UNAVAILABLE, // The device cannot handle the request (because it is overloaded or down for maintenance). Generally, this is a temporary state
+       REPLY_PENDING_AUTHORIZATION, // Request is valid, and authorization is required before processing.
+       REPLY_NOT_MASTER, // The requestingDeviceId is not the selected master MC.
+       /**
+        * Change History:
+        *  1) Version: 2.0.1, Change: add, Interoperability: No-xtypes
+        *     Allow device to provide more specified reason a request
+        *     is denied.
+        */
+       REPLY_PERMISSION_DENIED // Remote control is disabled for this request.
+   }; // enum ReplyCode
+
+
+   /**
+    * Indicate the wiring scheme for an AC or DC circuit.
+    */
+   @extensibility(APPENDABLE)
+   enum CircuitWiring {
+       WIRING_UNKNOWN, // Unknown value. This is a generic placeholder representing the case in which an appropriate value could not be determined.
+       WIRING_AC_SINGLE, // Single-phase AC circuit.  Hot wire.
+       WIRING_AC_SPLIT, // Split-phase AC circuit.  Wires A, B, and N.
+       WIRING_AC_3WYE, // 3-phase AC circuit, wye configuration.  Wires A, B, C, and N.
+       WIRING_AC_3DELTA, // 3-phase AC circuit, delta configuration.  Wires A, B, and C.
+       WIRING_DC, // 2-wire DC circuit.  Positive and negative.
+       WIRING_DC_3WIRE // 3-wire DC circuit.  Positive, negative, and neutral.
+   }; // enum CircuitWiring
+
+
+   /**
+    * Indicate the polarity of a power connector.
+    */
+   @extensibility(APPENDABLE)
+   enum PowerConnectorPolarity {
+       POLARITY_UNKNOWN, // Unknown value. This is a generic placeholder representing the case in which an appropriate value could not be determined.
+       POLARITY_PIN, // This connector contains pins to insert in sockets.
+       POLARITY_SOCKET, // This connector contains sockets to receive pins. Includes terminal blocks.
+       POLARITY_UNIVERSAL // This connector is symmetric.
+   }; // enum PowerConnectorPolarity
+
+
+   /**
+    * Indicate the standard defining the physical shape and form of a power connector.
+    */
+   @extensibility(APPENDABLE)
+   enum PowerConnectorType {
+       CONNECTOR_UNKNOWN, // Unknown value. This is a generic placeholder representing the case in which an appropriate value could not be determined.
+       CONNECTOR_TERMINAL_BLOCK, // Terminal block.
+       CONNECTOR_MILSTD, // Generic MIL spec connector. MIL-STD-1651, MIL-DTL-22992, and MIL-DTL-53126, as used by PDISE.
+       CONNECTOR_NEMA5, // For convenience power ports, etc.
+       CONNECTOR_CAMLOCK, // As used by MEPDIS-R.
+       CONNECTOR_POWERLOCK, // ITT VEAM PowerLock
+       CONNECTOR_IEC60309, // As used by MEPDIS-R.
+       CONNECTOR_J1772, // Electric vehicle charging cable.
+       CONNECTOR_POWERLOK, // Amphenol PowerLok.
+       CONNECTOR_MILSTD1651, // MIL-STD-1651.
+       CONNECTOR_MILDTL22992, // MIL-DTL-22992.
+       CONNECTOR_MILDTL53126, // MIL-DTL-53126.
+       CONNECTOR_OTHER, // Other connector type, not listed elsewhere.
+       CONNECTOR_METER, // Used to represent a clamp on power meter.
+       CONNECTOR_BUS // Not a physical connector.  Used to represent the device internal bus.   Typically used by a Distribution or Conversion device but not limited to these device roles.
+   }; // enum PowerConnectorType
+
+
+   /**
+    * Anticipated direction of power flow.
+    */
+   @extensibility(APPENDABLE)
+   enum PowerPortDirectionality {
+       PPD_UNKNOWN, // not initialized.
+       PPD_NONE, // directionality not applicable (e.g., for a logical port, expect zero power).
+       PPD_IN, // Port intended to receive power.
+       PPD_OUT, // Port intended to send power .
+       PPD_IN_OUT // Port intended to send and receive power.
+   }; // enum PowerPortDirectionality
+
+
+   /**
+    * Indicate how a cable can be detected.
+    */
+   @extensibility(APPENDABLE)
+   enum PowerConnectorFeature {
+       PCF_UNKNOWN, // Unknown value. This is a generic placeholder representing the case in which an appropriate value could not be determined.
+       PCF_CABLE_SENSE, // A continuity circuit or similar feature detects when a cable is connected.
+       PCF_CABLE_ID_READER, // A cable ID reader is present.
+       PCF_CABLE_MEASUREMENT, // Voltage and current monitoring can establish the presence of a cable.
+       PCF_COMMUNICATION, // Contains network interface.
+       PCF_TOPOLOGY_DISCOVERY // Ability to discover connectivity to remote device power ports.
+   }; // enum PowerConnectorFeature
+
+
+   /**
+    * Describes a feature on a switch.  The MANUAL, AUTO, and REQUEST features cover what type of actors may change the switch state.
+    */
+   @extensibility(APPENDABLE)
+   enum PowerSwitchFeature {
+       PSF_UNKNOWN, // Unknown value. This is a generic placeholder representing the case in which an appropriate value could not be determined.
+       PSF_MANUAL_OPEN, // The operator may open the switch using an on-device interface.
+       PSF_MANUAL_CLOSE, // The operator may close the switch using an on-device interface.
+       PSF_AUTO_OPEN, // The power device may automatically open the switch.  For example, load shed logic.
+       PSF_AUTO_CLOSE, // The power device may automatically close the switch.  For example, automatic backup power logic.
+       PSF_REQUEST_OPEN, // A request such as PowerSwitchRequest may open the switch.  For example, the switch may have a shunt trip.
+       PSF_REQUEST_CLOSE, // A request such as PowerSwitchRequest may close the switch.  For example, the switch may have a contractor or motorized switch.
+       PSF_LOCK, // The operator may lock the switch to prevent AUTO or REQUEST operation.  This lock may be per-device or per-port.  For example, IEEE C37.2 device function 1, 5, 69, or 86.
+       PSF_RECLOSER, // Automatic recloser.  For example, IEEE C37.2 device function 79.  Depends on PSF_AUTO_CLOSE.
+       PSF_BREAKER, // Automatic over current / thermal protection.  For example, IEEE C37.2 device function 50 or 51.  Depends on PSF_AUTO_OPEN.
+       PSF_GFI, // Automatic ground fault protection.  Depends on PSF_AUTO_OPEN.
+       PSF_ARC_FLASH, // Automatic arc flash protection.  For example, IEEE C37.2 device function AFD.  Depends on PSF_AUTO_OPEN.
+       PSF_SYNCHRONIZER, // Synchronize before close.  For example, IEEE C37.2 device function 25.  Depends on PSF_AUTO_CLOSE or PSF_REQUEST_CLOSE.
+       PSF_SURGE, // Automatic over voltage protection.  Depends on PSF_AUTO_OPEN.
+       PSF_SWITCH_CONDITIONS // Supports PowerSwitchRequest.switchConditions.  Depends on PSF_REQUEST_CLOSE and PowerPortInfo.hasExternalMeter.
+   }; // enum PowerSwitchFeature
+
+
+   /**
+    * Indicate why a power switch entered a continuity state.
+    */
+   @extensibility(APPENDABLE)
+   enum PowerSwitchReason {
+       PSR_UNKNOWN, // No information is available, either due to design or malfunction.
+       PSR_STARTUP, // Initial state when the device started.
+       PSR_MANUAL, // Changed by a local operator, either mechanical or digital.  PSR_OPERATOR_LOGIN if the operator is authenticated and has an identity.
+       PSR_AUTO, // Automatic operation initiated by the device and not covered by a more specific AUTO reason.
+       PSR_REQUEST, // Responded to a MC request.
+       PSR_OPERATOR_LOGIN, // Changed by a local operator who is logged in to an internal display and has an identity. PSR_MANUAL when not logged in or no operator identity.
+       PSR_AUTO_PROTECTION, // Activated by an internal protection function.  For example, in response to IEEE C37.2 device function 49, 50, 51, 59, or 64.
+       PSR_AUTO_LOAD_SHED, // Activated by internal load shed logic.
+       PSR_AUTO_VOLTAGE_LOSS, // Responded to an interruption in line voltage.
+       PSR_AUTO_COMMS_LOSS, // Responded to an interruption in microgrid communications.
+       PSR_MALFUNCTION // Apparent internal malfunction.
+   }; // enum PowerSwitchReason
+
+
+   /**
+    * Describes a feature on a specific energy source device.
+    */
+   @extensibility(APPENDABLE)
+   enum SourceFeature {
+       SRCF_UNKNOWN, // Unknown value. This is a generic placeholder representing the case in which an appropriate value could not be determined.
+       SRCF_GENSET, // Genset source.
+       SRCF_FUEL_CELL, // Fuel cell source.
+       SRCF_SOLAR, // Solar source.
+       SRCF_WIND, // Wind source.
+       SRCF_VEHICLE // Source shared with a vehicle power train.
+   }; // enum SourceFeature
+
+
+   /**
+    * Describes a feature on a specific energy load.
+    */
+   @extensibility(APPENDABLE)
+   enum LoadFeature {
+       LOADF_UNKNOWN, // Unknown value. This is a generic placeholder representing the case in which an appropriate value could not be determined.
+       LOADF_DEMAND_RESPONSE, // Device can shed load to provide grid support.
+       LOADF_CHANGE_NOTIFICATION, // Device can notify the microgrid before causing a large load transient.
+       LOADF_SOFT_START // Device can smoothly ramp up and down to minimize load transients.
+   }; // enum LoadFeature
+
+
+   /**
+    * Describes a feature on a specific energy distribution device.
+    */
+   @extensibility(APPENDABLE)
+   enum DistributionFeature {
+       DISTF_UNKNOWN, // Unknown value. This is a generic placeholder representing the case in which an appropriate value could not be determined.
+       DISTF_CLAMP_METER, // clamp-on power meter, two logical power ports.
+       DISTF_TAP_METER, // pass-through power meter, two physical power ports.
+       DISTF_PCC, // has additional capabilities for PCC interconnect with another grid.
+       DISTF_FEEDER, // intended for supplying power to other DIST devices.
+       DISTF_DISTRIBUTION // intended for supplying power to LOAD devices.
+   }; // enum DistributionFeature
+
+
+   /**
+    * Describes a feature on a specific energy converter.
+    */
+   @extensibility(APPENDABLE)
+   enum ConversionFeature {
+       CONVF_UNKNOWN, // Unknown value. This is a generic placeholder representing the case in which an appropriate value could not be determined.
+       CONVF_ACTIVE, // Uses power electronics or other active components (programmable).
+       CONVF_PASSIVE // Uses transformers or other passive components (fixed function).
+   }; // enum ConversionFeature
+
+
+   /**
+    * Describes a feature on a specific microgrid dashboard.
+    */
+   @extensibility(APPENDABLE)
+   enum MicrogridDashboardFeature {
+       MDF_UNKNOWN, // Unknown value. This is a generic placeholder representing the case in which an appropriate value could not be determined.
+       MDF_DISPLAY, // Can show microgrid status.
+       MDF_CONTROL // Can control microgrid status.
+   }; // enum MicrogridDashboardFeature
+
+
+   /**
+    * Describes a feature on a specific microgrid controller.
+    */
+   @extensibility(APPENDABLE)
+   enum MicrogridControllerFeature {
+       MCF_UNKNOWN, // Unknown value. This is a generic placeholder representing the case in which an appropriate value could not be determined.
+       MCF_FIXED, // special-purpose microgrid controller designed for a single platform or limited microgrid configuration.
+       MCF_GENERAL // general-purpose microgrid controller.
+   }; // enum MicrogridControllerFeature
+
+
+   /**
+    * Describes a feature of a specific energy storage device.
+    */
+   @extensibility(APPENDABLE)
+   enum StorageFeature {
+       STORF_UNKNOWN, // Unknown value. This is a generic placeholder representing the case in which an appropriate value could not be determined.
+       STORF_GRID, // Grid attached storage, does not require pass-through from source to load.
+       STORF_SUBCYCLE_UPS, // Can provide fast voltage support to recover from a grid fault condition.
+       STORF_CHARGING, // Integrated into a charging station, as for electric vehicles.
+       STORF_VEHICLE // Integrated into an electric vehicle power train.
+   }; // enum StorageFeature
+
+
+   /**
+    * Identifies the time when configuration settings are to be used.
+    */
+   @extensibility(APPENDABLE)
+   enum ConfigId {
+       CONFIG_UNKNOWN, // Unknown value. This is a generic placeholder representing the case in which an appropriate value could not be determined.
+       CONFIG_DEFAULTS, // Read-only manufacturer defaults.
+       CONFIG_ACTIVE, // Settings for use at the present time.
+       CONFIG_ON_REBOOT, // Settings for use after a reboot / restart.
+       CONFIG_ON_COMMS_LOSS // Settings for use after a communications loss timeout.
+   }; // enum ConfigId
+
+
+   /**
+    * Describes the type of fault. See SAE J1939.
+    */
+   @extensibility(APPENDABLE)
+   enum FailureModeIndicator {
+       FMI_UNKNOWN, // No information is available, either due to design or malfunction.
+       FMI_HIGH_MOST_SEVERE_HIGH, // 0, Data valid but above normal operational range, most severe level.
+       FMI_HIGH_MOST_SEVERE_LOW, // 1, Data valid but below normal operational range, most severe level.
+       FMI_DATA_ERRATIC, // 2, Data erratic, intermittent or incorrect (rationality).
+       FMI_VOLTAGE_HIGH, // 3, Voltage above normal or shorted to high source.
+       FMI_VOLTAGE_LOW, // 4, Voltage below normal or shorted to low source.
+       FMI_CURRENT_LOW, // 5, Current below normal or open circuit.
+       FMI_CURRENT_HIGH, // 6, Current above normal or ground circuit.
+       FMI_NOT_RESPONDING, // 7, Mechanical system not responding or out of adjustment.
+       FMI_ABNORMAL_FREQUENCY, // 8, Abnormal frequency or pulse width or period.
+       FMI_ABNORMAL_UPDATE_RATE, // 9, Abnormal update rate.
+       FMI_ABNORMAL_RATE_OF_CHARGE, // 10, Abnormal rate of change.
+       FMI_FAILURE_CODE_NOT_IDENTIFIABLE, // 11, Failure code not identifiable.
+       FMI_BAD_INTELLIGENT_DEVICE, // 12, Bad intelligent device or component.
+       FMI_OUT_OF_CALIBRATION, // 13, Out of calibration.
+       FMI_SPECIAL_INSTRUCTIONS, // 14, Special instructions.
+       FMI_HIGH_LEAST_SEVERE, // 15, Data valid but above normal operational range, least severe level.
+       FMI_HIGH_MODERATELY_SEVERE, // 16, Data valid but above normal operational range, moderately severe level.
+       FMI_LOW_LEAST_SEVERE, // 17, Data valid but below normal operational range, least severe level.
+       FMI_LOW_MODERATELY_SEVERE, // 18, Data valid but below normal operational range, moderately severe level.
+       FMI_RECEIVED_DATA_ERROR, // 19, Received network data in error (multiplexed data).
+       FMI_DATA_DRIFTED_HIGH, // 20, Data drifted high (rationality high).
+       FMI_DATA_DRIFTED_LOW, // 21, Data drifted high (rationality high).
+       FMI_CONDITION_EXISTS // 31, Condition exists.
+   }; // enum FailureModeIndicator
+
+
+   /**
+    * Identifies a port within a device. Port numbers below 0 are invalid.
+    */
+   typedef int32 PowerPortNumber;
+
+   /** Maximum number of power ports that a device may contain. */
+   const uint32 MAX_PORTS = 64;
+
+   /** A constant value for an unspecified port number (-1). */
+   const int32 INVALID_PORT_NUMBER = -1;
+
+
+   const uint32 Identity_MINLEN = 1;
+   const uint32 Identity_MAXLEN = 32;
+   /**
+    * Universally unique identifier for a device, person, platform, or other entity. 
+    * Minimum length: 1
+    * Maximum length: 32
+    */
+   typedef string <Identity_MAXLEN> Identity;
+
+
+   const uint32 IdentitySequence_MINLEN = 0;
+   const uint32 IdentitySequence_MAXLEN = MAX_PORTS;
+   /**
+    * A sequence of Identity.
+    * Minimum length: 0
+    * Maximum length: MAX_PORTS
+    */
+   typedef sequence<Identity, IdentitySequence_MAXLEN> IdentitySequence;
+
+
+   const uint32 GlobalTradeItemNumber_LEN = 14;
+   /**
+    * Encodes a Global Trade Item Number (GTIN).
+    * Fixed length: 14
+    */
+   typedef char GlobalTradeItemNumber[GlobalTradeItemNumber_LEN];
+
+
+   /**
+    * Identifies a grounding circuit within a device.
+    */
+   typedef int32 GroundingCircuitNumber;
+
+   /** Maximum number of grounding circuits that a device may contain. */
+   const int32 MAX_GROUNDING_CIRCUITS = 8;
+
+   /** A constant value for an invalid grounding circuit (-1). */
+   const int32 INVALID_GROUNDING_CIRCUIT_NUMBER = -1;
+
+
+   const uint32 NatoStockNumber_LEN = 13;
+   /**
+    * Encodes a NATO Stock Number (NSN), aka National Stock Number.
+    * Fixed length: 13
+    */
+   typedef char NatoStockNumber[NatoStockNumber_LEN];
+
+
+   const uint32 String16_MINLEN = 0;
+   const uint32 String16_MAXLEN = 16;
+   /**
+    * A variable length string.
+    * Minimum length: 0
+    * Maximum length: 16
+    */
+   typedef string <String16_MAXLEN> String16;
+
+
+   const uint32 String32_MINLEN = 0;
+   const uint32 String32_MAXLEN = 32;
+   /**
+    * A variable length string.
+    * Minimum length: 0
+    * Maximum length: 32
+    */
+   typedef string <String32_MAXLEN> String32;
+
+
+   const uint32 String1_32_MINLEN = 1;
+   const uint32 String1_32_MAXLEN = 32;
+   /**
+    * A variable length string with a fixed minimum.
+    * Minimum length: 1
+    * Maximum length: 32
+    */
+   typedef string <String1_32_MAXLEN> String1_32;
+
+
+   /**
+    * Identifies the sensor or subsystem at issue or a particular event or condition.
+    */
+   typedef uint32 SuspectParameterNumber;
+
+
+   /**
+    * Tap changer index in a passive conversion device.  Defaults to 0 when no changer is present.
+    */
+   typedef int32 TapNumber;
+
+   /** Maximum number of positions in a tap changer.  Many tap changers have 33 positions. */
+   const int32 MAX_TAPS = 64;
+
+
+   const uint32 PowerPortNumberSequence_MINLEN = 0;
+   const uint32 PowerPortNumberSequence_MAXLEN = MAX_PORTS;
+   /**
+    * A sequence of PowerPortNumber.
+    * Minimum length: 0
+    * Maximum length: MAX_PORTS
+    */
+   typedef sequence<PowerPortNumber, PowerPortNumberSequence_MAXLEN> PowerPortNumberSequence;
+
+
+   const uint32 ConversionFeatureSequence_MINLEN = 0;
+   const uint32 ConversionFeatureSequence_MAXLEN = 3;
+   /**
+    * A sequence of ConversionFeature.
+    * Minimum length: 0
+    * Maximum length: 3
+    */
+   typedef sequence<ConversionFeature, ConversionFeatureSequence_MAXLEN> ConversionFeatureSequence;
+
+
+   const uint32 OctetSequence_MINLEN = 1;
+   const uint32 OctetSequence_MAXLEN = 32768;
+   /**
+    * A sequence of Octet (byte).
+    * Minimum length: 1
+    * Maximum length: 32768
+    */
+   typedef sequence<octet, OctetSequence_MAXLEN> OctetSequence;
+
+
+   const uint32 DistributionFeatureSequence_MINLEN = 0;
+   const uint32 DistributionFeatureSequence_MAXLEN = 6;
+   /**
+    * A sequence of DistributionFeature.
+    * Minimum length: 0
+    * Maximum length: 6
+    */
+   typedef sequence<DistributionFeature, DistributionFeatureSequence_MAXLEN> DistributionFeatureSequence;
+
+
+   const uint32 PowerConnectorFeatureSequence_MINLEN = 0;
+   const uint32 PowerConnectorFeatureSequence_MAXLEN = 6;
+   /**
+    * A sequence of PowerConnectorFeature.
+    * Minimum length: 0
+    * Maximum length: 6
+    */
+   typedef sequence<PowerConnectorFeature, PowerConnectorFeatureSequence_MAXLEN> PowerConnectorFeatureSequence;
+
+
+   const uint32 PowerSwitchFeatureSequence_MINLEN = 0;
+   const uint32 PowerSwitchFeatureSequence_MAXLEN = 15;
+   /**
+    * A sequence of PowerSwitchFeature.
+    * Minimum length: 0
+    * Maximum length: 15
+    */
+   typedef sequence<PowerSwitchFeature, PowerSwitchFeatureSequence_MAXLEN> PowerSwitchFeatureSequence;
+
+
+   const uint32 LoadFeatureSequence_MINLEN = 0;
+   const uint32 LoadFeatureSequence_MAXLEN = 4;
+   /**
+    * A sequence of LoadFeature.
+    * Minimum length: 0
+    * Maximum length: 4
+    */
+   typedef sequence<LoadFeature, LoadFeatureSequence_MAXLEN> LoadFeatureSequence;
+
+
+   const uint32 MicrogridControllerFeatureSequence_MINLEN = 1;
+   const uint32 MicrogridControllerFeatureSequence_MAXLEN = 3;
+   /**
+    * A sequence of MicrogridControllerFeature.
+    * Minimum length: 1
+    * Maximum length: 3
+    */
+   typedef sequence<MicrogridControllerFeature, MicrogridControllerFeatureSequence_MAXLEN> MicrogridControllerFeatureSequence;
+
+
+   const uint32 MicrogridDashboardFeatureSequence_MINLEN = 1;
+   const uint32 MicrogridDashboardFeatureSequence_MAXLEN = 3;
+   /**
+    * A sequence of MicrogridDashboardFeature.
+    * Minimum length: 1
+    * Maximum length: 3
+    */
+   typedef sequence<MicrogridDashboardFeature, MicrogridDashboardFeatureSequence_MAXLEN> MicrogridDashboardFeatureSequence;
+
+
+   const uint32 EnumLabelSequence_MINLEN = 0;
+   const uint32 EnumLabelSequence_MAXLEN = 128;
+   /**
+    * A sequence of String1_32 values that contain unique labels for an enumerated parameter.
+    * Minimum length: 0
+    * Maximum length: 128
+    */
+   typedef sequence<String1_32, EnumLabelSequence_MAXLEN> EnumLabelSequence;
+
+
+   const uint32 SourceFeatureSequence_MINLEN = 0;
+   const uint32 SourceFeatureSequence_MAXLEN = 6;
+   /**
+    * A sequence of SourceFeature.
+    * Minimum length: 0
+    * Maximum length: 6
+    */
+   typedef sequence<SourceFeature, SourceFeatureSequence_MAXLEN> SourceFeatureSequence;
+
+
+   const uint32 StorageFeatureSequence_MINLEN = 0;
+   const uint32 StorageFeatureSequence_MAXLEN = 5;
+   /**
+    * A sequence of StorageFeature.
+    * Minimum length: 0
+    * Maximum length: 5
+    */
+   typedef sequence<StorageFeature, StorageFeatureSequence_MAXLEN> StorageFeatureSequence;
+
+
+   const uint32 ThermalLoadSequence_MINLEN = 0;
+   const uint32 ThermalLoadSequence_MAXLEN = 5;
+   /**
+    * A sequence of float32. Estimate of temperature control load as a fraction of capacity.  0=no load, 1=full rated load (hot or cold).  Values above 1 indicate overload conditions.
+    * Minimum length: 0
+    * Maximum length: 5
+    * Minimum Value: 0
+    */
+   typedef sequence<float, ThermalLoadSequence_MAXLEN> ThermalLoadSequence;
+
+
+   const uint32 ThermalZoneSequence_MINLEN = 0;
+   const uint32 ThermalZoneSequence_MAXLEN = 5;
+   /**
+    * A sequence of String1_32.
+    * Minimum length: 0
+    * Maximum length: 5
+    */
+   typedef sequence<String1_32, ThermalZoneSequence_MAXLEN> ThermalZoneSequence;
+
+
+
+   /** 
+    * Represent a point in a two-dimensional space.
+    */
+   @nested
+   @extensibility(APPENDABLE)
+   struct Point2D {
+
+       /**
+        * Horizontal coordinate.
+        */
+       float x;
+
+       /**
+        * Vertical coordinate.
+        */
+       float y;
+   }; // end struct Point2D
+
+
+   const uint32 Point2DSequence_MINLEN = 0;
+   const uint32 Point2DSequence_MAXLEN = 21;
+   /**
+    * A sequence of Point2D.
+    * Minimum length: 0
+    * Maximum length: 21
+    */
+   typedef sequence<Point2D, Point2DSequence_MAXLEN> Point2DSequence;
+
+
+
+   /** 
+    * Represent a curve in a two-dimensional space.
+    */
+   @nested
+   @extensibility(APPENDABLE)
+   struct Curve2D {
+
+       /**
+        * Vertices on the curve.
+        */
+       Point2DSequence points;
+   }; // end struct Curve2D
+
+
+
+   /** 
+    * Specify output variable y as a function of input variable x.
+    */
+   @nested
+   @extensibility(APPENDABLE)
+   struct ControlCurve {
+
+       /**
+        * Minimum acceptable value of y. Devices should operate above this curve.
+        */
+       Curve2D minimum;
+
+       /**
+        * Nominal value of y. Used as the set-point for PID controls.
+        */
+       Curve2D nominal;
+
+       /**
+        * Maximum acceptable value of y. Devices should operate below this curve.
+        */
+       Curve2D maximum;
+   }; // end struct ControlCurve
+
+
+
+   /** 
+    * Key value for a request that targets all devices in the grid.
+    */
+   @nested
+   @extensibility(APPENDABLE)
+   struct GridRequest {
+
+       /**
+        * Identity of the device that sent this request.
+        */
+       Identity requestingDeviceId;
+   }; // end struct GridRequest
+
+
+
+   /** 
+    * Local oscillator timestamp, not affected by clock jumps.
+    */
+   @nested
+   @extensibility(APPENDABLE)
+   struct ClockMonotonic {
+
+       /**
+        * integer portion of the timestamp.
+        */
+       uint32 seconds;
+
+       /**
+        * fractional portion of the timestamp.
+        */
+       uint32 nanoseconds;
+   }; // end struct ClockMonotonic
+
+
+
+   /** 
+    * Design information for thermal management.
+    */
+   @nested
+   @extensibility(APPENDABLE)
+   struct ThermalInfo {
+
+       /**
+        * Name of each thermal zone.
+        */
+       ThermalZoneSequence thermalZone;
+   }; // end struct ThermalInfo
+
+
+
+   /** 
+    * Provides operating information of the thermal management in this device.
+    */
+   @nested
+   @extensibility(APPENDABLE)
+   struct ThermalState {
+
+       /**
+        * Load for each thermalZone, in same order published in tms.ThermalInfo.
+        */
+       ThermalLoadSequence thermalLoad;
+   }; // end struct ThermalState
+
+
+
+   /** 
+    * Model a synchronous generator, motor, or similar device for simulation and control.  Direct-axis and quadrature-axis (DQ) synchronous machine model based on IEEE 115.
+    */
+   @nested
+   @extensibility(APPENDABLE)
+   struct SynchronousMachineCoefficients {
+
+       /**
+        * Ra, stator resistance per phase
+        * units: ohm (ohm)
+        */
+       @unit("ohm")
+       float statorResistancePerPhase;
+
+       /**
+        * Xl, stator leakage reactance
+        * units: ohm (ohm)
+        */
+       @unit("ohm")
+       float statorLeakageReactance;
+
+       /**
+        * X0, zero-sequence reactance
+        * units: ohm (ohm)
+        */
+       @unit("ohm")
+       float zeroSequenceReactance;
+
+       /**
+        * X2, negative-sequence reactance
+        * units: ohm (ohm)
+        */
+       @unit("ohm")
+       float negativeSequenceReactance;
+
+       /**
+        * R0, zero-sequence resistance
+        * units: ohm (ohm)
+        */
+       @unit("ohm")
+       float zeroSequenceResistance;
+
+       /**
+        * R2 negative-sequence resistance
+        * units: ohm (ohm)
+        */
+       @unit("ohm")
+       float negativeSequenceResistance;
+
+       /**
+        * Xd, direct-axis synchronous reactance
+        * units: ohm (ohm)
+        */
+       @unit("ohm")
+       float directAxisSynchronousReactance;
+
+       /**
+        * Xd', direct-axis transient reactance
+        * units: ohm (ohm)
+        */
+       @unit("ohm")
+       float directAxisTransientReactance;
+
+       /**
+        * Xd'', direct-axis subtransient reactance
+        * units: ohm (ohm)
+        */
+       @unit("ohm")
+       float directAxisSubtransientReactance;
+
+       /**
+        * Xq, quadrature-axis synchronous reactance
+        * units: ohm (ohm)
+        */
+       @unit("ohm")
+       float quadratureAxisSynchronousReactance;
+
+       /**
+        * Xq', quadrature-axis transient reactance
+        * units: ohm (ohm)
+        */
+       @unit("ohm")
+       float quadratureAxisTransientReactance;
+
+       /**
+        * Xq'', quadrature-axis subtransient reactance
+        * units: ohm (ohm)
+        */
+       @unit("ohm")
+       float quadratureAxisSubtransientReactance;
+
+       /**
+        * Td', direct-axis transient short-circuit time constant
+        * units: second (s)
+        */
+       @unit("s")
+       float directAxisTransientShortCircuitTimeConstant;
+
+       /**
+        * Td'', direct-axis subtransient short-circuit time constant
+        * units: second (s)
+        */
+       @unit("s")
+       float directAxisSubtransientShortCircuitTimeConstant;
+
+       /**
+        * TdO'', direct-axis transient open-circuit time constant
+        * units: second (s)
+        */
+       @unit("s")
+       float directAxisTransientOpenCircuitTimeConstant;
+
+       /**
+        * TdO'', direct-axis subtransient open-circuit time constant
+        * units: second (s)
+        */
+       @unit("s")
+       float directAxisSubtransientOpenCircuitTimeConstant;
+
+       /**
+        * Tq', quadrature-axis transient short-circuit time constant
+        * units: second (s)
+        */
+       @unit("s")
+       float quadratureAxisTransientShortCircuitTimeConstant;
+
+       /**
+        * Tq'', quadrature-axis subtransient short-circuit time constant
+        * units: second (s)
+        */
+       @unit("s")
+       float quadratureAxisSubtransientShortCircuitTimeConstant;
+
+       /**
+        * TqO', quadrature-axis transient open-circuit time constant
+        * units: second (s)
+        */
+       @unit("s")
+       float quadratureAxisTransientOpenCircuitTimeConstant;
+
+       /**
+        * TqO'', quadrature-axis subtransient open-circuit time constant
+        * units: second (s)
+        */
+       @unit("s")
+       float quadratureAxisSubtransientOpenCircuitTimeConstant;
+   }; // end struct SynchronousMachineCoefficients
+
+
+
+   /** 
+    * Design information for power electronics.
+    */
+   @nested
+   @extensibility(APPENDABLE)
+   struct PowerElectronicsInfo {
+
+       /**
+        * Minimum rated operating temperature.
+        * units: degree Celsius (degC)
+        * Change History:
+        *  1) Version: 2.0.1, Change: modify, Interoperability: No-xtypes
+        *     Removed minimum and maximum range specification.
+        */
+       @unit("degC")
+       float minTemperature;
+
+       /**
+        * Maximum rated operating temperature.
+        * units: degree Celsius (degC)
+        * Change History:
+        *  1) Version: 2.0.1, Change: modify, Interoperability: No-xtypes
+        *     Removed minimum and maximum range specification.
+        */
+       @unit("degC")
+       float maxTemperature;
+   }; // end struct PowerElectronicsInfo
+
+
+
+   /** 
+    * Operating state of the power electronics hardware.
+    */
+   @nested
+   @extensibility(APPENDABLE)
+   struct PowerElectronicsState {
+
+       /**
+        * Present temperature.
+        * units: degree Celsius (degC)
+        * Change History:
+        *  1) Version: 2.0.1, Change: modify, Interoperability: No-xtypes
+        *     Removed minimum and maximum range specification.
+        */
+       @unit("degC")
+       float temperature;
+   }; // end struct PowerElectronicsState
+
+
+   /**
+    * Identifies an energy storage cell within a device.
+    */
+   typedef uint16 StorageCellNumber;
+
+   /** Number to use for a single-cell device. */
+   const StorageCellNumber ONLY_CELL = 0;
+
+   /** Maximum number of cells that a device may report. */
+   const StorageCellNumber MAXLEN_storageCells = 50;
+
+
+
+   /** 
+    * Power measurement for direct current devices.
+    */
+   @nested
+   @extensibility(APPENDABLE)
+   struct StorageCellState {
+
+       /**
+        * Identifies the energy storage cell being reported on within a device.
+        */
+       StorageCellNumber cellNumber;
+
+       /**
+        * Cumulative estimate of the energy storage wear, measured as the number of operating charge/discharge cycles.  Set to NaN if not available.
+        */
+       float cycleCounter;
+
+       /**
+        * Estimate of present charge as a fraction of rated capacity.  0=empty and 1=full.
+        * units: per unit (p.u.)
+        * Change History:
+        *  1) Version: 2.0.1, Change: modify, Interoperability: No-xtypes
+        *     Made the field optional.
+        */
+       @range(min=0, max=1)
+       @unit("p.u.")
+       @optional
+       float stateOfCharge;
+
+       /**
+        * Temperature measurement of the individual storage cell.  Set to NaN if not available.
+        * units: degree Celsius (degC)
+        * Change History:
+        *  1) Version: 2.0.1, Change: modify, Interoperability: No-xtypes
+        *     Removed minimum and maximum range specification.
+        */
+       @unit("degC")
+       float temperature;
+
+       /**
+        * DC bus voltage across the energy storage cell terminals.  Set to NaN if not available.
+        * units: volt (V)
+        */
+       @unit("V")
+       float voltage;
+   }; // end struct StorageCellState
+
+
+   const uint32 StorageCellStateSequence_MINLEN = 0;
+   const uint32 StorageCellStateSequence_MAXLEN = MAXLEN_storageCells;
+   /**
+    * A sequence of StorageCellState.
+    * Minimum length: 0
+    * Maximum length: MAXLEN_storageCells
+    */
+   typedef sequence<StorageCellState, StorageCellStateSequence_MAXLEN> StorageCellStateSequence;
+
+
+
+   /** 
+    * Operating state of the energy storage device or unit.
+    */
+   @nested
+   @extensibility(APPENDABLE)
+   struct EnergyStorageState {
+
+       /**
+        * Present temperature of the energy storage components, minimum value measured.
+        * units: degree Celsius (degC)
+        * Change History:
+        *  1) Version: 2.0.1, Change: modify, Interoperability: No-xtypes
+        *     Removed minimum and maximum range specification.
+        */
+       @unit("degC")
+       float minTemperature;
+
+       /**
+        * Present temperature of the energy storage components, average of values measured.
+        * units: degree Celsius (degC)
+        * Change History:
+        *  1) Version: 2.0.1, Change: modify, Interoperability: No-xtypes
+        *     Removed minimum and maximum range specification.
+        */
+       @unit("degC")
+       float averageTemperature;
+
+       /**
+        * Present temperature of the energy storage components, maximum value measured.
+        * units: degree Celsius (degC)
+        * Change History:
+        *  1) Version: 2.0.1, Change: modify, Interoperability: No-xtypes
+        *     Removed minimum and maximum range specification.
+        */
+       @unit("degC")
+       float maxTemperature;
+
+       /**
+        * Cumulative time that the energy storage has been actively charging or discharging.  Usually displayed as an hour meter. 
+        * units: second (s)
+        */
+       @unit("s")
+       float runTime;
+
+       /**
+        * Information on each storage cell. 
+        */
+       StorageCellStateSequence storageCells;
+   }; // end struct EnergyStorageState
+
+
+
+   /** 
+    * Design information for an energy storage device or unit.
+    */
+   @nested
+   @extensibility(APPENDABLE)
+   struct EnergyStorageInfo {
+
+       /**
+        * The high state of charge during continuous operations, only to be exceeded for limited-duration operation. Increased wear when charging above this point
+        * units: per unit (p.u.)
+        * Change History:
+        *  1) Version: 2.0.1, Change: modify, Interoperability: No-xtypes
+        *     Made the field optional.
+        */
+       @range(min=0, max=1)
+       @unit("p.u.")
+       @optional
+       float highStateOfCharge;
+
+       /**
+        * The low state of charge during continuous operations, only to go below for limited-duration operation. Increased wear when discharging below this point.
+        * units: per unit (p.u.)
+        * Change History:
+        *  1) Version: 2.0.1, Change: modify, Interoperability: No-xtypes
+        *     Made the field optional.
+        */
+       @range(min=0, max=1)
+       @unit("p.u.")
+       @optional
+       float lowStateOfCharge;
+
+       /**
+        * Minimum rated operating temperature.
+        * units: degree Celsius (degC)
+        * Change History:
+        *  1) Version: 2.0.1, Change: modify, Interoperability: No-xtypes
+        *     Removed minimum and maximum range specification.
+        */
+       @unit("degC")
+       float minTemperature;
+
+       /**
+        * Most efficient operating temperature.
+        * units: degree Celsius (degC)
+        * Change History:
+        *  1) Version: 2.0.1, Change: modify, Interoperability: No-xtypes
+        *     Removed minimum and maximum range specification.
+        */
+       @unit("degC")
+       float nomTemperature;
+
+       /**
+        * Maximum rated operating temperature.
+        * units: degree Celsius (degC)
+        * Change History:
+        *  1) Version: 2.0.1, Change: modify, Interoperability: No-xtypes
+        *     Removed minimum and maximum range specification.
+        */
+       @unit("degC")
+       float maxTemperature;
+   }; // end struct EnergyStorageInfo
+
+
+
+   /** 
+    * Design information for a power generator.
+    */
+   @nested
+   @extensibility(APPENDABLE)
+   struct GeneratorInfo {
+
+       /**
+        * Minimum field current value for normal operation.
+        * units: ampere (A)
+        */
+       @unit("A")
+       float minFieldCurrent;
+
+       /**
+        * Maximum field current value for normal operation.
+        * units: ampere (A)
+        */
+       @unit("A")
+       float maxFieldCurrent;
+
+       /**
+        * Maximum stator temperature. Indicates overheating.
+        * units: degree Celsius (degC)
+        * Change History:
+        *  1) Version: 2.0.1, Change: modify, Interoperability: No-xtypes
+        *     Removed minimum and maximum range specification.
+        */
+       @unit("degC")
+       float maxStatorTemperature;
+   }; // end struct GeneratorInfo
+
+
+
+   /** 
+    * Report information on AVR and generator condition.
+    */
+   @nested
+   @extensibility(APPENDABLE)
+   struct GeneratorState {
+
+       /**
+        * field current, as controlled by AVR.
+        * units: ampere (A)
+        */
+       @unit("A")
+       float fieldCurrent;
+
+       /**
+        * stator temperature.
+        * units: degree Celsius (degC)
+        */
+       @unit("degC")
+       float statorTemperature;
+   }; // end struct GeneratorState
+
+
+
+   /** 
+    * Design information for an engine, such as on a generator set (genset).
+    */
+   @nested
+   @extensibility(APPENDABLE)
+   struct EngineInfo {
+
+       /**
+        * Minimum oil pressure for the operation of the engine that prevents engine damage.
+        * units: pascal (Pa)
+        * Change History:
+        *  1) Version: 2.0.1, Change: modify, Interoperability: No-xtypes
+        *     Removed minimum range specification.
+        */
+       @unit("Pa")
+       float minOilPressure;
+
+       /**
+        * Maximum oil pressure for the operation of the engine that prevents engine damage.
+        * units: pascal (Pa)
+        * Change History:
+        *  1) Version: 2.0.1, Change: modify, Interoperability: No-xtypes
+        *     Removed minimum range specification.
+        */
+       @unit("Pa")
+       float maxOilPressure;
+
+       /**
+        * Minimum coolant temperature for the operation of the engine that prevents engine damage.
+        * units: degree Celsius (degC)
+        */
+       @unit("degC")
+       float minCoolantTemperature;
+
+       /**
+        * Maximum coolant temperature for the operation of the engine that prevents engine damage.
+        * units: degree Celsius (degC)
+        */
+       @unit("degC")
+       float maxCoolantTemperature;
+
+       /**
+        * Stall warning speed of the engine. Speeds below this threshold may cause a malfunction or protective shutdown.
+        * units: radian per second (rad/s)
+        * Change History:
+        *  1) Version: 2.0.1, Change: modify, Interoperability: No-xtypes
+        *     Removed minimum range specification.
+        */
+       @unit("rad/s")
+       float minEngineSpeed;
+
+       /**
+        * Maximum engine speed. I.e. the red line
+        * units: radian per second (rad/s)
+        * Change History:
+        *  1) Version: 2.0.1, Change: modify, Interoperability: No-xtypes
+        *     Removed minimum range specification.
+        */
+       @unit("rad/s")
+       float maxEngineSpeed;
+
+       /**
+        * Minimum load required to prevent wet stack build up.
+        * units: watt (W)
+        * Change History:
+        *  1) Version: 2.0.1, Change: modify, Interoperability: No-xtypes
+        *     Removed minimum range specification.
+        */
+       @unit("W")
+       float minWetStackPreventionLoad;
+
+       /**
+        * Minimum load required to clear wet stack build up.
+        * units: watt (W)
+        * Change History:
+        *  1) Version: 2.0.1, Change: modify, Interoperability: No-xtypes
+        *     Removed minimum range specification.
+        */
+       @unit("W")
+       float minWetStackMitigationLoad;
+   }; // end struct EngineInfo
+
+
+   /**
+    * Indicate the operating state of an engine.  Engines are not required to support all operating states.
+    */
+   @extensibility(APPENDABLE)
+   enum EngineOperatingState {
+       EOS_UNKNOWN, // Unknown value. This is a generic placeholder representing the case in which an appropriate value could not be determined.
+       EOS_STOPPED, // Engine is stopped.
+       EOS_HEATING, // Engine is stopped and being heated for cold weather start.
+       EOS_STARTING, // Engine is starting.
+       EOS_IDLING, // Engine is started and running at a low, non-operational speed.
+       EOS_WARMUP, // Engine is started and warming up to operational speed.
+       EOS_RUNNING, // Engine is started and fully operational.
+       EOS_COOLDOWN, // Engine is started and cooling down in preparation to stop.
+       EOS_STOPPING, // Engine is stopping.
+       EOS_DISABLED // Engine is disabled.  It may be broken or undergoing maintenance.
+   }; // enum EngineOperatingState
+
+
+
+   /** 
+    * Report key parameters about the state of the engine.
+    */
+   @nested
+   @extensibility(APPENDABLE)
+   struct EngineState {
+
+       /**
+        * Present operating state.  Should be consistent with the EnergyStartStopState.
+        */
+       EngineOperatingState operatingState;
+
+       /**
+        * Oil pressure.
+        * units: pascal (Pa)
+        */
+       @unit("Pa")
+       float oilPressure;
+
+       /**
+        * Coolant temperature.
+        * units: degree Celsius (degC)
+        * Change History:
+        *  1) Version: 2.0.1, Change: modify, Interoperability: No-xtypes
+        *     Removed minimum and maximum range specification.
+        */
+       @unit("degC")
+       float coolantTemperature;
+
+       /**
+        * Speed.
+        * units: radian per second (rad/s)
+        * Change History:
+        *  1) Version: 2.0.1, Change: modify, Interoperability: No-xtypes
+        *     Removed minimum range specification.
+        */
+       @unit("rad/s")
+       float speed;
+
+       /**
+        * wet stack per unit, mitigation required or indicated at 1.
+        * units: per unit (p.u.)
+        */
+       @range(min=0, max=1)
+       @unit("p.u.")
+       @optional
+       float wetStack;
+
+       /**
+        * Engine runtime.
+        * units: second (s)
+        * Change History:
+        *  1) Version: 2.0.1, Change: modify, Interoperability: No-xtypes
+        *     Removed minimum range specification.
+        *  2) Version: 2.0.1, Change: modify, Interoperability: No-xtypes
+        *     Name changed from engineRuntime and units to second.
+        */
+       @unit("s")
+       float runTime;
+
+       /**
+        * Fuel consumption rate at the present power level.
+        * units: liters per second (L/s)
+        */
+       @min(0)
+       @unit("L/s")
+       @optional
+       float fuelConsumptionRate;
+   }; // end struct EngineState
+
+
+
+   /** 
+    * Design information for the fuel associated with a power device.
+    */
+   @nested
+   @extensibility(APPENDABLE)
+   struct FuelInfo {
+
+       /**
+        * The rated fuel capacity of the device.
+        * units: liter (L)
+        * Change History:
+        *  1) Version: 2.0.1, Change: modify, Interoperability: No-xtypes
+        *     Removed minimum range specification.
+        */
+       @unit("L")
+       float maxFuelLevel;
+
+       /**
+        * Level where engine automatically shuts down.
+        * units: per unit (p.u.)
+        */
+       @range(min=0, max=1)
+       @unit("p.u.")
+       float lowFuelLevelCutoff;
+   }; // end struct FuelInfo
+
+
+
+   /** 
+    * Provides dynamic state information regarding fuel levels and pumps.
+    */
+   @nested
+   @extensibility(APPENDABLE)
+   struct FuelState {
+
+       /**
+        * The current fuel level of the device.
+        * units: liter (L)
+        */
+       @unit("L")
+       float fuelLevel;
+
+       /**
+        * True indicates that fuel is being pulled from external tank (fuel pump is on). False otherwise or if the device does not have a fuel pump.
+        */
+       boolean fuelPumpRunning;
+   }; // end struct FuelState
+
+
+
+   /** 
+    * Design information for a device capable of load sharing.  Expected step response when directly connected to a load.  Both acceptance and rejection responses start from steady state and stop when the response settles.  The load step occurs at t=0, and the step size should be at least 50% of the rated power capacity of the load sharing device.
+    */
+   @nested
+   @extensibility(APPENDABLE)
+   struct LoadStepResponse {
+
+       /**
+        * Initial condition for the load acceptance step.  Final condition for the load rejection step.
+        * units: watt (W)
+        */
+       @unit("W")
+       float loadStepLowRealPower;
+
+       /**
+        * Initial condition for the load rejection step.  Final condition for the load acceptance step.
+        * units: watt (W)
+        */
+       @unit("W")
+       float loadStepHighRealPower;
+
+       /**
+        * Initial condition for the load acceptance step.  Final condition for the load rejection step.
+        * units: volt ampere reactive (var)
+        */
+       @unit("var")
+       float loadStepLowReactivePower;
+
+       /**
+        * Initial condition for the load rejection step.  Final condition for the load acceptance step.
+        * units: volt ampere reactive (var)
+        */
+       @unit("var")
+       float loadStepHighReactivePower;
+
+       /**
+        * Plot of expected frequency response to the load acceptance step.
+        * units: hertz, second (Hz, s)
+        */
+       @unit("Hz, s")
+       Curve2D loadAcceptanceFrequency;
+
+       /**
+        * Plot of expected voltage response to the load acceptance step.
+        * units: volt, second (V, s)
+        */
+       @unit("V, s")
+       Curve2D loadAcceptanceVoltage;
+
+       /**
+        * Plot of expected real power response to the load acceptance step.
+        * units: watt, second (W, s)
+        */
+       @unit("W, s")
+       Curve2D loadAcceptanceRealPower;
+
+       /**
+        * Plot of expected reactive power response to the load acceptance step.
+        * units: volt ampere reactive, second (var, s)
+        */
+       @unit("var, s")
+       Curve2D loadAcceptanceReactivePower;
+
+       /**
+        * Plot of expected frequency response to the load rejection step.
+        * units: hertz, second (Hz, s)
+        */
+       @unit("Hz, s")
+       Curve2D loadRejectionFrequency;
+
+       /**
+        * Plot of expected voltage response to the load rejection step.
+        * units: volt, second (V, s)
+        */
+       @unit("V, s")
+       Curve2D loadRejectionVoltage;
+
+       /**
+        * Plot of expected real power response to the load rejection step.
+        * units: watt, second (W, s)
+        */
+       @unit("W, s")
+       Curve2D loadRejectionRealPower;
+
+       /**
+        * Plot of expected reactive power response to the load rejection step.
+        * units: volt ampere reactive, second (var, s)
+        */
+       @unit("var, s")
+       Curve2D loadRejectionReactivePower;
+   }; // end struct LoadStepResponse
+
+
+   const uint32 LoadStepResponseSequence_MINLEN = 0;
+   const uint32 LoadStepResponseSequence_MAXLEN = 16;
+   /**
+    * A sequence of LoadStepResponse.
+    * Minimum length: 0
+    * Maximum length: 16
+    */
+   typedef sequence<LoadStepResponse, LoadStepResponseSequence_MAXLEN> LoadStepResponseSequence;
+
+
+
+   /** 
+    * Design information for a device capable of load sharing.
+    */
+   @nested
+   @extensibility(APPENDABLE)
+   struct LoadSharingInfo {
+
+       /**
+        * The power port number.
+        */
+       PowerPortNumber portNumber;
+
+       /**
+        * The device can allow the frequency (AC) and voltage (AC and DC) to sag as load increases.
+        */
+       boolean supportsDroop;
+
+       /**
+        * The droop curves can have multiple piecewise linear segments.
+        */
+       boolean supportsMultiSegmentDroop;
+
+       /**
+        * The device can regulate output power instead of frequency and voltage.
+        */
+       boolean supportsConstantPower;
+
+       /**
+        * Minimum rated real power.
+        * units: watt (W)
+        */
+       @unit("W")
+       float minRealPower;
+
+       /**
+        * Maximum rated real power.
+        * units: watt (W)
+        */
+       @unit("W")
+       float maxRealPower;
+
+       /**
+        * Rated overload output real power as a function of overload duration
+        * units: second, watt (s, W)
+        */
+       @unit("s, W")
+       @optional
+       Curve2D maxOverloadRealPower;
+
+       /**
+        * Minimum rated reactive power.
+        * units: volt ampere reactive (var)
+        */
+       @unit("var")
+       float minReactivePower;
+
+       /**
+        * Maximum rated reactive power.
+        * units: volt ampere reactive (var)
+        */
+       @unit("var")
+       float maxReactivePower;
+
+       /**
+        * Maximum rated apparent power (absolute value).
+        * units: volt ampere (VA)
+        */
+       @unit("VA")
+       float maxApparentPower;
+
+       /**
+        * Rated power factor, usually 0.8.
+        */
+       float powerFactor;
+
+       /**
+        * Expected response to various load steps.
+        */
+       @optional
+       LoadStepResponseSequence loadResponse;
+   }; // end struct LoadSharingInfo
+
+
+   const uint32 LoadSharingInfoSequence_MINLEN = 1;
+   const uint32 LoadSharingInfoSequence_MAXLEN = MAX_PORTS;
+   /**
+    * A sequence of LoadSharingInfo.
+    * Minimum length: 1
+    * Maximum length: MAX_PORTS
+    */
+   typedef sequence<LoadSharingInfo, LoadSharingInfoSequence_MAXLEN> LoadSharingInfoSequence;
+
+
+
+   /** 
+    * Design information for power storage devices.
+    */
+   @nested
+   @extensibility(APPENDABLE)
+   struct StorageInfo {
+
+       /**
+        * A set of features this device supports.
+        */
+       StorageFeatureSequence features;
+
+       /**
+        * Rated energy at full state of charge.
+        * units: joule (J)
+        */
+       @unit("J")
+       float maxChargeEnergy;
+
+       /**
+        * Load sharing capabilities of this device.
+        */
+       LoadSharingInfo loadSharing;
+
+       /**
+        * List of the EnergyStartStopLevels supported by this device for use in EnergyStartStopState or EnergyStartStopRequest.
+        */
+       EnergyStartStopLevelSequence supportedEnergyStartStopLevels;
+   }; // end struct StorageInfo
+
+
+
+   /** 
+    * Design information for control hardware.
+    */
+   @nested
+   @extensibility(APPENDABLE)
+   struct ControlHardwareInfo {
+
+       /**
+        * True indicates that the device has a real time clock. False otherwise.
+        */
+       boolean hasRealtimeClock;
+
+       /**
+        * Minimum rated operating temperature.
+        * units: degree Celsius (degC)
+        * Change History:
+        *  1) Version: 2.0.1, Change: modify, Interoperability: No-xtypes
+        *     Removed minimum and maximum range specification.
+        */
+       @unit("degC")
+       float minTemperature;
+
+       /**
+        * Maximum rated operating temperature.
+        * units: degree Celsius (degC)
+        * Change History:
+        *  1) Version: 2.0.1, Change: modify, Interoperability: No-xtypes
+        *     Removed minimum and maximum range specification.
+        */
+       @unit("degC")
+       float maxTemperature;
+
+       /**
+        * Number of network port connectors.
+        */
+       @min(0)
+       uint16 numNetworkPorts;
+   }; // end struct ControlHardwareInfo
+
+
+
+   /** 
+    * Operating state for the control hardware in this device.
+    * Topic Usage: 
+    * - TOPIC_CONTROL_HARDWARE_UPDATE
+    */
+   @topic
+   @extensibility(APPENDABLE)
+   struct ControlHardwareUpdate {
+
+       /**
+        * The device described by this structure.
+        */
+       @key
+       Identity deviceId;
+
+       /**
+        * Time of these measurements.
+        */
+       ClockMonotonic timestamp;
+
+       /**
+        * Central Processing Unit (CPU) usage, as a per unit measure of the whole capacity.
+        * units: per unit (p.u.)
+        * Change History:
+        *  1) Version: 2.0.1, Change: modify, Interoperability: No-xtypes
+        *     Made the field optional.
+        */
+       @range(min=0, max=1)
+       @unit("p.u.")
+       @optional
+       float processorUsage;
+
+       /**
+        * Memory utilization of the hardware, as a per unit measure of the whole capacity.
+        * units: per unit (p.u.)
+        * Change History:
+        *  1) Version: 2.0.1, Change: modify, Interoperability: No-xtypes
+        *     Made the field optional.
+        */
+       @range(min=0, max=1)
+       @unit("p.u.")
+       @optional
+       float memoryUsage;
+
+       /**
+        * Network utilization of the hardware, as a per unit measure of the whole capacity. If the device has multiple network interfaces, this field will describe the network interface utilized by TMS communication protocols.
+        * units: per unit (p.u.)
+        * Change History:
+        *  1) Version: 2.0.1, Change: modify, Interoperability: No-xtypes
+        *     Made the field optional.
+        */
+       @range(min=0, max=1)
+       @unit("p.u.")
+       @optional
+       float networkUsage;
+
+       /**
+        * Disk storage utilization of the hardware, as a per unit measure of the whole capacity.
+        * units: per unit (p.u.)
+        * Change History:
+        *  1) Version: 2.0.1, Change: modify, Interoperability: No-xtypes
+        *     Made the field optional.
+        */
+       @range(min=0, max=1)
+       @unit("p.u.")
+       @optional
+       float storageUsage;
+
+       /**
+        * Temperature measurement of the control hardware.
+        * units: degree Celsius (degC)
+        * Change History:
+        *  1) Version: 2.0.1, Change: modify, Interoperability: No-xtypes
+        *     Removed minimum and maximum range specification.
+        */
+       @unit("degC")
+       float temperature;
+   }; // end struct ControlHardwareUpdate
+
+
+
+   /** 
+    * Design information for power hardware. Power hardware refers to accessories or supporting components of a power device, such as an engine, control boards, etc.
+    */
+   @nested
+   @extensibility(APPENDABLE)
+   struct PowerHardwareInfo {
+
+       /**
+        * Engine information.
+        */
+       @optional
+       EngineInfo engine;
+
+       /**
+        * Fuel information.
+        */
+       @optional
+       FuelInfo fuel;
+
+       /**
+        * Generator information.
+        */
+       @optional
+       GeneratorInfo generator;
+
+       /**
+        * Energy storage information.
+        */
+       @optional
+       EnergyStorageInfo energyStorage;
+
+       /**
+        * Power electronics information.
+        */
+       @optional
+       PowerElectronicsInfo powerElectronics;
+
+       /**
+        * Thermal zone information.
+        */
+       @optional
+       ThermalInfo thermal;
+
+       /**
+        * Dynamic stability information for synchronous machines.
+        */
+       @optional
+       SynchronousMachineCoefficients synchronousMachineModel;
+   }; // end struct PowerHardwareInfo
+
+
+
+   /** 
+    * Operating state of the power hardware.
+    * Topic Usage: 
+    * - TOPIC_POWER_HARDWARE_UPDATE
+    */
+   @topic
+   @extensibility(APPENDABLE)
+   struct PowerHardwareUpdate {
+
+       /**
+        * The device described by this structure.
+        */
+       @key
+       Identity deviceId;
+
+       /**
+        * Time of these measurements.
+        */
+       ClockMonotonic timestamp;
+
+       /**
+        * Operating state of the engine if present. 
+        */
+       @optional
+       EngineState engine;
+
+       /**
+        * Fuel state, if present.
+        */
+       @optional
+       FuelState fuel;
+
+       /**
+        * Operating state of a generator, if present.
+        */
+       @optional
+       GeneratorState generator;
+
+       /**
+        * Operating state of energy storage if present.
+        */
+       @optional
+       EnergyStorageState energyStorage;
+
+       /**
+        * Operating state of active components including inverters and rectifiers, if present.
+        */
+       @optional
+       PowerElectronicsState powerElectronics;
+
+       /**
+        * Thermal operating state including heating and cooling components, if present.
+        */
+       @optional
+       ThermalState thermal;
+   }; // end struct PowerHardwareUpdate
+
+
+
+   /** 
+    * Represent an individual alarm or fault condition originating from the indicated sensor or subsystem, as identified by the portNumber and suspectParameter.
+    */
+   @nested
+   @extensibility(APPENDABLE)
+   struct DiagnosticTroubleCode {
+
+       /**
+        * Number shown on the device exterior to represent this port.  Present when this condition pertains to a specific power port and absent when it pertains to the entire device.
+        */
+       @optional
+       PowerPortNumber portNumber;
+
+       /**
+        * Parameter representing this DTC.
+        */
+       SuspectParameterNumber suspectParameter;
+
+       /**
+        * Type of fault for this parameter.
+        */
+       FailureModeIndicator failureMode;
+
+       /**
+        * Number of times this DTC was raised. This field increments on a state change from inactive to active. In order to increment, the cleared state must be sensed. The count must not increment simply due to restarts. The count should be stored in non-volatile memory in order to preserve it over power cycles. The count saturates at 4294967294 $(2^{32}-2)$. The value 4294967295 $(2^{32}-1)$ indicates that the count is not available.
+        */
+       uint32 occurrenceCount;
+
+       /**
+        * Timestamp when this DTC was raised or activated.
+        */
+       ClockMonotonic timeRaised;
+
+       /**
+        * Expected impact of the DTC on grid operation. Intended to support automatic handling of parameters that are unknown to the receiving system.
+        */
+       DtcSeverity severity;
+
+       /**
+        * Estimate of when the DTC severity will change, assuming continued operation under present conditions.
+        */
+       @optional
+       ClockMonotonic estimateTime;
+
+       /**
+        * Expected DTC severity at the estimateTime.
+        */
+       @optional
+       DtcSeverity estimateSeverity;
+
+       /**
+        * Short, human-readable text description of the DTC. This should summarize to the operator what the issue is (e.g. ``oil pressure'' or ``low oil pressure''). Intended to support human operators for parameters that are unknown to the receiving system.
+        */
+       String32 hint;
+   }; // end struct DiagnosticTroubleCode
+
+
+   const uint32 DiagnosticTroubleCodeSequence_MINLEN = 0;
+   const uint32 DiagnosticTroubleCodeSequence_MAXLEN = 64;
+   /**
+    * A sequence of DiagnosticTroubleCode.
+    * Minimum length: 0
+    * Maximum length: 64
+    */
+   typedef sequence<DiagnosticTroubleCode, DiagnosticTroubleCodeSequence_MAXLEN> DiagnosticTroubleCodeSequence;
+
+
+
+   /** 
+    * Clock synchronized to a global time base.
+    */
+   @nested
+   @extensibility(APPENDABLE)
+   struct ClockRealtime {
+
+       /**
+        * Epoch.
+        */
+       uint16 epoch;
+
+       /**
+        * integer portion of the timestamp.
+        */
+       uint32 seconds;
+
+       /**
+        * fractional portion of the timestamp.
+        */
+       uint32 nanoseconds;
+   }; // end struct ClockRealtime
+
+
+   /**
+    * Source of the realtime clock, as enumerated for timeSource in IEEE-1588-2008 Table 7.
+    */
+   @extensibility(APPENDABLE)
+   enum ClockSource {
+       CLOCK_UNKNOWN, // No information is available, either due to design or malfunction.
+       CLOCK_ATOMIC, // Direct connection to a calibrated atomic clock.
+       CLOCK_GPS, // Satellite-based system.
+       CLOCK_RADIO, // Terrestrial radio system.
+       CLOCK_PTP, // PTP, IEEE-1588.
+       CLOCK_NTP, // NTP, RFC 5905 or SNTP, RFC 4330.
+       CLOCK_HAND, // User input.
+       CLOCK_OTHER, // Other source.
+       CLOCK_INTERNAL // Arbitrary or unknown epoch
+   }; // enum ClockSource
+
+
+
+   /** 
+    * Simultaneous measurement of both system clocks, and synchronization status for .
+    * Topic Usage: 
+    * - TOPIC_CLOCK_STATE
+    */
+   @topic
+   @extensibility(APPENDABLE)
+   struct ClockState {
+
+       /**
+        * The device described by this structure.
+        */
+       @key
+       Identity deviceId;
+
+       /**
+        * Measured monotonic time, sampled simultaneously with realtime.
+        */
+       ClockMonotonic monotonic;
+
+       /**
+        * Indicate whether the monotonic clock initializes to 0 or accumulates operating time across restarts.
+        */
+       ClockMonotonicPersistenceType monotonicPersistence;
+
+       /**
+        * Measured real time, sampled simultaneously with monotonic.
+        */
+       ClockRealtime realtime;
+
+       /**
+        * Source of the realtime clock, as enumerated for timeSource in IEEE-1588-2008 Table 7.
+        */
+       ClockSource realtimeSource;
+
+       /**
+        * Last time the realtime clock was updated by the source.
+        */
+       ClockRealtime realtimeSetTime;
+   }; // end struct ClockState
+
+
+   /**
+    * Allows Request / Reply topics to be paired together. Value is requester assigned sequence number sent in a request and returned in a reply.
+    */
+   typedef uint64 RequestSequence;
+
+
+
+   /** 
+    * Key value for a request that targets one power device configuration.
+    */
+   @nested
+   @extensibility(APPENDABLE)
+   struct DeviceConfigRequest {
+
+       /**
+        * Identity of the device that sent this request.
+        */
+       Identity requestingDeviceId;
+
+       /**
+        * Identity of the device that should receive this request.
+        */
+       Identity targetDeviceId;
+
+       /**
+        * Power device configuration that this request belongs to.
+        */
+       ConfigId config;
+   }; // end struct DeviceConfigRequest
+
+
+
+   /** 
+    * Key value for a request that targets one device.
+    */
+   @nested
+   @extensibility(APPENDABLE)
+   struct DeviceRequest {
+
+       /**
+        * Identity of the device that sent this request.
+        */
+       Identity requestingDeviceId;
+
+       /**
+        * Identity of the device that should receive this request.
+        */
+       Identity targetDeviceId;
+   }; // end struct DeviceRequest
+
+
+
+   /** 
+    * Identify a power port (often remote)
+    */
+   @nested
+   @extensibility(APPENDABLE)
+   struct PowerPortId {
+
+       /**
+        * Device containing the port.
+        */
+       Identity deviceId;
+
+       /**
+        * Number shown on the device exterior to represent this port.
+        */
+       PowerPortNumber portNumber;
+   }; // end struct PowerPortId
+
+
+
+   /** 
+    * Design information for power connectors.
+    */
+   @nested
+   @extensibility(APPENDABLE)
+   struct PowerConnectorInfo {
+
+       /**
+        * Zero length indicates no features.
+        */
+       PowerConnectorFeatureSequence features;
+
+       /**
+        * Physical type of this connector.
+        */
+       PowerConnectorType physicalType;
+
+       /**
+        * Polarity of this connector.
+        */
+       PowerConnectorPolarity polarity;
+   }; // end struct PowerConnectorInfo
+
+
+
+   /** 
+    * Design information for power switches.
+    */
+   @nested
+   @extensibility(APPENDABLE)
+   struct PowerSwitchInfo {
+
+       /**
+        * Zero length indicates no features.
+        */
+       PowerSwitchFeatureSequence features;
+
+       /**
+        * Maximum (in/out) interrupt current.
+        * units: ampere (A)
+        */
+       @unit("A")
+       float interruptAmperage;
+   }; // end struct PowerSwitchInfo
+
+
+
+   /** 
+    * Design information for the connector, rated circuit, and switching capabilities of a power port.
+    */
+   @nested
+   @extensibility(APPENDABLE)
+   struct PowerPortInfo {
+
+       /**
+        * Number shown on the device exterior to represent this port.
+        */
+       PowerPortNumber portNumber;
+
+       /**
+        * Type of wiring provided by this port.
+        */
+       CircuitWiring wiring;
+
+       /**
+        *  Anticipated direction of power flow.
+        */
+       PowerPortDirectionality directionality;
+
+       /**
+        * Indicate whether this power port has a switch.
+        */
+       boolean hasSwitch;
+
+       /**
+        * Indicate whether this power port has an external meter.
+        */
+       boolean hasExternalMeter;
+
+       /**
+        * Indicate whether this power port has an internal meter.
+        */
+       boolean hasInternalMeter;
+
+       /**
+        * Indicate whether this port supports the AC or DC SummaryMeasurementUpdate.  Depends on corresponding topic.
+        */
+       boolean hasSummaryMeasurementUpdate;
+
+       /**
+        * minimum (least output) rated operating amperage.
+        * units: ampere (A)
+        */
+       @unit("A")
+       float minAmperage;
+
+       /**
+        * maximum (greatest output) rated operating amperage.
+        * units: ampere (A)
+        */
+       @unit("A")
+       float maxAmperage;
+
+       /**
+        * Maximum rated fault amperage that will not damage the power port.  Must be greater than maxAmperage.  Defined in the NEC as the short-circuit current rating (SCCR).
+        * units: ampere (A)
+        */
+       @unit("A")
+       float shortCircuitAmperage;
+
+       /**
+        * minimum rated operating voltage.
+        * units: volt (V)
+        */
+       @unit("V")
+       float minVoltage;
+
+       /**
+        * maximum rated operating voltage.
+        * units: volt (V)
+        */
+       @unit("V")
+       float maxVoltage;
+
+       /**
+        * minimum rated operating frequency, not present for DC, required for AC
+        * units: volt (V)
+        */
+       @unit("V")
+       @optional
+       float minFrequency;
+
+       /**
+        * maximum rated operating frequency, not present for DC, required for AC.
+        * units: volt (V)
+        */
+       @unit("V")
+       @optional
+       float maxFrequency;
+
+       /**
+        * Information about the connector.  Every power port must have a connector.
+        */
+       PowerConnectorInfo connectorInfo;
+
+       /**
+        * Information about the switch.  If hasSwitch is true, then required, otherwise not present.
+        */
+       @optional
+       PowerSwitchInfo switchInfo;
+   }; // end struct PowerPortInfo
+
+
+   const uint32 PowerPortInfoSequence_MINLEN = 0;
+   const uint32 PowerPortInfoSequence_MAXLEN = MAX_PORTS;
+   /**
+    * A sequence of PowerPortInfo.
+    * Minimum length: 0
+    * Maximum length: MAX_PORTS
+    */
+   typedef sequence<PowerPortInfo, PowerPortInfoSequence_MAXLEN> PowerPortInfoSequence;
+
+
+   /**
+    * Indicate the status of a pending power switch transition.  Power switches are not required to support all transition codes.
+    */
+   @extensibility(APPENDABLE)
+   enum PowerSwitchTransitionCode {
+       PSTC_UNKNOWN, // Unknown value. This is a generic placeholder representing the case in which an appropriate value could not be determined.
+       PSTC_NONE, // No transition was initiated.
+       PSTC_IN_PROGRESS, // Transition is in progress and needs time to complete.  No pending conditions.  For example, IEEE C37.2 device function 62.
+       PSTC_PENDING_SYNC, // Waiting for the synchronizer to close.  For example, IEEE C37.2 device function 25.
+       PSTC_PENDING_SWITCH_CONDITIONS, // Waiting for the PowerSwitchCloseConditions to be met.
+       PSTC_PENDING_INTERLOCK, // Waiting for a sequencing condition to be met.  For example, IEEE C37.2 device function 3.
+       PSTC_COMPLETE, // The transition completed successfully.
+       PSTC_MANUAL_OVERRIDE, // The last transition request was overridden (followed and replaced) by MANUAL action.
+       PSTC_AUTO_OVERRIDE, // The last transition request was overridden (followed and replaced) by AUTO logic.
+       PSTC_AUTO_LOCK, // The transition was attempted one or more times.  Automatic logic locked out further attempts.  For example, IEEE C37.2 device function 66.  MC may re-try the request.
+       PSTC_MALFUNCTION // The transition failed for an unknown reason.
+   }; // enum PowerSwitchTransitionCode
+
+
+
+   /** 
+    * Describe the present state and most recent transition of a power switch
+    */
+   @nested
+   @extensibility(APPENDABLE)
+   struct PowerSwitchStatus {
+
+       /**
+        * Present circuit continuity through the switch. May be measured from the switch position or from electrical continuity. Continuity is unknown for manual switches with no monitoring capability. Continuity may be inconsistent for multi-phase switches.
+        */
+       CircuitContinuity presentContinuity;
+
+       /**
+        * Continuity that the switch is transitioning to, or presentContinuity if no transition.  May be initiated by a manual, automatic, or requested action.
+        */
+       CircuitContinuity futureContinuity;
+
+       /**
+        * This power switch is known to be locked and requests will get REPLY_PRECONDITION_FAILED.  A device-level lock must be reported on all affected ports.  Unknown locks may REPLY_OK and then PSTC_MALFUNCTION.
+        */
+       boolean requestLock;
+
+       /**
+        * Type of action that caused the switch to be in its presentContinuity.
+        */
+       PowerSwitchReason presentContinuityReason;
+
+       /**
+        * Device or operator that caused the switch to be in its presentContinuity.  Present with an MC identity for REQUEST, operator identity for OPERATOR_LOGIN, and this deviceId for AUTO, AUTO_PROTECTION, AUTO_LOAD_SHED, AUTO_VOLTAGE_LOSS, and AUTO_COMMS_LOSS.  Absent for all other PowerSwitchReason values.
+        */
+       @optional
+       Identity presentContinuityActor;
+
+       /**
+        * Progress towards completing a transition, or final result of a requested transition.
+        */
+       PowerSwitchTransitionCode futureContinuityReason;
+   }; // end struct PowerSwitchStatus
+
+
+
+   /** 
+    * Describe the state of a grounding circuit.
+    */
+   @nested
+   @extensibility(APPENDABLE)
+   struct GroundingCircuitStatus {
+
+       /**
+        * Number used to represent this circuit.
+        */
+       GroundingCircuitNumber groundNumber;
+
+       /**
+        * Status of the grounding control switch.
+        */
+       @optional
+       PowerSwitchStatus control;
+
+       /**
+        * Status of the grounding pulse switch.
+        */
+       @optional
+       PowerSwitchStatus pulse;
+
+       /**
+        * Status of the ground fault detector. GFD_NOT_APPLICABLE if no detector.
+        */
+       GroundFaultDetection faultDetection;
+   }; // end struct GroundingCircuitStatus
+
+
+   const uint32 GroundingCircuitStateSequence_MINLEN = 0;
+   const uint32 GroundingCircuitStateSequence_MAXLEN = MAX_GROUNDING_CIRCUITS;
+   /**
+    * A sequence of Grounding Circuit Status.
+    * Minimum length: 0
+    * Maximum length: MAX_GROUNDING_CIRCUITS
+    */
+   typedef sequence<GroundingCircuitStatus, GroundingCircuitStateSequence_MAXLEN> GroundingCircuitStateSequence;
+
+
+
+   /** 
+    * Report the present state of all the ground circuits in a device.
+    * Topic Usage: 
+    * - TOPIC_DEVICE_GROUNDING_STATE
+    */
+   @topic
+   @extensibility(APPENDABLE)
+   struct GroundingCircuitState {
+
+       /**
+        * The device described by this structure.
+        */
+       @key
+       Identity deviceId;
+
+       /**
+        * Information on each ground circuit.
+        */
+       GroundingCircuitStateSequence grounds;
+   }; // end struct GroundingCircuitState
+
+
+
+   /** 
+    * Design information describing a grounding circuit in a device.
+    */
+   @nested
+   @extensibility(APPENDABLE)
+   struct GroundingInfo {
+
+       /**
+        * Number used to represent this circuit.
+        */
+       GroundingCircuitNumber groundNumber;
+
+       /**
+        * Type of grounding provided by this circuit.
+        */
+       GroundingDesignType groundType;
+
+       /**
+        * List of ports protected by this circuit.
+        */
+       PowerPortNumberSequence protectedPorts;
+
+       /**
+        * Not present if no control switch.  Required if control switch exists.  Length 0 indicates no features.
+        */
+       PowerSwitchFeatureSequence controlSwitchFeatures;
+
+       /**
+        * Not present if no pulse switch.  Required if pulse switch exists.  Length 0 indicates no features.
+        */
+       PowerSwitchFeatureSequence pulseSwitchFeatures;
+   }; // end struct GroundingInfo
+
+
+   const uint32 GroundingInfoSequence_MINLEN = 0;
+   const uint32 GroundingInfoSequence_MAXLEN = MAX_GROUNDING_CIRCUITS;
+   /**
+    * A sequence of GroundingInfo.
+    * Minimum length: 0
+    * Maximum length: MAX_GROUNDING_CIRCUITS
+    */
+   typedef sequence<GroundingInfo, GroundingInfoSequence_MAXLEN> GroundingInfoSequence;
+
+
+
+   /** Maximum number of parameters that a device may contain. */
+   const uint32 MAX_PARAMETERS = 128;
+
+   /** 
+    * Describe the allowed values for a parameter.
+    */
+   @nested
+   @extensibility(APPENDABLE)
+   struct ParameterMetadata {
+
+       /**
+        * Unique name of this parameter.
+        */
+       String1_32 name;
+
+       /**
+        * Units of measure such as V, A, Hz, or V/Hz.
+        */
+       String16 units;
+
+       /**
+        * Recommended lower bound. Set to 0 if defining an enumeration, else set to -infinity if no limit, otherwise hardMinValue <= nominalMinValue <= nominalMaxValue <= hardMaxValue.
+        */
+       float nominalMinValue;
+
+       /**
+        * Recommended upper bound. Set to number of enumerations - 1 if defining an enumeration, else set to +infinity if no limit, otherwise hardMinValue <= nominalMinValue <= nominalMaxValue <= hardMaxValue.
+        */
+       float nominalMaxValue;
+
+       /**
+        * Absolute lower bound. Lower values will be rejected. Set to -infinity if no limit, otherwise hardMinValue <= nominalMinValue <= nominalMaxValue <= hardMaxValue.
+        */
+       float hardMinValue;
+
+       /**
+        * Absolute upper bound. Higher values will be rejected. Set to +infinity if no limit, otherwise hardMinValue <= nominalMinValue <= nominalMaxValue <= hardMaxValue.
+        */
+       float hardMaxValue;
+
+       /**
+        * Smallest change >= 0 that may have an effect. Set to 1 if defining an enumeration, otherwise set to 0 if no limit.
+        */
+       @min(0)
+       float resolution;
+
+       /**
+        * Enumeration labels. The sequence length must equal the number of enumerated values, otherwise 0 if not defining an enumeration. Each value must be at least 1 character in length. No duplicates are allowed per ParameterMetadata.
+        */
+       EnumLabelSequence enumLabels;
+   }; // end struct ParameterMetadata
+
+
+
+   /** 
+    * Provide the value for a parameter.
+    */
+   @nested
+   @extensibility(APPENDABLE)
+   struct ParameterValue {
+
+       /**
+        * Name of this parameter.
+        */
+       String1_32 name;
+
+       /**
+        * Value of this parameter, with units according to ParameterMetadata.
+        */
+       float value;
+   }; // end struct ParameterValue
+
+
+   const uint32 ParameterValueSequence_MINLEN = 0;
+   const uint32 ParameterValueSequence_MAXLEN = 128;
+   /**
+    * A sequence of ParameterValue.
+    * Minimum length: 0
+    * Maximum length: 128
+    */
+   typedef sequence<ParameterValue, ParameterValueSequence_MAXLEN> ParameterValueSequence;
+
+
+   const uint32 ParameterMetadataSequence_MINLEN = 0;
+   const uint32 ParameterMetadataSequence_MAXLEN = 128;
+   /**
+    * A sequence of ParameterMetadata.
+    * Minimum length: 0
+    * Maximum length: 128
+    */
+   typedef sequence<ParameterMetadata, ParameterMetadataSequence_MAXLEN> ParameterMetadataSequence;
+
+
+
+   /** 
+    * Describe the state of a power port.
+    */
+   @nested
+   @extensibility(APPENDABLE)
+   struct PowerPortStatus {
+
+       /**
+        * Number shown on the device exterior to represent this port.
+        */
+       PowerPortNumber portNumber;
+
+       /**
+        * Indicates whether a power cable is plugged in.
+        */
+       CableSenseStatus cableStatus;
+
+       /**
+        * Indicates that a smart cable is attached. This value is present when a smart cable is connected and absent when it is disconnected.
+        */
+       @optional
+       Identity cableId;
+
+       /**
+        * Indicates that this port is connected to a remote port.
+        */
+       @optional
+       PowerPortId connection;
+
+       /**
+        * Indicates the state of a switch associated with this port.  Must be present when PowerPortInfo.hasSwitch is true and absent otherwise.
+        */
+       @optional
+       PowerSwitchStatus switchStatus;
+   }; // end struct PowerPortStatus
+
+
+   const uint32 PowerPortStatusSequence_MINLEN = 0;
+   const uint32 PowerPortStatusSequence_MAXLEN = MAX_PORTS;
+   /**
+    * A sequence of PowerPortStatus.
+    * Minimum length: 0
+    * Maximum length: MAX_PORTS
+    */
+   typedef sequence<PowerPortStatus, PowerPortStatusSequence_MAXLEN> PowerPortStatusSequence;
+
+
+
+   /** 
+    * Specifies the operator priority for a single device or power port.
+    */
+   @nested
+   @extensibility(APPENDABLE)
+   struct OperatorPriority {
+
+       /**
+        * The operator priority type.
+        */
+       OperatorPriorityType priorityType;
+
+       /**
+        * Rank values indicate priority order, where 0 is the highest priority and increasing values are lower priority. The numericRank is used when priorityType is OPT_NUMERIC_RANK.
+        */
+       int16 numericRank;
+   }; // end struct OperatorPriority
+
+
+
+   /** 
+    * Specify the device power port level operator intent.
+    */
+   @nested
+   @extensibility(APPENDABLE)
+   struct PowerPortIntent {
+
+       /**
+        * The device described by this structure.
+        */
+       Identity deviceId;
+
+       /**
+        * Number shown on the device exterior to represent this port.
+        */
+       PowerPortNumber portNumber;
+
+       /**
+        * The operator assigned priority of this power port.
+        */
+       OperatorPriority priority;
+   }; // end struct PowerPortIntent
+
+
+
+   /** 
+    * Identify a connection between power ports
+    */
+   @nested
+   @extensibility(APPENDABLE)
+   struct PowerConnectionId {
+
+       /**
+        * One end of the connection.
+        */
+       PowerPortId portA;
+
+       /**
+        * The other end of the connection.  Absent if not available.   See PowerConnectionDetectionType.
+        */
+       @optional
+       PowerPortId portB;
+   }; // end struct PowerConnectionId
+
+
+
+   /** 
+    * Design information for power sources.
+    */
+   @nested
+   @extensibility(APPENDABLE)
+   struct SourceInfo {
+
+       /**
+        * A set of features this device supports.
+        */
+       SourceFeatureSequence features;
+
+       /**
+        * Load sharing capabilities of this device.
+        */
+       LoadSharingInfo loadSharing;
+
+       /**
+        * List of the EnergyStartStopLevels supported by this device for use in EnergyStartStopState or EnergyStartStopRequest.
+        */
+       EnergyStartStopLevelSequence supportedEnergyStartStopLevels;
+   }; // end struct SourceInfo
+
+
+
+   /** 
+    * Active diagnostic messages.
+    * Topic Usage: 
+    * - TOPIC_ACTIVE_DIAGNOSTIC_STATE
+    */
+   @topic
+   @extensibility(APPENDABLE)
+   struct ActiveDiagnosticState {
+
+       /**
+        * The device described by this structure.
+        */
+       @key
+       Identity deviceId;
+
+       /**
+        * Active trouble codes. A given suspect parameter can only appear once in this sequence.
+        */
+       DiagnosticTroubleCodeSequence codes;
+
+       /**
+        * Count of trouble codes that were truncated from the codes because the maximum sequence length was exceeded. A count of 0 indicates that all active trouble codes are listed.
+        */
+       uint32 overflow;
+   }; // end struct ActiveDiagnosticState
+
+
+
+   /** 
+    * Report the result of a request that required authorization.
+    * Topic Usage: 
+    * - TOPIC_AUTHORIZATION_TO_ENERGIZE_RESULT
+    */
+   @topic
+   @extensibility(APPENDABLE)
+   struct AuthorizationToEnergizeResult {
+
+       /**
+        * Copy of the corresponding AuthorizationToEnergizeRequest.requestId.
+        */
+       @key
+       GridRequest relatedRequestId;
+
+       /**
+        * Copy of the corresponding AuthorizationToEnergizeRequest.sequenceId.
+        */
+       RequestSequence relatedSequenceId;
+
+       /**
+        * Copy of AuthorizationToEnergizeReply.deviceId if a response was received, else absent.
+        */
+       @optional
+       Identity authorizationDeviceId;
+
+       /**
+        * Copy of the corresponding AuthorizationToEnergizeRequest.energizeRequestingDeviceId.
+        */
+       Identity energizeRequestingDeviceId;
+
+       /**
+        * Copy of the corresponding AuthorizationToEnergizeRequest.energizeSequenceId.
+        */
+       tms::RequestSequence energizeSequenceId;
+
+       /**
+        * Copy of the AuthorizationToEnergizeReply.userId if a response was received and the field was present, else absent.
+        */
+       @optional
+       Identity userId;
+
+       /**
+        * True if the authorization was accepted, the request will be executed, and both relatedRequestId and relatedSequenceId are valid.
+        */
+       boolean accepted;
+
+       /**
+        * True confirms that an AuthorizationToEnergizeReply was received. False indicates a response due to authorization timeout, and therefore authorizationDeviceId is absent.
+        */
+       boolean responseReceived;
+
+       /**
+        * True confirms that energizeRequestingDeviceId, energizeSequenceId, and powerPorts in the AuthorizationToEnergizeReply matched a pending energize request. False otherwise.
+        */
+       boolean energizeRequestValid;
+
+       /**
+        * True confirms that the AuthorizationToEnergizeReply.userId and AuthorizationToEnergizeReply.timeOfReview are valid. False otherwise.
+        */
+       boolean authorizationReviewValid;
+
+       /**
+        * Local monotonic clock when the outcome decision was made.
+        */
+       ClockMonotonic outcomeMonotonic;
+
+       /**
+        * Local realtime clock when the outcome decision was made.
+        */
+       ClockRealtime outcomeRealtime;
+   }; // end struct AuthorizationToEnergizeResult
+
+
+
+   /** 
+    * Request authorization for a manual black start command.
+    * Topic Usage: 
+    * - TOPIC_AUTHORIZATION_TO_ENERGIZE_REQUEST
+    */
+   @topic
+   @extensibility(APPENDABLE)
+   struct AuthorizationToEnergizeRequest {
+
+       /**
+        * Identity of this request.
+        */
+       @key
+       GridRequest requestId;
+
+       /**
+        * GridRequest sequence data used to associate a request and returning reply.
+        */
+       tms::RequestSequence sequenceId;
+
+       /**
+        * Copy of the requestingDeviceId from the request that requires authorization.
+        */
+       Identity energizeRequestingDeviceId;
+
+       /**
+        * Copy of the sequenceId from the request that requires authorization.
+        */
+       tms::RequestSequence energizeSequenceId;
+
+       /**
+        * All power ports that would be energized by executing this request.
+        */
+       PowerPortNumberSequence powerPorts;
+   }; // end struct AuthorizationToEnergizeRequest
+
+
+
+   /** 
+    * Provide the operator's response to an authorization request.
+    * Topic Usage: 
+    * - TOPIC_AUTHORIZATION_TO_ENERGIZE_REPLY
+    */
+   @topic
+   @extensibility(APPENDABLE)
+   struct AuthorizationToEnergizeReply {
+
+       /**
+        * Identity of the device that processed the corresponding AuthorizationToEnergizeRequest and sent this response.
+        */
+       Identity deviceId;
+
+       /**
+        * Copy of the corresponding AuthorizationToEnergizeRequest.requestId.
+        */
+       @key
+       GridRequest relatedRequestId;
+
+       /**
+        * Copy of the corresponding AuthorizationToEnergizeRequest.sequenceId.
+        */
+       RequestSequence relatedSequenceId;
+
+       /**
+        * Copy of the corresponding AuthorizationToEnergizeRequest.energizeRequestingDeviceId.
+        */
+       Identity energizeRequestingDeviceId;
+
+       /**
+        * Copy of the corresponding AuthorizationToEnergizeRequest.energizeSequenceId.
+        */
+       tms::RequestSequence energizeSequenceId;
+
+       /**
+        * Copy of the AuthorizationToEnergizeRequest.powerPorts.
+        */
+       PowerPortNumberSequence powerPorts;
+
+       /**
+        * Identity of the user that provided this response.  Absent if not available.
+        */
+       @optional
+       Identity userId;
+
+       /**
+        * True if the request is authorized to proceed.
+        */
+       boolean accept;
+
+       /**
+        * True if the request must not be executed.
+        */
+       boolean deny;
+
+       /**
+        * Time the user provided this response.
+        */
+       ClockRealtime timeOfReview;
+   }; // end struct AuthorizationToEnergizeReply
+
+
+
+   /** 
+    * Change the nickname associated with a Identity.
+    * Topic Usage: 
+    * - TOPIC_IDENTITY_NICKNAME_REQUEST
+    */
+   @topic
+   @extensibility(APPENDABLE)
+   struct IdentityNicknameRequest {
+
+       /**
+        * Identity of this request.
+        */
+       @key
+       DeviceRequest requestId;
+
+       /**
+        * Request sequence data used to associate a request and returning reply.
+        */
+       tms::RequestSequence sequenceId;
+
+       /**
+        * New nickname to be used for this Identity.
+        */
+       String32 nickname;
+   }; // end struct IdentityNicknameRequest
+
+
+
+   /** 
+    * Small image representing a device.
+    * Topic Usage: 
+    * - TOPIC_DEVICE_ICON
+    */
+   @topic
+   @extensibility(APPENDABLE)
+   struct DeviceIcon {
+
+       /**
+        * The device illustrated by this image.
+        */
+       @key
+       Identity deviceId;
+
+       /**
+        * Type of the image format. Currently, the only supported type is 'image/png'.  See the IANA Media Type list - http://www.iana.org/assignments/media-types/media-types.xhtml.
+        */
+       String32 mimeType;
+
+       /**
+        * Contents of the image with a resolution of 64x64 and transparent background.  The image should be clearly visible on a white or black background.
+        */
+       OctetSequence data;
+   }; // end struct DeviceIcon
+
+
+
+   /** 
+    * Specify the device level operator intent.
+    */
+   @nested
+   @extensibility(APPENDABLE)
+   struct DeviceIntent {
+
+       /**
+        * The device described by this structure.
+        */
+       Identity deviceId;
+
+       /**
+        * The device Battle Short state.
+        */
+       boolean battleShort;
+
+       /**
+        * The operator assigned priority of the device.
+        */
+       OperatorPriority priority;
+   }; // end struct DeviceIntent
+
+
+   const uint32 DeviceIntentSequence_MINLEN = 0;
+   const uint32 DeviceIntentSequence_MAXLEN = 200;
+   /**
+    * A sequence of DeviceIntent.
+    * Minimum length: 0
+    * Maximum length: 200
+    */
+   typedef sequence<DeviceIntent, DeviceIntentSequence_MAXLEN> DeviceIntentSequence;
+
+
+
+   /** 
+    * Request for a control parameter value.
+    * Topic Usage: 
+    * - TOPIC_CONTROL_PARAMETER_REQUEST
+    */
+   @topic
+   @extensibility(APPENDABLE)
+   struct ControlParameterRequest {
+
+       /**
+        * Identity of this request.
+        */
+       @key
+       DeviceConfigRequest requestId;
+
+       /**
+        * Request sequence data used to associate a request and returning reply.
+        */
+       tms::RequestSequence sequenceId;
+
+       /**
+        * Selected parameter values to update (may be partial or full list).
+        */
+       ParameterValueSequence parameters;
+   }; // end struct ControlParameterRequest
+
+
+
+   /** 
+    * State of control parameters.
+    * Topic Usage: 
+    * - TOPIC_CONTROL_PARAMETER_STATE
+    */
+   @topic
+   @extensibility(APPENDABLE)
+   struct ControlParameterState {
+
+       /**
+        * The device described by this structure.
+        */
+       @key
+       Identity deviceId;
+
+       /**
+        * Configuration that these values belong to.
+        */
+       ConfigId config;
+
+       /**
+        * A full list of the parameters available on this device.
+        */
+       ParameterValueSequence parameters;
+   }; // end struct ControlParameterState
+
+
+
+   /** 
+    * Report the present state of all the power ports in a device.
+    * Topic Usage: 
+    * - TOPIC_POWER_PORT_STATE
+    */
+   @topic
+   @extensibility(APPENDABLE)
+   struct PowerPortState {
+
+       /**
+        * The device described by this structure.
+        */
+       @key
+       Identity deviceId;
+
+       /**
+        * Information on each power port.
+        */
+       PowerPortStatusSequence powerPorts;
+   }; // end struct PowerPortState
+
+
+
+   /** 
+    * Design information for the distribution device role.
+    */
+   @nested
+   @extensibility(APPENDABLE)
+   struct DistributionInfo {
+
+       /**
+        * A set of features this device supports.
+        */
+       DistributionFeatureSequence features;
+   }; // end struct DistributionInfo
+
+
+
+   /** 
+    * Provide a short, human-readable name for a Identity.
+    * Topic Usage: 
+    * - TOPIC_IDENTITY_NICKNAME_STATE
+    */
+   @topic
+   @extensibility(APPENDABLE)
+   struct IdentityNicknameState {
+
+       /**
+        * Identity of the device that sent this structure.
+        */
+       @key
+       Identity deviceId;
+
+       /**
+        * Identity using the nickname.  It must match the deviceId or platformId of the sending device DeviceInfo
+        */
+       @key
+       Identity identityId;
+
+       /**
+        * Nickname given to this identityId.
+        */
+       String32 nickname;
+   }; // end struct IdentityNicknameState
+
+
+
+   /** 
+    * Remotely transition a grounding circuit switch.
+    * Topic Usage: 
+    * - TOPIC_GROUNDING_CIRCUIT_REQUEST
+    */
+   @topic
+   @extensibility(APPENDABLE)
+   struct GroundingCircuitRequest {
+
+       /**
+        * Identity of this request.
+        */
+       @key
+       DeviceConfigRequest requestId;
+
+       /**
+        * Request sequence data used to associate a request and returning reply.
+        */
+       tms::RequestSequence sequenceId;
+
+       /**
+        * Grounding circuit containing the switch that should change state.
+        */
+       GroundingCircuitNumber groundNumber;
+
+       /**
+        * Desired continuity through the grounding control switch.
+        */
+       DesiredCircuitContinuity control;
+
+       /**
+        * Desired continuity through the grounding pulse switch.
+        */
+       DesiredCircuitContinuity pulse;
+   }; // end struct GroundingCircuitRequest
+
+
+
+   /** 
+    * Periodic indication of device availability.
+    * Topic Usage: 
+    * - TOPIC_HEARTBEAT
+    */
+   @topic
+   @extensibility(APPENDABLE)
+   struct Heartbeat {
+
+       /**
+        * The device described by this structure.
+        */
+       @key
+       Identity deviceId;
+
+       /**
+        * A counter that starts at 0 and increments by 1 for each new heartbeat.
+        */
+       uint32 sequenceNumber;
+   }; // end struct Heartbeat
+
+
+
+   /** 
+    * Design information for load devices.
+    */
+   @nested
+   @extensibility(APPENDABLE)
+   struct LoadInfo {
+
+       /**
+        * A set of features this device supports.
+        */
+       LoadFeatureSequence features;
+
+       /**
+        * Maximum real power utlization from this Load.
+        * units: watt (W)
+        */
+       @unit("W")
+       float maxRealPower;
+
+       /**
+        * Maximum reactive power utlization from this Load.
+        * units: volt ampere reactive (var)
+        */
+       @unit("var")
+       float maxReactivePower;
+   }; // end struct LoadInfo
+
+
+
+   /** 
+    * Latest values for device metric parameters.
+    * Topic Usage: 
+    * - TOPIC_METRIC_PARAMETER_STATE
+    */
+   @topic
+   @extensibility(APPENDABLE)
+   struct MetricParameterState {
+
+       /**
+        * The device described by this structure.
+        */
+       @key
+       Identity deviceId;
+
+       /**
+        * A full list of read-only parameter values on this device.
+        */
+       ParameterValueSequence metricParameters;
+   }; // end struct MetricParameterState
+
+
+
+   /** 
+    * Specify the microgrid level load sharing intent.
+    */
+   @nested
+   @extensibility(APPENDABLE)
+   struct LoadSharingIntent {
+
+       /**
+        * Per unit of used capacity that triggers the MC to add additional power source to the microgrid. Per unit is in the range 0 - 1.
+        * units: per unit (p.u.)
+        */
+       @range(min=0, max=1)
+       @unit("p.u.")
+       float increaseCapacityThreshold;
+
+       /**
+        * Per unit of used capacity that triggers the MC to remove a power source from the microgrid. Per unit is in the range 0 - 1 and must be less than increaseCapacityThreshold.
+        * units: per unit (p.u.)
+        */
+       @range(min=0, max=1)
+       @unit("p.u.")
+       float decreaseCapacityThreshold;
+
+       /**
+        * The time duration the decreaseCapacityThreshold must be met before the Microgrid Controller removes a power source from the microgrid. This duration prevents power sources from being added and removed in rapid succession.
+        * units: second (s)
+        */
+       @unit("s")
+       float decreaseCapacityDuration;
+
+       /**
+        * The priority above which the Microgrid Controller is authorized to trigger load curtailment. Load curtailment is accomplished by stopped a load device. A value of OPT_ALWAYS_OPERATE disables load curtailment.
+        */
+       OperatorPriority priorityLoadCurtailmentAllowed;
+
+       /**
+        * The priority above which the Microgrid Controller is authorized to trigger port power load shedding. Port power load shedding is accomplished by opening a power port on a distribution device. A value of OPT_ALWAYS_OPERATE disables circuit load shedding.
+        */
+       OperatorPriority priorityPowerPortSheddingAllowed;
+   }; // end struct LoadSharingIntent
+
+
+
+   /** 
+    * Specify the storage device intent.
+    */
+   @nested
+   @extensibility(APPENDABLE)
+   struct StorageIntent {
+
+       /**
+        * The desired total state of charge to hold in reserve.
+        * units: per unit (p.u.)
+        */
+       @range(min=0, max=1)
+       @unit("p.u.")
+       float reservedStateOfCharge;
+
+       /**
+        * Time till the reservedStateOfCharge is reached and maintained.
+        */
+       ClockMonotonic timeTillReservedSoc;
+
+       /**
+        * The priority above which the MC is authorized to trigger load shedding. Load shedding is accomplished by stopped a smart load device. A value of OPT_ALWAYS_OPERATE disables load curtailment.
+        */
+       OperatorPriority priorityLoadSheddingAllowed;
+
+       /**
+        * The priority above which the MC is authorized to trigger power port load curtailment. Power port shedding is accomplished by opening a power port on a distribution device. A value of OPT_ALWAYS_OPERATE disables circuit load shedding.
+        */
+       OperatorPriority priorityPowerPortSheddingAllowed;
+
+       /**
+        * The list of storage devices that should reach the reservedStateOfCharge.  At empty list indicates all available storage devices.
+        */
+       IdentitySequence reservedDeviceIds;
+   }; // end struct StorageIntent
+
+
+
+   /** 
+    * Specify the microgrid level operator intent.
+    */
+   @nested
+   @extensibility(APPENDABLE)
+   struct MicrogridIntent {
+
+       /**
+        * Overall operating mode for the microgrid.
+        */
+       OperatingMode operatingModeValue;
+
+       /**
+        * Load sharing Microgrid Controller directives.
+        */
+       LoadSharingIntent loadSharingIntentValue;
+
+       /**
+        * Present if the operator provides Storage device Microgrid Controller directives.
+        */
+       @optional
+       StorageIntent storageIntentValue;
+   }; // end struct MicrogridIntent
+
+
+   const uint32 PowerPortIntentSequence_MINLEN = 0;
+   const uint32 PowerPortIntentSequence_MAXLEN = 4000;
+   /**
+    * A sequence of PowerPortIntent.
+    * Minimum length: 0
+    * Maximum length: 4000
+    */
+   typedef sequence<PowerPortIntent, PowerPortIntentSequence_MAXLEN> PowerPortIntentSequence;
+
+
+
+   /** 
+    * Specifies a complete set of operator directives used by the MC to control the microgrid.
+    */
+   @nested
+   @extensibility(APPENDABLE)
+   struct OperatorIntent {
+
+       /**
+        * The device that defined this structure.
+        */
+       GridRequest requestId;
+
+       /**
+        * The operator intent type.
+        */
+       OperatorIntentType intentType;
+
+       /**
+        * The microgrid level directives.
+        */
+       MicrogridIntent microgrid;
+
+       /**
+        * The device level directives.
+        */
+       DeviceIntentSequence devices;
+
+       /**
+        * The power port level directives.
+        */
+       PowerPortIntentSequence powerPorts;
+   }; // end struct OperatorIntent
+
+
+
+   /** 
+    * Used to request activation of an OperatorIntent.
+    * Topic Usage: 
+    * - TOPIC_OPERATOR_INTENT_REQUEST
+    */
+   @topic
+   @extensibility(APPENDABLE)
+   struct OperatorIntentRequest {
+
+       /**
+        * The device sending this request.
+        */
+       @key
+       GridRequest requestId;
+
+       /**
+        * Request sequence data used to associate a request and returning reply.
+        */
+       tms::RequestSequence sequenceId;
+
+       /**
+        * The OperatorIntent to activate.
+        */
+       OperatorIntent desiredOperatorIntent;
+   }; // end struct OperatorIntentRequest
+
+
+
+   /** 
+    * The active OperatorIntent.
+    * Topic Usage: 
+    * - TOPIC_OPERATOR_INTENT_STATE
+    */
+   @topic
+   @extensibility(APPENDABLE)
+   struct OperatorIntentState {
+
+       /**
+        * The device described by this structure.
+        */
+       @key
+       Identity deviceId;
+
+       /**
+        * The complete active OperatorIntent.
+        */
+       OperatorIntent activeOperatorIntent;
+   }; // end struct OperatorIntentState
+
+
+
+   /** 
+    * Key value for a request that targets one power port of a device.
+    */
+   @nested
+   @extensibility(APPENDABLE)
+   struct PowerPortConfigRequest {
+
+       /**
+        * Identity of the device that sent this request.
+        */
+       Identity requestingDeviceId;
+
+       /**
+        * Identity of the device that should received this request.
+        */
+       Identity targetDeviceId;
+
+       /**
+        * Power device configuration that this request belongs to.
+        */
+       ConfigId config;
+
+       /**
+        * Power port number that should change state.
+        */
+       PowerPortNumber portNumber;
+   }; // end struct PowerPortConfigRequest
+
+
+
+   /** 
+    * Identify links between devices
+    */
+   @nested
+   @extensibility(APPENDABLE)
+   struct PowerConnection {
+
+       /**
+        * Connection described by this object.
+        */
+       PowerConnectionId connectionId;
+
+       /**
+        * Technique used to detect this connection.
+        */
+       PowerConnectionDetectionType detectionType;
+
+       /**
+        * Device or user that detected this connection.
+        */
+       Identity detectionSource;
+
+       /**
+        * Confidence in the link detection. -1 = confident the link does not exist, 0 = no opinion, 1 = confident the link exists.
+        */
+       @range(min=-1, max=1)
+       float detectionConfidence;
+   }; // end struct PowerConnection
+
+
+   const uint32 PowerConnectionSequence_MINLEN = 0;
+   const uint32 PowerConnectionSequence_MAXLEN = 200;
+   /**
+    * A sequence of PowerConnection.
+    * Minimum length: 0
+    * Maximum length: 200
+    */
+   typedef sequence<PowerConnection, PowerConnectionSequence_MAXLEN> PowerConnectionSequence;
+
+
+
+   /** 
+    * List all power connections known to a device or user
+    * Topic Usage: 
+    * - TOPIC_OPERATOR_POWER_CONNECTION_STATE
+    * - TOPIC_DISCOVERED_POWER_CONNECTION_STATE
+    * - TOPIC_MICROGRID_POWER_CONNECTION_STATE
+    */
+   @topic
+   @extensibility(APPENDABLE)
+   struct PowerConnectionState {
+
+       /**
+        * The reporting device or user.
+        */
+       @key
+       Identity deviceId;
+
+       /**
+        * List of power connections being reported by this device or user.
+        */
+       PowerConnectionSequence connections;
+   }; // end struct PowerConnectionState
+
+
+
+   /** 
+    * The associated request to close a switch should wait until all of these conditions are met.  The MC may use these to override any built-in device defaults, providing looser bounds to recover from abnormal conditions or tighter bounds to prevent a large transient.  These conditions do not modify any built-in protections such as a synchronization check.  Requires PSF_SWITCH_CONDITIONS in PowerSwitchInfo.features
+    */
+   @nested
+   @extensibility(APPENDABLE)
+   struct PowerSwitchCloseConditions {
+
+       /**
+        * Minimum external RMS AC or DC voltage.
+        * units: volt (V)
+        */
+       @unit("V")
+       float minVoltage;
+
+       /**
+        * Maximum external RMS AC or DC voltage.
+        * units: volt (V)
+        */
+       @unit("V")
+       float maxVoltage;
+
+       /**
+        * Minimum external AC frequency.  NaN for DC.
+        * units: hertz (Hz)
+        */
+       @unit("Hz")
+       float minFrequency;
+
+       /**
+        * Maximum external AC frequency.  NaN for DC.
+        * units: hertz (Hz)
+        */
+       @unit("Hz")
+       float maxFrequency;
+   }; // end struct PowerSwitchCloseConditions
+
+
+
+   /** 
+    * Remotely transition a power port switch.
+    * Topic Usage: 
+    * - TOPIC_POWER_SWITCH_REQUEST
+    */
+   @topic
+   @extensibility(APPENDABLE)
+   struct PowerSwitchRequest {
+
+       /**
+        * Identity of this request.
+        */
+       @key
+       PowerPortConfigRequest requestId;
+
+       /**
+        * Request sequence data used to associate a request and returning reply.
+        */
+       tms::RequestSequence sequenceId;
+
+       /**
+        * Desired continuity through the switch.
+        */
+       DesiredCircuitContinuity continuity;
+
+       /**
+        * Conditions that may delay switch closure.  Can only be present for power ports that support PSF_SWITCH_CONDITIONS.  Must be absent for DCC_OPEN or DCC_NO_CHANGE requests.
+        */
+       @optional
+       PowerSwitchCloseConditions switchConditions;
+   }; // end struct PowerSwitchRequest
+
+
+
+   /** 
+    * Topic information. Defines which conditional and optional topics are supported by this device.
+    */
+   @nested
+   @extensibility(APPENDABLE)
+   struct TopicInfo {
+
+       /**
+        * Release version of data topics and types.  See tms.TMS_VERSION.
+        */
+       String32 dataModelVersion;
+
+       /**
+        * List of conditional topic names that are published by this device.
+        */
+       TopicList publishedConditionalTopics;
+
+       /**
+        * List of optional topic names that are published by this device.
+        */
+       TopicList publishedOptionalTopics;
+
+       /**
+        * List of request topic names that are subscribed to by this device.
+        */
+       TopicList supportedRequestTopics;
+
+       /**
+        * List of extension topic names that are published by this device.  Extension topics are not specified in the standard.
+        */
+       @optional
+       TopicList extensionTopics;
+   }; // end struct TopicInfo
+
+
+
+   /** 
+    * Design information for active conversion load sharing devices.
+    */
+   @nested
+   @extensibility(APPENDABLE)
+   struct ActiveConversionInfo {
+
+       /**
+        * Load sharing capabilities of each power port.
+        */
+       LoadSharingInfoSequence loadSharing;
+   }; // end struct ActiveConversionInfo
+
+
+
+   /** 
+    * Design information for conversion taps.
+    */
+   @nested
+   @extensibility(APPENDABLE)
+   struct ConversionTapInfo {
+
+       /**
+        * Tap changer position.
+        */
+       TapNumber tapId;
+
+       /**
+        * Phase shift between this port and the internal bus.
+        */
+       float phaseShift;
+
+       /**
+        * Voltage ratio between this port and the internal bus.
+        */
+       float voltageRatio;
+   }; // end struct ConversionTapInfo
+
+
+   const uint32 ConversionTapInfoSequence_MINLEN = 1;
+   const uint32 ConversionTapInfoSequence_MAXLEN = MAX_TAPS;
+   /**
+    * A sequence of ConversionTapInfo.
+    * Minimum length: 1
+    * Maximum length: MAX_TAPS
+    */
+   typedef sequence<ConversionTapInfo, ConversionTapInfoSequence_MAXLEN> ConversionTapInfoSequence;
+
+
+
+   /** 
+    * Design information for power port conversation devices.
+    */
+   @nested
+   @extensibility(APPENDABLE)
+   struct PowerPortConversionInfo {
+
+       /**
+        * The power port number this structure represents.
+        */
+       PowerPortNumber portNumber;
+
+       /**
+        * Sequence to support tap changers
+        */
+       ConversionTapInfoSequence conversionTaps;
+
+       /**
+        * False requires (or causes) circuit interrupt to change, true can change under rated load.
+        */
+       boolean changeUnderLoad;
+   }; // end struct PowerPortConversionInfo
+
+
+   const uint32 PowerPortConversionInfoSequence_MINLEN = 1;
+   const uint32 PowerPortConversionInfoSequence_MAXLEN = MAX_PORTS;
+   /**
+    * A sequence of PowerPortConversionInfo.
+    * Minimum length: 1
+    * Maximum length: MAX_PORTS
+    */
+   typedef sequence<PowerPortConversionInfo, PowerPortConversionInfoSequence_MAXLEN> PowerPortConversionInfoSequence;
+
+
+
+   /** 
+    * Design information for a passive energy converter.
+    */
+   @nested
+   @extensibility(APPENDABLE)
+   struct PassiveConversionInfo {
+
+       /**
+        * Information for each port on the device.
+        */
+       PowerPortConversionInfoSequence portConversion;
+   }; // end struct PassiveConversionInfo
+
+
+
+   /** 
+    * Design information for power conversion devices. Each power port must be listed once in either activeConversion or passiveConversion but not both.
+    */
+   @nested
+   @extensibility(APPENDABLE)
+   struct ConversionInfo {
+
+       /**
+        * A set of features this device supports.
+        */
+       ConversionFeatureSequence features;
+
+       /**
+        * Power regulation for active devices.
+        */
+       @optional
+       ActiveConversionInfo activeConversion;
+
+       /**
+        * Power regulation for passive devices.
+        */
+       @optional
+       PassiveConversionInfo passiveConversion;
+   }; // end struct ConversionInfo
+
+
+
+   /** 
+    * Information on how a product is marketed.
+    */
+   @nested
+   @extensibility(APPENDABLE)
+   struct ProductInfo {
+
+       /**
+        * Supply type of the product.
+        */
+       NatoStockNumber nsn;
+
+       /**
+        * Commercial type of the product.
+        */
+       GlobalTradeItemNumber gtin;
+
+       /**
+        * Name of the product manufacturer.
+        */
+       String32 manufacturerName;
+
+       /**
+        * Name of the product model.
+        */
+       String32 modelName;
+
+       /**
+        * Manufacturer number for the product model.  May include non-numeric characters.
+        */
+       String32 modelNumber;
+
+       /**
+        * Unique production number for a specific product. Large enough to contain a variety of formats, including the GS1 serial number (AI 21).
+        */
+       String32 serialNumber;
+
+       /**
+        * Software Version.
+        */
+       String32 softwareVersion;
+
+       /**
+        * A platform groups TMS products into a larger physical or logical package.  This grouping may be shown on the microgrid dashboard, and it may supplement topology information in the microgrid controller.  If a product is re-assigned to a different platform, it must resend the DeviceInfo as if it restarted.  Present when such a grouping is known to the product and absent otherwise.
+        */
+       @optional
+       Identity platformId;
+   }; // end struct ProductInfo
+
+
+
+   /** 
+    * Design information for a microgrid dashboard.
+    */
+   @nested
+   @extensibility(APPENDABLE)
+   struct MicrogridDashboardInfo {
+
+       /**
+        * A set of features this device supports.
+        */
+       MicrogridDashboardFeatureSequence features;
+   }; // end struct MicrogridDashboardInfo
+
+
+
+   /** 
+    * Design information for a microgrid controller.
+    */
+   @nested
+   @extensibility(APPENDABLE)
+   struct MicrogridControllerInfo {
+
+       /**
+        * A set of features this device supports.
+        */
+       MicrogridControllerFeatureSequence features;
+
+       /**
+        * The numeric priority ranking of this MC where 0 is the highest priority and increasing values are lower priority.
+        * Change History:
+        *  1) Version: 2.0.1, Change: add, Interoperability: No-Business Logic
+        *     The active Microgrid Controller selection has changed to
+        *     consider this field.  As a result, backwards
+        *     compatibility is not guaranteed as older power devices
+        *     will not implement the updated logic.
+        */
+       uint16 priorityRanking;
+   }; // end struct MicrogridControllerInfo
+
+
+
+   /** 
+    * Indicate the type of success or failure of a request.
+    */
+   @nested
+   @extensibility(APPENDABLE)
+   struct ReplyStatus {
+
+       /**
+        * Indicate whether the request was accepted or rejected.
+        */
+       ReplyCode code;
+
+       /**
+        * Short textual description of the reply code intended for human operators.
+        */
+       String32 reason;
+   }; // end struct ReplyStatus
+
+
+
+   /** 
+    * Respond whether a request was accepted for execution or rejected.  Supported requestId types include GridRequest, DeviceRequest, DeviceConfigRequest, and PowerPortConfigRequest.
+    * Topic Usage: 
+    * - TOPIC_REPLY
+    */
+   @topic
+   @extensibility(APPENDABLE)
+   struct Reply {
+
+       /**
+        * Copy of requestingDeviceId from the requestId.
+        */
+       @key
+       Identity requestingDeviceId;
+
+       /**
+        * Identity of the device that sent this Reply.
+        */
+       @key
+       Identity targetDeviceId;
+
+       /**
+        * Copy of configId from a requestId of type DeviceConfigRequest or PowerPortConfigRequest, otherwise ConfigId.CONFIG_UNKNOWN.
+        */
+       ConfigId config;
+
+       /**
+        * Copy of portNumber from a requestId of type PowerPortConfigRequest, otherwise PowerPortNumber.INVALID_PORT_NUMBER.
+        */
+       PowerPortNumber portNumber;
+
+       /**
+        * Copy of sequenceId from the requestId.  The requestingDeviceId and requestSequenceId uniquely match the reply code to the original request.
+        */
+       RequestSequence requestSequenceId;
+
+       /**
+        * Decision to accept or reason to reject the request.
+        */
+       ReplyStatus status;
+   }; // end struct Reply
+
+
+
+   /** 
+    * Change the level of a SRC or STOR device.
+    * Topic Usage: 
+    * - TOPIC_ENERGY_START_STOP_REQUEST
+    */
+   @topic
+   @extensibility(APPENDABLE)
+   struct EnergyStartStopRequest {
+
+       /**
+        * Identity of this request.
+        */
+       @key
+       DeviceConfigRequest requestId;
+
+       /**
+        * Request sequence data used to associate a request and returning reply.
+        */
+       RequestSequence sequenceId;
+
+       /**
+        * Reject this request if fromLevel does not match presentLevel.  ESSL_ANY matches all levels.  ESSL_UNKNOWN is invalid.
+        */
+       EnergyStartStopLevel fromLevel;
+
+       /**
+        * Desired operating level.  ESSL_ANY and ESSL_UNKNOWN are invalid.
+        */
+       EnergyStartStopLevel toLevel;
+
+       /**
+        * Conditions that may delay switch closure.  Only applies to ESSL_OPERATIONAL requests and power ports that support PSF_SWITCH_CONDITIONS.
+        */
+       @optional
+       PowerSwitchCloseConditions switchConditions;
+   }; // end struct EnergyStartStopRequest
+
+
+
+   /** 
+    * Report the operating level of a SRC and STOR device, including the progress of any transitions.
+    * Topic Usage: 
+    * - TOPIC_ENERGY_START_STOP_STATE
+    */
+   @topic
+   @extensibility(APPENDABLE)
+   struct EnergyStartStopState {
+
+       /**
+        * The device described by this structure.
+        */
+       @key
+       Identity deviceId;
+
+       /**
+        * Present operating level.
+        */
+       EnergyStartStopLevel presentLevel;
+
+       /**
+        * Level that the device is transitioning to, or presentLevel if no transition.
+        */
+       EnergyStartStopLevel futureLevel;
+
+       /**
+        * This device or power switch is known to be locked and requests will get REPLY_PRECONDITION_FAILED.  A device-level lock must be reported on all affected ports.  Unknown locks may REPLY_OK and then PSTC_MALFUNCTION.
+        */
+       boolean requestLock;
+
+       /**
+        * Elapsed time the device has been in the present transition.  Remains at the total elapsed time when the transition is complete.
+        * units: second (s)
+        */
+       @unit("s")
+       float elapsedTime;
+
+       /**
+        * Estimates when the present transition will complete. It is zero (0.0) when the device is not in transition.
+        * units: second (s)
+        */
+       @unit("s")
+       float remainingTime;
+
+       /**
+        * Type of action that caused the device to be in its presentLevel.
+        */
+       PowerSwitchReason presentLevelReason;
+
+       /**
+        * Device or user that caused the device to be in its presentLevel.  Value may be a MC (REQUEST), this device (AUTO), or operator (MANUAL).  Present when the identity is known, otherwise absent.
+        */
+       @optional
+       Identity presentLevelActor;
+
+       /**
+        * Progress towards completing a transition, or final result of a requested transition.
+        */
+       PowerSwitchTransitionCode futureLevelReason;
+   }; // end struct EnergyStartStopState
+
+
+
+   /** 
+    * Identify which :MC currently has write access to the active configuration.
+    * Topic Usage: 
+    * - TOPIC_ACTIVE_MICROGRID_CONTROLLER_STATE
+    */
+   @topic
+   @extensibility(APPENDABLE)
+   struct ActiveMicrogridControllerState {
+
+       /**
+        * The device described by this structure.
+        */
+       @key
+       Identity deviceId;
+
+       /**
+        * The MC that currently controls this device. Present if a MC is selected, absent otherwise.
+        */
+       @optional
+       Identity masterId;
+   }; // end struct ActiveMicrogridControllerState
+
+
+   module ac {
+
+      const uint32 PhaseAngleSequence_MINLEN = 0;
+      const uint32 PhaseAngleSequence_MAXLEN = 3;
+      /**
+       * A sequence of floats representing phase angles.
+       * Minimum length: 0
+       * Maximum length: 3
+       */
+      typedef sequence<float, PhaseAngleSequence_MAXLEN> PhaseAngleSequence;
+
+
+
+      /** 
+       * Measurements for a single AC power line.
+       */
+      @nested
+      @extensibility(APPENDABLE)
+      struct PowerLineMeasurement {
+
+          /**
+           * RMS voltage.
+           * units: volt (V)
+           */
+          @unit("V")
+          float voltage;
+
+          /**
+           * Dominant line frequency.
+           * units: hertz (Hz)
+           * Change History:
+           *  1) Version: 2.0.1, Change: modify, Interoperability: No-xtypes
+           *     Removed minimum range specification.
+           */
+          @unit("Hz")
+          float frequency;
+
+          /**
+           * RMS amperage.
+           * units: ampere (A)
+           */
+          @unit("A")
+          float amperage;
+
+          /**
+           * The angle (phase offset) by which the current lags the voltage.
+           * units: radian (rad)
+           * Change History:
+           *  1) Version: 2.0.1, Change: modify, Interoperability: No-xtypes
+           *     Made the field optional.
+           */
+          @range(min=-RADIAN_MAX, max=RADIAN_MAX)
+          @unit("rad")
+          @optional
+          float phaseOffset;
+
+          /**
+           * Active RMS power.
+           * units: watt (W)
+           */
+          @unit("W")
+          float realPower;
+
+          /**
+           * Reactive RMS power.
+           * units: volt ampere reactive (var)
+           */
+          @unit("var")
+          float reactivePower;
+      }; // end struct PowerLineMeasurement
+
+
+      const uint32 PowerLineMeasurementSequence_MINLEN = 1;
+      const uint32 PowerLineMeasurementSequence_MAXLEN = 4;
+      /**
+       * A sequence of PowerLineMeasurement.  Supports the AC circuits defined in PowerConnectorPhases.
+       * Minimum length: 1
+       * Maximum length: 4
+       */
+      typedef sequence<PowerLineMeasurement, PowerLineMeasurementSequence_MAXLEN> PowerLineMeasurementSequence;
+
+
+
+      /** 
+       * Power measurement for an alternating current port.
+       */
+      @nested
+      @extensibility(APPENDABLE)
+      struct PowerPortMeasurement {
+
+          /**
+           * Port being measured.
+           */
+          tms::PowerPortNumber portNumber;
+
+          /**
+           * Measured values for each AC power line.  Length and order of values are based on PowerPortInfo.wiring. WIRING_SINGLE=1, WIRING_SPLIT=2, WIRING_3WYE=4, and WIRING_3DELTA=3.
+           */
+          PowerLineMeasurementSequence line;
+
+          /**
+           * Measured phase difference between the voltages for all applicable wiring pairs.  Length and order of values are based on PowerPortInfo.wiring.
+           * units: radian (rad)
+           */
+          @unit("rad")
+          PhaseAngleSequence phaseAngle;
+
+          /**
+           * Time derivative of realPower, summed across all wires excluding neutral.
+           * units: watt per second (W/s)
+           */
+          @unit("W/s")
+          float realPowerRateOfChange;
+
+          /**
+           * Time derivative of reactivePower, summed across all wires excluding neutral.
+           * units: volt ampere reactive per second (var/s)
+           */
+          @unit("var/s")
+          float reactivePowerRateOfChange;
+      }; // end struct PowerPortMeasurement
+
+
+      const uint32 PowerPortMeasurementSequence_MINLEN = 0;
+      const uint32 PowerPortMeasurementSequence_MAXLEN = tms::MAX_PORTS;
+      /**
+       * A sequence of ac::PowerPortMeasurement.
+       * Minimum length: 0
+       * Maximum length: tms::MAX_PORTS
+       */
+      typedef sequence<PowerPortMeasurement, PowerPortMeasurementSequence_MAXLEN> PowerPortMeasurementSequence;
+
+
+
+      /** 
+       * Publish measurements for all alternating current (AC) power ports on a device.
+       * Topic Usage: 
+       * - TOPIC_AC_MEASUREMENT_UPDATE
+       * - TOPIC_AC_SUMMARY_MEASUREMENT_UPDATE
+       */
+      @topic
+      @extensibility(APPENDABLE)
+      struct MeasurementUpdate {
+
+          /**
+           * The device described by this structure.
+           */
+          @key
+          tms::Identity deviceId;
+
+          /**
+           * Time of these measurements.
+           */
+          tms::ClockMonotonic timeMeasured;
+
+          /**
+           * Measurements for all power ports where PowerPortInfo.hasExternalMeter is true.
+           */
+          PowerPortMeasurementSequence externalMeasurement;
+
+          /**
+           * Measurements for all power ports where PowerPortInfo.hasInternalMeter is true.
+           */
+          PowerPortMeasurementSequence internalMeasurement;
+      }; // end struct MeasurementUpdate
+
+
+
+      /** 
+       * Load sharing parameters for AC power ports.
+       */
+      @nested
+      @extensibility(APPENDABLE)
+      struct LoadSharingParameters {
+
+          /**
+           * The power port number.
+           */
+          tms::PowerPortNumber portNumber;
+
+          /**
+           * Desired frequency as a function of output real power.  Zero points disables frequency regulation and enables bounded or constant real power regulation.  One point is invalid.  Two points with the same frequency enables constant frequency (isochronous) regulation.  Two or more points with different frequencies enables droop frequency regulation.
+           * units: watt, hertz (W, Hz)
+           */
+          @unit("W, Hz")
+          tms::ControlCurve referenceFrequency;
+
+          /**
+           * Desired voltage as a function of output reactive power.  Zero points disables voltage regulation and enables bounded or constant reactive power regulation.  One point is invalid.  Two points with the same voltage enables constant voltage regulation.  Two or more points with different voltages enables droop voltage regulation.
+           * units: volt ampere reactive, volt (var, V)
+           */
+          @unit("var, V")
+          tms::ControlCurve referenceVoltage;
+
+          /**
+           * Minimum desired real power output.  May limit the device's ability to regulate frequency.
+           * units: watt (W)
+           */
+          @unit("W")
+          float minRealPower;
+
+          /**
+           * Maximum desired real power output.  May limit the device's ability to regulate frequency.
+           * units: watt (W)
+           */
+          @unit("W")
+          float maxRealPower;
+
+          /**
+           * Minimum desired voltage output.  May limit the device's ability to regulate real power.
+           * units: hertz (Hz)
+           */
+          @unit("Hz")
+          float minFrequency;
+
+          /**
+           * Maximum desired voltage output.  May limit the device's ability to regulate real power.
+           * units: hertz (Hz)
+           */
+          @unit("Hz")
+          float maxFrequency;
+
+          /**
+           * Minimum desired reactive power output.   May limit the device's ability to regulate voltage.
+           * units: volt ampere reactive (var)
+           */
+          @unit("var")
+          float minReactivePower;
+
+          /**
+           * Maximum desired reactive power output.  May limit the device's ability to regulate voltage.
+           * units: volt ampere reactive (var)
+           */
+          @unit("var")
+          float maxReactivePower;
+
+          /**
+           * Minimum desired voltage output.  May limit the device's ability to regulate reactive power.
+           * units: volt (V)
+           */
+          @unit("V")
+          float minVoltage;
+
+          /**
+           * Maximum desired voltage output.  May limit the device's ability to regulate reactive power.
+           * units: volt (V)
+           */
+          @unit("V")
+          float maxVoltage;
+      }; // end struct LoadSharingParameters
+
+
+      const uint32 LoadSharingParameterSequence_MINLEN = 1;
+      const uint32 LoadSharingParameterSequence_MAXLEN = MAX_PORTS;
+      /**
+       * A sequence of AC LoadSharingParameters.
+       * Minimum length: 1
+       * Maximum length: MAX_PORTS
+       */
+      typedef sequence<LoadSharingParameters, LoadSharingParameterSequence_MAXLEN> LoadSharingParameterSequence;
+
+
+
+      /** 
+       * Sets load sharing parameters for AC power ports.
+       * Topic Usage: 
+       * - TOPIC_AC_LOAD_SHARING_REQUEST
+       */
+      @topic
+      @extensibility(APPENDABLE)
+      struct LoadSharingRequest {
+
+          /**
+           * Identity of this request.
+           */
+          @key
+          tms::PowerPortConfigRequest requestId;
+
+          /**
+           * Request sequence data used to associate a request and returning reply.
+           */
+          tms::RequestSequence sequenceId;
+
+          /**
+           * Desired parameters for controlling frequency, voltage, and power.
+           */
+          LoadSharingParameters parameters;
+      }; // end struct LoadSharingRequest
+
+
+
+      /** 
+       * Report the present value of the load sharing parameters for alternating current devices.
+       * Topic Usage: 
+       * - TOPIC_AC_LOAD_SHARING_STATE
+       */
+      @topic
+      @extensibility(APPENDABLE)
+      struct LoadSharingState {
+
+          /**
+           * The device described by this structure.
+           */
+          @key
+          tms::Identity deviceId;
+
+          /**
+           * Configuration that these values belong to.
+           */
+          tms::ConfigId config;
+
+          /**
+           * LoadSharingParameters for each power port that supports AC load sharing.
+           */
+          LoadSharingParameterSequence parameters;
+      }; // end struct LoadSharingState
+
+   }; //end module ac
+
+   module dc {
+
+
+      /** 
+       * Measurements for a single DC power line.
+       */
+      @nested
+      @extensibility(APPENDABLE)
+      struct PowerLineMeasurement {
+
+          /**
+           * Averaged DC voltage.
+           * units: volt (V)
+           */
+          @unit("V")
+          float voltage;
+
+          /**
+           * Averaged DC amperage.
+           * units: ampere (A)
+           */
+          @unit("A")
+          float amperage;
+
+          /**
+           * Averaged DC power.
+           * units: watt (W)
+           */
+          @unit("W")
+          float power;
+      }; // end struct PowerLineMeasurement
+
+
+      const uint32 PowerLineMeasurementSequence_MINLEN = 1;
+      const uint32 PowerLineMeasurementSequence_MAXLEN = 3;
+      /**
+       * A sequence of PowerLineMeasurement.  Supports the DC circuits defined in PowerConnectorPhases.
+       * Minimum length: 1
+       * Maximum length: 3
+       */
+      typedef sequence<PowerLineMeasurement, PowerLineMeasurementSequence_MAXLEN> PowerLineMeasurementSequence;
+
+
+
+      /** 
+       * Power measurement for a direct current power port.
+       */
+      @nested
+      @extensibility(APPENDABLE)
+      struct PowerPortMeasurement {
+
+          /**
+           * Port being measured.
+           */
+          tms::PowerPortNumber portNumber;
+
+          /**
+           * Measured values for each DC line.  Length and order of values are based on PowerPortInfo.wiring.  PHASE_DC=2, PHASE_DC_3WIRE=3
+           */
+          PowerLineMeasurementSequence line;
+
+          /**
+           * Time derivative of power, summed across all wires excluding neutral.
+           * units: watt per second (W/s)
+           */
+          @unit("W/s")
+          float powerRateOfChange;
+      }; // end struct PowerPortMeasurement
+
+
+      const uint32 PowerPortMeasurementSequence_MINLEN = 0;
+      const uint32 PowerPortMeasurementSequence_MAXLEN = tms::MAX_PORTS;
+      /**
+       * A sequence of dc:PowerPortMeasurement.
+       * Minimum length: 0
+       * Maximum length: tms::MAX_PORTS
+       */
+      typedef sequence<PowerPortMeasurement, PowerPortMeasurementSequence_MAXLEN> PowerPortMeasurementSequence;
+
+
+
+      /** 
+       * Publish measurements for all direct current (DC) power ports on a device.
+       * Topic Usage: 
+       * - TOPIC_DC_MEASUREMENT_UPDATE
+       * - TOPIC_DC_SUMMARY_MEASUREMENT_UPDATE
+       */
+      @topic
+      @extensibility(APPENDABLE)
+      struct MeasurementUpdate {
+
+          /**
+           * The device described by this structure.
+           */
+          @key
+          tms::Identity deviceId;
+
+          /**
+           * Time of these measurements.
+           */
+          tms::ClockMonotonic timeMeasured;
+
+          /**
+           * Measurements for all power ports where PowerPortInfo.hasExternalMeter is true.
+           */
+          PowerPortMeasurementSequence externalMeasurement;
+
+          /**
+           * Measurements for all power ports where PowerPortInfo.hasInternalMeter is true.
+           */
+          PowerPortMeasurementSequence internalMeasurement;
+      }; // end struct MeasurementUpdate
+
+
+
+      /** 
+       * Load sharing parameters for DC power ports.
+       */
+      @nested
+      @extensibility(APPENDABLE)
+      struct LoadSharingParameters {
+
+          /**
+           * The power port number.
+           */
+          tms::PowerPortNumber portNumber;
+
+          /**
+           * Desired voltage as a function of output amperage.  Zero points disables voltage regulation and enables bounded or constant amperage regulation.  One point is invalid.  Two points with the same voltage enables constant voltage regulation.  Two or more points with different voltages enables droop voltage regulation.
+           * units: ampere, volt (A, V)
+           */
+          @unit("A, V")
+          tms::ControlCurve referenceVoltage;
+
+          /**
+           * Minimum desired amperage output.  May limit the device's ability to regulate voltage.
+           * units: ampere (A)
+           */
+          @unit("A")
+          float minAmperage;
+
+          /**
+           * Maximum desired amperage output.  May limit the device's ability to regulate voltage.
+           * units: ampere (A)
+           */
+          @unit("A")
+          float maxAmperage;
+
+          /**
+           * Minimum desired voltage output.  May limit the device's ability to regulate amperage.
+           * units: volt (V)
+           */
+          @unit("V")
+          float minVoltage;
+
+          /**
+           * Maximum desired voltage output.  May limit the device's ability to regulate amperage.
+           * units: volt (V)
+           */
+          @unit("V")
+          float maxVoltage;
+      }; // end struct LoadSharingParameters
+
+
+      const uint32 LoadSharingParameterSequence_MINLEN = 1;
+      const uint32 LoadSharingParameterSequence_MAXLEN = MAX_PORTS;
+      /**
+       * A sequence of DC LoadSharingParameters.
+       * Minimum length: 1
+       * Maximum length: MAX_PORTS
+       */
+      typedef sequence<LoadSharingParameters, LoadSharingParameterSequence_MAXLEN> LoadSharingParameterSequence;
+
+
+
+      /** 
+       * Sets load sharing parameters for DC power ports.
+       * Topic Usage: 
+       * - TOPIC_DC_LOAD_SHARING_REQUEST
+       */
+      @topic
+      @extensibility(APPENDABLE)
+      struct LoadSharingRequest {
+
+          /**
+           * Identity of this request.
+           */
+          @key
+          tms::PowerPortConfigRequest requestId;
+
+          /**
+           * Request sequence data used to associate a request and returning reply.
+           */
+          tms::RequestSequence sequenceId;
+
+          /**
+           * Desired parameters for controlling voltage and power.
+           */
+          LoadSharingParameters parameters;
+      }; // end struct LoadSharingRequest
+
+
+
+      /** 
+       * Report the present value of the load sharing parameters for direct current devices.
+       * Topic Usage: 
+       * - TOPIC_DC_LOAD_SHARING_STATE
+       */
+      @topic
+      @extensibility(APPENDABLE)
+      struct LoadSharingState {
+
+          /**
+           * The device described by this structure.
+           */
+          @key
+          tms::Identity deviceId;
+
+          /**
+           * Configuration that these values belong to.
+           */
+          tms::ConfigId config;
+
+          /**
+           * LoadSharingParameters for each power port that support DC load sharing.
+           */
+          LoadSharingParameterSequence parameters;
+      }; // end struct LoadSharingState
+
+   }; //end module dc
+
+
+   /** 
+    * Report the state of a storage device.
+    * Topic Usage: 
+    * - TOPIC_STORAGE_UPDATE
+    */
+   @topic
+   @extensibility(APPENDABLE)
+   struct StorageUpdate {
+
+       /**
+        * The device described by this structure.
+        */
+       @key
+       Identity deviceId;
+
+       /**
+        * Measurement indicating the DC bus voltage between the energy storage and power converter. 
+        * units: volt (V)
+        */
+       @unit("V")
+       float internalVoltage;
+
+       /**
+        * Estimate of present charge as a fraction of rated capacity.  0=empty and 1=full. 
+        * Change History:
+        *  1) Version: 2.0.1, Change: modify, Interoperability: No-xtypes
+        *     Made the field optional.
+        */
+       @range(min=0, max=1)
+       @optional
+       float stateOfCharge;
+
+       /**
+        * Estimate of present energy available for discharging to the microgrid.
+        * units: joule (J)
+        */
+       @unit("J")
+       float availableEnergy;
+
+       /**
+        * Estimate of how long the energy storage can operate at the present power rate. 
+        * units: second (s)
+        */
+       @unit("s")
+       float holdTime;
+
+       /**
+        * Estimate of how long the energy storage can charge at different power levels, without exceeding the highStateOfCharge. 
+        * units: watt, second (W, s)
+        */
+       @unit("W, s")
+       Curve2D chargeTime;
+
+       /**
+        * Estimate of how long the energy storage can discharge at different power levels, without exceeding the lowStateOfCharge. 
+        * units: watt, second (W, s)
+        */
+       @unit("W, s")
+       Curve2D dischargeTime;
+
+       /**
+        * Estimate of how long the energy storage can charge at different power levels, with battle short enabled.  Must be greater than or equal to the chargeTime. 
+        * units: watt, second (W, s)
+        */
+       @unit("W, s")
+       Curve2D maxChargeTime;
+
+       /**
+        * Estimate of how long the energy storage can discharge at different power levels, with battle short enabled.  Must be greater than or equal to the dischargeTime. 
+        * units: watt, second (W, s)
+        */
+       @unit("W, s")
+       Curve2D maxDischargeTime;
+
+       /**
+        * The maximum rate of charge based on current temperatures and state of charge. 0 to Inf.
+        * units: watt (W)
+        * Change History:
+        *  1) Version: 2.0.1, Change: modify, Interoperability: No-xtypes
+        *     Made the field optional.
+        */
+       @min(0)
+       @unit("W")
+       @optional
+       float maxChargeRate;
+
+       /**
+        * The maximum rate of discharge based on current temperatures and state of charge. -Inf to 0.
+        * units: watt (W)
+        * Change History:
+        *  1) Version: 2.0.1, Change: modify, Interoperability: No-xtypes
+        *     Made the field optional.
+        */
+       @max(0)
+       @unit("W")
+       @optional
+       float maxDischargeRate;
+   }; // end struct StorageUpdate
+
+
+
+   /** 
+    * Design information for control services on microgrid controllers and dashboards.
+    */
+   @nested
+   @extensibility(APPENDABLE)
+   struct ControlServiceInfo {
+
+       /**
+        * Microgrid Controller information.
+        */
+       @optional
+       MicrogridControllerInfo mc;
+
+       /**
+        * Microgrid Dashboard information.
+        */
+       @optional
+       MicrogridDashboardInfo md;
+   }; // end struct ControlServiceInfo
+
+
+
+   /** 
+    * Design information for a power device which is any TMS device role that generates, distributes or consumes power. SRC, STOR, LOAD, DIST and CONV.
+    */
+   @nested
+   @extensibility(APPENDABLE)
+   struct PowerDeviceInfo {
+
+       /**
+        * 1 for SRC and STOR and LOAD, 2+ for DIST and CONV
+        */
+       PowerPortInfoSequence powerPorts;
+
+       /**
+        * Grounding port information.
+        */
+       GroundingInfoSequence grounds;
+
+       /**
+        * Conversion information. Required for the CONV device role and empty otherwise.
+        */
+       @optional
+       ConversionInfo conversion;
+
+       /**
+        * Distribution device information. Required for the DIST device role and empty otherwise.
+        */
+       @optional
+       DistributionInfo distribution;
+
+       /**
+        * Power source device information. Required for the SRC device role and empty otherwise.
+        */
+       @optional
+       SourceInfo source;
+
+       /**
+        * Power storage device information. Required for the STOR device role and empty otherwise.
+        */
+       @optional
+       StorageInfo storage;
+
+       /**
+        * Power load information. Required for the LOAD device role and empty otherwise.
+        */
+       @optional
+       LoadInfo load;
+   }; // end struct PowerDeviceInfo
+
+
+
+   /** 
+    * Design information for the device.
+    * Topic Usage: 
+    * - TOPIC_DEVICE_INFO
+    */
+   @topic
+   @extensibility(APPENDABLE)
+   struct DeviceInfo {
+
+       /**
+        * The device described by this structure.
+        */
+       @key
+       Identity deviceId;
+
+       /**
+        * TMS role implemented by this device.
+        */
+       DeviceRole role;
+
+       /**
+        * Product information.
+        */
+       ProductInfo product;
+
+       /**
+        * communications interfaces implemented by this device
+        */
+       TopicInfo topics;
+
+       /**
+        * Information about the device controller.  May apply to both control services and power devices.
+        */
+       @optional
+       ControlHardwareInfo controlHardware;
+
+       /**
+        * Information about the power hardware, if applicable.
+        */
+       @optional
+       PowerHardwareInfo powerHardware;
+
+       /**
+        * A complete list of read-write control parameters that must be present if the device implements the ControlParameterState topic.
+        */
+       @optional
+       ParameterMetadataSequence controlParameters;
+
+       /**
+        * A complete list of read-only metric parameters that must be present if the device implements the MetricParameterState topic.
+        */
+       @optional
+       ParameterMetadataSequence metricParameters;
+
+       /**
+        * Control role-specific information. Required for MC or MD device roles and empty otherwise.
+        */
+       @optional
+       ControlServiceInfo controlService;
+
+       /**
+        * Power device role-specific information. Required for CONV, STOR, DIST, SRC, or LOAD device roles and empty otherwise.
+        */
+       @optional
+       PowerDeviceInfo powerDevice;
+   }; // end struct DeviceInfo
+
+}; // module tms
