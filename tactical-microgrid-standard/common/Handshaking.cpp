@@ -148,7 +148,7 @@ DDS::ReturnCode_t Handshaking::start_heartbeats(tms::Identity id)
     return DDS::RETCODE_ERROR;
   }
 
-  ACE_Time_Value period(1, 0);
+  const ACE_Time_Value period(1, 0);
   tms::Heartbeat hb;
   hb.deviceId(id);
 
