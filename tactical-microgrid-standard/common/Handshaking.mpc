@@ -3,6 +3,7 @@ project: opendds_cxx11 {
   includes += ../idl
   libpaths += ../idl
   libs += tms
+  after += tms
 
   Source_Files {
     Handshaking.cpp
