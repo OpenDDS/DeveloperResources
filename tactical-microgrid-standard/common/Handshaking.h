@@ -1,7 +1,7 @@
 #ifndef HANDSHAKING
 #define HANDSHAKING
 
-#include "mil-std-3071_data_modelTypeSupportImpl.h"
+#include "idl/mil-std-3071_data_modelTypeSupportImpl.h"
 
 #include <dds/DCPS/Service_Participant.h>
 

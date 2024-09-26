@@ -1,6 +1,6 @@
 project: opendds_cxx11 {
 
-  includes += ../idl
+  includes += ..
   libpaths += ../idl
   libs += tms
   after += tms
