@@ -1,0 +1,11 @@
+project(*Controller): dcpsexe {
+  exename = controller
+  includes += ..
+  libpaths += ../idl
+  libpaths += ../common
+  libs += tms Handshaking
+
+  Source_Files {
+    Controller.cpp
+  }
+}
