@@ -1,6 +1,7 @@
 #include "Handshaking.h"
 #include "DeviceInfoDataReaderListenerImpl.h"
 #include "HeartbeatDataReaderListenerImpl.h"
+#include "qos/QosHelper.h"
 
 #include <dds/DCPS/PublisherImpl.h>
 #include <dds/DCPS/SubscriberImpl.h>
@@ -83,7 +84,8 @@ DDS::ReturnCode_t Handshaking::create_publishers()
     return DDS::RETCODE_ERROR;
   }
 
-  DDS::Publisher_var pub = participant_->create_publisher(PUBLISHER_QOS_DEFAULT,
+  const DDS::PublisherQos pub_qos = Qos::Publisher::get_qos();
+  DDS::Publisher_var pub = participant_->create_publisher(pub_qos,
                                                           DDS::PublisherListener::_nil(),
                                                           ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
   if (!pub) {
@@ -91,8 +93,9 @@ DDS::ReturnCode_t Handshaking::create_publishers()
     return DDS::RETCODE_ERROR;
   }
 
+  const DDS::DataWriterQos di_qos = Qos::DataWriter::fn_map.at(tms::topic::TOPIC_DEVICE_INFO)(device_id_);
   DDS::DataWriter_var di_dw_base = pub->create_datawriter(di_topic_.in(),
-                                                          DATAWRITER_QOS_DEFAULT,
+                                                          di_qos,
                                                           DDS::DataWriterListener::_nil(),
                                                           ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
   if (!di_dw_base) {
@@ -107,8 +110,9 @@ DDS::ReturnCode_t Handshaking::create_publishers()
     return DDS::RETCODE_ERROR;
   }
 
+  const DDS::DataWriterQos hb_qos = Qos::DataWriter::fn_map.at(tms::topic::TOPIC_HEARTBEAT)(device_id_);
   DDS::DataWriter_var hb_dw_base = pub->create_datawriter(hb_topic_.in(),
-                                                          DATAWRITER_QOS_DEFAULT,
+                                                          hb_qos,
                                                           DDS::DataWriterListener::_nil(),
                                                           ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
   if (!hb_dw_base) {
@@ -180,7 +184,8 @@ DDS::ReturnCode_t Handshaking::create_subscribers(
     return DDS::RETCODE_ERROR;
   }
 
-  DDS::Subscriber_var sub = participant_->create_subscriber(SUBSCRIBER_QOS_DEFAULT,
+  const DDS::SubscriberQos sub_qos = Qos::Subscriber::get_qos();
+  DDS::Subscriber_var sub = participant_->create_subscriber(sub_qos,
                                                             DDS::SubscriberListener::_nil(),
                                                             ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
   if (!sub) {
@@ -191,8 +196,9 @@ DDS::ReturnCode_t Handshaking::create_subscribers(
   DDS::DataReaderListener_var di_listener(new DeviceInfoDataReaderListenerImpl(di_cb));
   DDS::DataReaderListener_var hb_listener(new HeartbeatDataReaderListenerImpl(hb_cb));
 
+  const DDS::DataReaderQos di_qos = Qos::DataReader::fn_map.at(tms::topic::TOPIC_DEVICE_INFO)(device_id_);
   DDS::DataReader_var di_dr = sub->create_datareader(di_topic_.in(),
-                                                     DATAREADER_QOS_DEFAULT,
+                                                     di_qos,
                                                      di_listener.in(),
                                                      ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
   if (!di_dr) {
@@ -201,8 +207,9 @@ DDS::ReturnCode_t Handshaking::create_subscribers(
     return DDS::RETCODE_ERROR;
   }
 
+  const DDS::DataReaderQos hb_qos = Qos::DataReader::fn_map.at(tms::topic::TOPIC_HEARTBEAT)(device_id_);
   DDS::DataReader_var hb_dr = sub->create_datareader(hb_topic_.in(),
-                                                     DATAREADER_QOS_DEFAULT,
+                                                     hb_qos,
                                                      hb_listener.in(),
                                                      ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
   if (!hb_dr) {
