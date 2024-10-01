@@ -1,9 +1,32 @@
-#include "mil-std-3071_data_modelTypeSupportImpl.h"
+#include "QosHelper.h"
 
 #include <dds/DCPS/Service_Participant.h>
 #include <dds/DCPS/Qos_Helper.h>
 
-// TODO: Provide functions to change application-specific QoS
+// The following QoS is application-specific:
+// - RELIABILITY.max_blocking_time
+// - ENTITY_FACTORY
+// - WRITER_DATA_LIFECYCLE
+// - READER_DATA_LIFECYCLE
+
+namespace Qos {
+
+namespace DataReader {
+// Add an entry for each supported topic
+const FnMap fn_map = {
+  {tms::topic::TOPIC_HEARTBEAT, get_Medium},
+  {tms::topic::TOPIC_DEVICE_INFO, get_PublishLast}};
+}
+
+namespace DataWriter {
+// Add an entry for each supported topic
+const FnMap fn_map = {
+  {tms::topic::TOPIC_HEARTBEAT, get_Medium},
+  {tms::topic::TOPIC_DEVICE_INFO, get_PublishLast}};
+}
+
+}
+
 namespace {
 
 // Common Qos values for SubscriberQos and PublisherQos
@@ -27,7 +50,6 @@ void init_UserDataQosPolicy(DDS::UserDataQosPolicy& user_data, const tms::Identi
 {
   const CORBA::ULong len = device_id.length();
   user_data.value.length(len);
-  //  std::memcpy(user_data.value.get_buffer(), static_cast<const unsigned char*>(device_id.c_str()), len);
   std::memcpy(user_data.value.get_buffer(), device_id.c_str(), len);
 }
 
@@ -227,46 +249,10 @@ void init_datawriter_common(DDS::DataWriterQos& qos)
 namespace Qos {
 
 namespace Subscriber {
-DDS::SubscriberQos get_PublishLast()
+DDS::SubscriberQos get_qos()
 {
   return get_group_qos_profile<DDS::SubscriberQos>();
 }
-
-DDS::SubscriberQos get_Rare()
-{
-  return get_group_qos_profile<DDS::SubscriberQos>();
-}
-
-DDS::SubscriberQos get_Slow()
-{
-  return get_group_qos_profile<DDS::SubscriberQos>();
-}
-
-DDS::SubscriberQos get_Medium()
-{
-  return get_group_qos_profile<DDS::SubscriberQos>();
-}
-
-DDS::SubscriberQos get_Continuous()
-{
-  return get_group_qos_profile<DDS::SubscriberQos>();
-}
-
-DDS::SubscriberQos get_Command()
-{
-  return get_group_qos_profile<DDS::SubscriberQos>();
-}
-
-DDS::SubscriberQos get_Response()
-{
-  return get_group_qos_profile<DDS::SubscriberQos>();
-}
-
-DDS::SubscriberQos get_Reply()
-{
-  return get_group_qos_profile<DDS::SubscriberQos>();
-}
-
 } // namespace Subscriber
 
 namespace DataReader {
@@ -338,46 +324,10 @@ DDS::DataReaderQos get_Reply(const tms::Identity& device_id)
 } // namespace DataReader
 
 namespace Publisher {
-DDS::PublisherQos get_PublishLast()
+DDS::PublisherQos get_qos()
 {
   return get_group_qos_profile<DDS::PublisherQos>();
 }
-
-DDS::PublisherQos get_Rare()
-{
-  return get_group_qos_profile<DDS::PublisherQos>();
-}
-
-DDS::PublisherQos get_Slow()
-{
-  return get_group_qos_profile<DDS::PublisherQos>();
-}
-
-DDS::PublisherQos get_Medium()
-{
-  return get_group_qos_profile<DDS::PublisherQos>();
-}
-
-DDS::PublisherQos get_Continuous()
-{
-  return get_group_qos_profile<DDS::PublisherQos>();
-}
-
-DDS::PublisherQos get_Command()
-{
-  return get_group_qos_profile<DDS::PublisherQos>();
-}
-
-DDS::PublisherQos get_Response()
-{
-  return get_group_qos_profile<DDS::PublisherQos>();
-}
-
-DDS::PublisherQos get_Reply()
-{
-  return get_group_qos_profile<DDS::PublisherQos>();
-}
-
 } // namespace Publisher
 
 namespace DataWriter {
