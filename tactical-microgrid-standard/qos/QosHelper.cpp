@@ -1,6 +1,7 @@
 #include "mil-std-3071_data_modelTypeSupportImpl.h"
 
-#include <dds/DCPS/Marked_Default_Qos.h>
+#include <dds/DCPS/Service_Participant.h>
+#include <dds/DCPS/Qos_Helper.h>
 
 // TODO: Provide functions to change application-specific QoS
 namespace {
@@ -19,13 +20,15 @@ T get_group_qos_profile()
 
   // entity_factory is application-specific
   qos.entity_factory.autoenable_created_entities = true;
+  return qos;
 }
 
-void init_UserDataQosPolicy(UserDataQosPolicy& user_data, const tms::Identity& device_id)
+void init_UserDataQosPolicy(DDS::UserDataQosPolicy& user_data, const tms::Identity& device_id)
 {
   const CORBA::ULong len = device_id.length();
   user_data.value.length(len);
-  std::memcpy(user_data.value.get_buffer(), static_cast<unsigned char*>(device_id.c_str()), len);
+  //  std::memcpy(user_data.value.get_buffer(), static_cast<const unsigned char*>(device_id.c_str()), len);
+  std::memcpy(user_data.value.get_buffer(), device_id.c_str(), len);
 }
 
 // Common Qos values for DataReaderQos and DataWriterQos
@@ -40,12 +43,12 @@ void init_endpoint_PublishLast_profile(T& qos, const tms::Identity& device_id)
   qos.deadline = TheServiceParticipant->initial_DeadlineQosPolicy();
   qos.latency_budget = TheServiceParticipant->initial_LatencyBudgetQosPolicy();
 
-  OpenDDS::DCPS::OwnershipQosPolicy ownership_builder;
+  OpenDDS::DCPS::OwnershipQosPolicyBuilder ownership_builder;
   qos.ownership = ownership_builder.exclusive();
 
   qos.liveliness = TheServiceParticipant->initial_LivelinessQosPolicy();
 
-  OpenDDS::DCPS::ReliabilityQosPolicy reliability_builder;
+  OpenDDS::DCPS::ReliabilityQosPolicyBuilder reliability_builder;
   qos.reliability = reliability_builder.reliable();
 
   qos.destination_order = TheServiceParticipant->initial_DestinationOrderQosPolicy();
@@ -64,7 +67,7 @@ void init_endpoint_Rare_profile(T& qos, const tms::Identity& device_id)
 
   qos.latency_budget = TheServiceParticipant->initial_LatencyBudgetQosPolicy();
 
-  OpenDDS::DCPS::OwnershipQosPolicy ownership_builder;
+  OpenDDS::DCPS::OwnershipQosPolicyBuilder ownership_builder;
   qos.ownership = ownership_builder.exclusive();
 
   qos.liveliness = TheServiceParticipant->initial_LivelinessQosPolicy();
@@ -85,7 +88,7 @@ void init_endpoint_Slow_profile(T& qos, const tms::Identity& device_id)
 
   qos.latency_budget = TheServiceParticipant->initial_LatencyBudgetQosPolicy();
 
-  OpenDDS::DCPS::OwnershipQosPolicy ownership_builder;
+  OpenDDS::DCPS::OwnershipQosPolicyBuilder ownership_builder;
   qos.ownership = ownership_builder.exclusive();
 
   qos.liveliness = TheServiceParticipant->initial_LivelinessQosPolicy();
@@ -106,7 +109,7 @@ void init_endpoint_Medium_profile(T& qos, const tms::Identity& device_id)
 
   qos.latency_budget = TheServiceParticipant->initial_LatencyBudgetQosPolicy();
 
-  OpenDDS::DCPS::OwnershipQosPolicy ownership_builder;
+  OpenDDS::DCPS::OwnershipQosPolicyBuilder ownership_builder;
   qos.ownership = ownership_builder.exclusive();
 
   qos.liveliness = TheServiceParticipant->initial_LivelinessQosPolicy();
@@ -127,7 +130,7 @@ void init_endpoint_Continuous_profile(T& qos, const tms::Identity& device_id)
 
   qos.latency_budget = TheServiceParticipant->initial_LatencyBudgetQosPolicy();
 
-  OpenDDS::DCPS::OwnershipQosPolicy ownership_builder;
+  OpenDDS::DCPS::OwnershipQosPolicyBuilder ownership_builder;
   qos.ownership = ownership_builder.exclusive();
 
   qos.liveliness = TheServiceParticipant->initial_LivelinessQosPolicy();
@@ -145,7 +148,7 @@ void init_endpoint_Command_profile(T& qos, const tms::Identity& device_id)
   qos.deadline = TheServiceParticipant->initial_DeadlineQosPolicy();
   qos.latency_budget = TheServiceParticipant->initial_LatencyBudgetQosPolicy();
 
-  OpenDDS::DCPS::OwnershipQosPolicy ownership_builder;
+  OpenDDS::DCPS::OwnershipQosPolicyBuilder ownership_builder;
   qos.ownership = ownership_builder.exclusive();
 
   qos.liveliness = TheServiceParticipant->initial_LivelinessQosPolicy();
@@ -166,7 +169,7 @@ void init_endpoint_Response_profile(T& qos, const tms::Identity& device_id)
   qos.deadline = TheServiceParticipant->initial_DeadlineQosPolicy();
   qos.latency_budget = TheServiceParticipant->initial_LatencyBudgetQosPolicy();
 
-  OpenDDS::DCPS::OwnershipQosPolicy ownership_builder;
+  OpenDDS::DCPS::OwnershipQosPolicyBuilder ownership_builder;
   qos.ownership = ownership_builder.exclusive();
 
   qos.liveliness = TheServiceParticipant->initial_LivelinessQosPolicy();
@@ -187,7 +190,7 @@ void init_endpoint_Reply_profile(T& qos, const tms::Identity& device_id)
   qos.deadline = TheServiceParticipant->initial_DeadlineQosPolicy();
   qos.latency_budget = TheServiceParticipant->initial_LatencyBudgetQosPolicy();
 
-  OpenDDS::DCPS::OwnershipQosPolicy ownership_builder;
+  OpenDDS::DCPS::OwnershipQosPolicyBuilder ownership_builder;
   qos.ownership = ownership_builder.exclusive();
 
   qos.liveliness = TheServiceParticipant->initial_LivelinessQosPolicy();
@@ -226,42 +229,42 @@ namespace Qos {
 namespace Subscriber {
 DDS::SubscriberQos get_PublishLast()
 {
-  return get_group_qos_profile();
+  return get_group_qos_profile<DDS::SubscriberQos>();
 }
 
 DDS::SubscriberQos get_Rare()
 {
-  return get_group_qos_profile();
+  return get_group_qos_profile<DDS::SubscriberQos>();
 }
 
 DDS::SubscriberQos get_Slow()
 {
-  return get_group_qos_profile();
+  return get_group_qos_profile<DDS::SubscriberQos>();
 }
 
 DDS::SubscriberQos get_Medium()
 {
-  return get_group_qos_profile();
+  return get_group_qos_profile<DDS::SubscriberQos>();
 }
 
 DDS::SubscriberQos get_Continuous()
 {
-  return get_group_qos_profile();
+  return get_group_qos_profile<DDS::SubscriberQos>();
 }
 
 DDS::SubscriberQos get_Command()
 {
-  return get_group_qos_profile();
+  return get_group_qos_profile<DDS::SubscriberQos>();
 }
 
 DDS::SubscriberQos get_Response()
 {
-  return get_group_qos_profile();
+  return get_group_qos_profile<DDS::SubscriberQos>();
 }
 
 DDS::SubscriberQos get_Reply()
 {
-  return get_group_qos_profile();
+  return get_group_qos_profile<DDS::SubscriberQos>();
 }
 
 } // namespace Subscriber
@@ -337,42 +340,42 @@ DDS::DataReaderQos get_Reply(const tms::Identity& device_id)
 namespace Publisher {
 DDS::PublisherQos get_PublishLast()
 {
-  return get_group_qos_profile();
+  return get_group_qos_profile<DDS::PublisherQos>();
 }
 
 DDS::PublisherQos get_Rare()
 {
-  return get_group_qos_profile();
+  return get_group_qos_profile<DDS::PublisherQos>();
 }
 
 DDS::PublisherQos get_Slow()
 {
-  return get_group_qos_profile();
+  return get_group_qos_profile<DDS::PublisherQos>();
 }
 
 DDS::PublisherQos get_Medium()
 {
-  return get_group_qos_profile();
+  return get_group_qos_profile<DDS::PublisherQos>();
 }
 
 DDS::PublisherQos get_Continuous()
 {
-  return get_group_qos_profile();
+  return get_group_qos_profile<DDS::PublisherQos>();
 }
 
 DDS::PublisherQos get_Command()
 {
-  return get_group_qos_profile();
+  return get_group_qos_profile<DDS::PublisherQos>();
 }
 
 DDS::PublisherQos get_Response()
 {
-  return get_group_qos_profile();
+  return get_group_qos_profile<DDS::PublisherQos>();
 }
 
 DDS::PublisherQos get_Reply()
 {
-  return get_group_qos_profile();
+  return get_group_qos_profile<DDS::PublisherQos>();
 }
 
 } // namespace Publisher
