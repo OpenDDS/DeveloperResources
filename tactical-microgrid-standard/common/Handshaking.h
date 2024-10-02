@@ -10,9 +10,10 @@
 
 class Handshaking {
 public:
-  Handshaking()
+  Handshaking(const tms::Identity& device_id)
     : seq_num_(0)
     , stop_(false)
+    , device_id_(device_id)
   {}
 
   ~Handshaking();
@@ -54,6 +55,7 @@ private:
 
   unsigned long seq_num_;
   std::atomic<bool> stop_;
+  const tms::Identity device_id_;
 };
 
 #endif // HANDSHAKING

@@ -8,8 +8,10 @@ lib*.a
 lib*.so*
 lib*.dylib
 
-mil-std-3071_data_modelC.*
-mil-std-3071_data_modelTypeSupport.idl
-mil-std-3071_data_modelTypeSupportC.*
-mil-std-3071_data_modelTypeSupportS.*
-mil-std-3071_data_modelTypeSupportImpl.*
+/idl/mil-std-3071_data_modelC.*
+/idl/mil-std-3071_data_modelTypeSupport.idl
+/idl/mil-std-3071_data_modelTypeSupportC.*
+/idl/mil-std-3071_data_modelTypeSupportS.*
+/idl/mil-std-3071_data_modelTypeSupportImpl.*
+
+/controller/controller
