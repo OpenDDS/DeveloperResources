@@ -1,25 +1,27 @@
 #ifndef HANDSHAKING
 #define HANDSHAKING
 
+#include "TimerHandler.h"
+
 #include "mil-std-3071_data_modelTypeSupportImpl.h"
+#include <opendds_tms_export.h>
 
 #include <dds/DCPS/Service_Participant.h>
 
-#include <atomic>
 #include <functional>
 
-class Handshaking {
+class opendds_tms_Export Handshaking : public TimerHandler<tms::Heartbeat> {
 public:
-  Handshaking()
-    : seq_num_(0)
-    , stop_(false)
+  Handshaking(tms::Identity id)
+    : id_(id)
+    , seq_num_(0)
   {}
 
   ~Handshaking();
 
   // Initialize a domain participant for the given domain ID.
   // Create the DeviceInfo and Heartbeat topics.
-  DDS::ReturnCode_t join_domain(DDS::DomainId_t domain_id, int argc = 0, char* argv[] = 0);
+  DDS::ReturnCode_t join_domain(DDS::DomainId_t domain_id, int argc = 0, char* argv[] = nullptr);
 
   // Create publishers and data writers for the DeviceInfo and Heartbeat topics.
   DDS::ReturnCode_t create_publishers();
@@ -27,12 +29,7 @@ public:
   DDS::ReturnCode_t send_device_info(tms::DeviceInfo device_info);
 
   // Send heartbeats in a separate thread
-  DDS::ReturnCode_t start_heartbeats(tms::Identity id);
-
-  void stop_heartbeats()
-  {
-    stop_ = true;
-  }
+  DDS::ReturnCode_t start_heartbeats();
 
   // Create subscribers and data readers for the DeviceInfo and Heartbeat topics.
   // User provides callbacks to process received samples of these 2 topics.
@@ -45,7 +42,18 @@ public:
     return participant_;
   }
 
+protected:
+  const tms::Identity id_;
+
 private:
+  static constexpr Sec heartbeat_period = Sec(1);
+
+  void timer_fired(Timer<tms::Heartbeat>& timer);
+  void any_timer_fired(AnyTimer timer)
+  {
+    std::visit([&](auto&& value) { this->timer_fired(*value); }, timer);
+  }
+
   DDS::DomainParticipantFactory_var dpf_;
   DDS::DomainParticipant_var participant_;
   DDS::Topic_var di_topic_, hb_topic_;
@@ -53,7 +61,6 @@ private:
   tms::HeartbeatDataWriter_var hb_dw_;
 
   unsigned long seq_num_;
-  std::atomic<bool> stop_;
 };
 
 #endif // HANDSHAKING
