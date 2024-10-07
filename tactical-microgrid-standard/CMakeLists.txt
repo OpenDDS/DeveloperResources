@@ -23,5 +23,6 @@ opendds_target_sources(${PROJECT_NAME}
   USE_EXPORT ${export}
 )
 target_link_libraries(${PROJECT_NAME} PUBLIC OpenDDS::Rtps_Udp)
+target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_17)
 
 add_subdirectory(tests)
