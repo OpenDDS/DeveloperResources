@@ -11,12 +11,14 @@ add_library(${PROJECT_NAME}
   common/PowerDevice.cpp
   common/DeviceInfoDataReaderListenerImpl.cpp
   common/HeartbeatDataReaderListenerImpl.cpp
+  qos/QosHelper.cpp
 )
-target_include_directories(${PROJECT_NAME} PUBLIC common)
+target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_SOURCE_DIR})
 opendds_export_header(${PROJECT_NAME} USE_EXPORT_VAR export)
 opendds_target_sources(${PROJECT_NAME}
   PUBLIC
     idl/mil-std-3071_data_model.idl
+  INCLUDE_BASE ${CMAKE_SOURCE_DIR}
   OPENDDS_IDL_OPTIONS -Lc++11
   USE_EXPORT ${export}
 )

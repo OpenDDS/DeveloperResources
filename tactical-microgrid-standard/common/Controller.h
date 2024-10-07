@@ -3,12 +3,9 @@
 
 #include "Handshaking.h"
 
-#include <mil-std-3071_data_modelTypeSupportImpl.h>
-#include <opendds_tms_export.h>
-
 class opendds_tms_Export Controller : public Handshaking {
 public:
-  Controller(tms::Identity id)
+  Controller(const tms::Identity& id)
     : Handshaking(id)
   {
   }

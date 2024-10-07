@@ -3,7 +3,7 @@
 
 #include "TimerHandler.h"
 
-#include "mil-std-3071_data_modelTypeSupportImpl.h"
+#include <idl/mil-std-3071_data_modelTypeSupportImpl.h>
 #include <opendds_tms_export.h>
 
 #include <dds/DCPS/Service_Participant.h>
@@ -12,9 +12,9 @@
 
 class opendds_tms_Export Handshaking : public TimerHandler<tms::Heartbeat> {
 public:
-  Handshaking(tms::Identity id)
-    : id_(id)
-    , seq_num_(0)
+  Handshaking(const tms::Identity& device_id)
+    : seq_num_(0)
+    , device_id_(device_id)
   {}
 
   ~Handshaking();
@@ -43,7 +43,7 @@ public:
   }
 
 protected:
-  const tms::Identity id_;
+  const tms::Identity device_id_;
 
 private:
   static constexpr Sec heartbeat_period = Sec(1);
@@ -60,7 +60,7 @@ private:
   tms::DeviceInfoDataWriter_var di_dw_;
   tms::HeartbeatDataWriter_var hb_dw_;
 
-  unsigned long seq_num_;
+  uint32_t seq_num_;
 };
 
 #endif // HANDSHAKING

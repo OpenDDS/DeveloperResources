@@ -25,7 +25,7 @@ DDS::ReturnCode_t Controller::init(DDS::DomainId_t domain, int argc, char* argv[
   }
 
   tms::DeviceInfo device_info;
-  device_info.deviceId(id_);
+  device_info.deviceId(device_id_);
   device_info.role(tms::DeviceRole::ROLE_MICROGRID_CONTROLLER);
   rc = send_device_info(device_info);
   if (rc != DDS::RETCODE_OK) {
@@ -42,7 +42,7 @@ DDS::ReturnCode_t Controller::init(DDS::DomainId_t domain, int argc, char* argv[
 
 void Controller::got_heartbeat(const tms::Heartbeat& hb, const DDS::SampleInfo& si)
 {
-  if (!si.valid_data || hb.deviceId() == id_) {
+  if (!si.valid_data || hb.deviceId() == device_id_) {
     return;
   }
   ACE_DEBUG((LM_INFO, "(%P|%t) Handshaking::controller_got_heartbeat: from %C\n",
@@ -51,7 +51,7 @@ void Controller::got_heartbeat(const tms::Heartbeat& hb, const DDS::SampleInfo& 
 
 void Controller::got_device_info(const tms::DeviceInfo& di, const DDS::SampleInfo& si)
 {
-  if (!si.valid_data || di.deviceId() == id_) {
+  if (!si.valid_data || di.deviceId() == device_id_) {
     return;
   }
   ACE_DEBUG((LM_INFO, "(%P|%t) Handshaking::controller_got_device_info: from %C\n",

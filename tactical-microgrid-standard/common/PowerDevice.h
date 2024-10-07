@@ -3,9 +3,6 @@
 
 #include "Handshaking.h"
 
-#include <mil-std-3071_data_modelTypeSupportImpl.h>
-#include <opendds_tms_export.h>
-
 #include <map>
 
 struct NewController {
@@ -91,7 +88,7 @@ private:
 
 class opendds_tms_Export PowerDevice : public Handshaking {
 public:
-  PowerDevice(tms::Identity id)
+  PowerDevice(const tms::Identity& id)
     : Handshaking(id)
     , controller_selector_(*this)
   {
