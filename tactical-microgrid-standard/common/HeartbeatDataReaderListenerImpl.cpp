@@ -20,12 +20,11 @@ void HeartbeatDataReaderListenerImpl::on_data_available(DDS::DataReader_ptr read
       } else {
         ACE_DEBUG((LM_INFO, "(%P|%t) INFO: HeartbeatDataReaderListenerImpl::on_data_available: received heartbeat\n"));
       }
-    } else if (rc == DDS::RETCODE_NO_DATA) {
-      ACE_DEBUG((LM_INFO, "(%P|%t) INFO: HeartbeatDataReaderListenerImpl::on_data_available: no more samples available\n"));
-      break;
     } else {
-      ACE_ERROR((LM_WARNING, "(%P|%t) WARNING: HeartbeatDataReaderListenerImpl::on_data_available: take_next_sample failed (%C)\n",
-                 OpenDDS::DCPS::retcode_to_string(rc)));
+      if (rc != DDS::RETCODE_NO_DATA) {
+        ACE_ERROR((LM_WARNING, "(%P|%t) WARNING: HeartbeatDataReaderListenerImpl::on_data_available: take_next_sample failed (%C)\n",
+                   OpenDDS::DCPS::retcode_to_string(rc)));
+      }
       break;
     }
   }

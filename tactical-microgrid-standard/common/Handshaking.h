@@ -7,13 +7,16 @@
 
 #include <atomic>
 #include <functional>
+#include <condition_variable>
+#include <mutex>
 
 class Handshaking {
 public:
   Handshaking(const tms::Identity& device_id)
-    : seq_num_(0)
+    : device_id_(device_id)
+    , seq_num_(0)
     , stop_(false)
-    , device_id_(device_id)
+    , done_(false)
   {}
 
   ~Handshaking();
@@ -28,12 +31,9 @@ public:
   DDS::ReturnCode_t send_device_info(tms::DeviceInfo device_info);
 
   // Send heartbeats in a separate thread
-  DDS::ReturnCode_t start_heartbeats(tms::Identity id);
+  DDS::ReturnCode_t start_heartbeats();
 
-  void stop_heartbeats()
-  {
-    stop_ = true;
-  }
+  void stop_heartbeats();
 
   // Create subscribers and data readers for the DeviceInfo and Heartbeat topics.
   // User provides callbacks to process received samples of these 2 topics.
@@ -46,6 +46,9 @@ public:
     return participant_;
   }
 
+protected:
+  const tms::Identity device_id_;
+
 private:
   DDS::DomainParticipantFactory_var dpf_;
   DDS::DomainParticipant_var participant_;
@@ -54,8 +57,27 @@ private:
   tms::HeartbeatDataWriter_var hb_dw_;
 
   unsigned long seq_num_;
+
   std::atomic<bool> stop_;
-  const tms::Identity device_id_;
+
+  struct NotifyGuard {
+    NotifyGuard(Handshaking& handshake) : handshake_(handshake) {}
+
+    ~NotifyGuard()
+    {
+      std::lock_guard<std::mutex> guard(handshake_.mut_);
+      handshake_.done_ = true;
+      handshake_.cond_.notify_one();
+    }
+
+    Handshaking& handshake_;
+  };
+
+  // For the heartbeat thread to announce it has finished and
+  // doesn't require this Handshaking object to stay alive.
+  std::mutex mut_;
+  std::condition_variable cond_;
+  bool done_;
 };
 
 #endif // HANDSHAKING

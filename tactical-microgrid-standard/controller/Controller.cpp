@@ -1,47 +1,84 @@
-#include "common/Handshaking.h"
+#include "Controller.h"
 
-#include <unordered_map>
-
-const DDS::DomainId_t domain_id = 11;
-const char* MICROGRID_CONTROLLER_IDENTITY = "Microgrid Controller Test";
-
-std::unordered_map<tms::Identity, tms::DeviceInfo> connected_devices;
-
-void device_info_cb(const tms::DeviceInfo& di, const DDS::SampleInfo& si)
+DDS::ReturnCode_t Controller::run(DDS::DomainId_t domain_id, int argc = 0, char* argv[] = nullptr)
 {
-  if (si.valid_data) {
-    connected_devices.insert(std::make_pair(di.deviceId(), di));
+  DDS::ReturnCode_t rc = join_domain(domain_id, argc, argv);
+  if (rc != DDS::RETCODE_OK) {
+    return rc;
+  }
+
+  rc = create_subscribers(
+    [&](const tms::DeviceInfo& di, const DDS::SampleInfo& si) {
+      device_info_cb(di, si);
+    },
+    [&](const tms::Heartbeat& hb, const DDS::SampleInfo& si) {
+      heartbeat_cb(hb, si);
+    });
+  if (rc != DDS::RETCODE_OK) {
+    return rc;
+  }
+
+  rc = create_publishers();
+  if (rc != DDS::RETCODE_OK) {
+    return rc;
+  }
+
+  tms::DeviceInfo di;
+  populate_device_info(di);
+
+  rc = send_device_info(di);
+  if (rc != DDS::RETCODE_OK) {
+    return rc;
+  }
+
+  rc = start_heartbeats();
+  if (rc != DDS::RETCODE_OK) {
+    return rc;
+  }
+
+  return DDS::RETCODE_OK;
+}
+
+tms::Identity Controller::id() const
+{
+  return device_id_;
+}
+
+PowerDevices Controller::power_devices() const
+{
+  std::lock_guard<std::mutex> guard(mut_);
+  return power_devices_;
+}
+
+void Controller::device_info_cb(const tms::DeviceInfo& di, const DDS::SampleInfo& si)
+{
+  if (!si.valid_data || di.deviceId() == device_id_) {
+    return;
+  }
+
+  ACE_DEBUG((LM_DEBUG, "(%P|%t) DEBUG: device_info_cb: device: \"%C\"\n", di.deviceId().c_str()));
+  power_devices_.insert(std::make_pair(di.deviceId(), di));
+}
+
+void Controller::heartbeat_cb(const tms::Heartbeat& hb, const DDS::SampleInfo& si)
+{
+  if (!si.valid_data || hb.deviceId() == device_id_) {
+    return;
+  }
+
+  const tms::Identity& id = hb.deviceId();
+  const uint32_t seqnum = hb.sequenceNumber();
+
+  if (power_devices_.count(id) > 0) {
+    ACE_DEBUG((LM_DEBUG, "(%P|%t) DEBUG: heartbeat_cb: known device: \"%C\", seqnum: %u\n", id.c_str(), seqnum));
+  } else {
+    ACE_DEBUG((LM_DEBUG, "(%P|%t) DEBUG: heartbeat_cb: new device: \"%C\", seqnum: %u\n", id.c_str(), seqnum));
   }
 }
 
-void heartbeat_cb(const tms::Heartbeat& hb, const DDS::SampleInfo& si)
+void Controller::populate_device_info(tms::DeviceInfo& device_info)
 {
-  if (si.valid_data) {
-    const tms::Identity& id = hb.deviceId();
-    if (connected_devices.count(id) > 0) {
-      ACE_DEBUG((LM_DEBUG, "(%P|%t) DEBUG: heartbeat_cb: received heartbeat from device: '%C'\n", id.c_str()));
-    } else {
-      ACE_DEBUG((LM_DEBUG, "(%P|%t) DEBUG: heartbeat_cb: received heartbeat from unknown device: '%C'\n", id.c_str()));
-    }
-  }
-}
-
-int main(int argc, char* argv[])
-{
-  Handshaking handshake;
-  if (handshake.join_domain(domain_id, argc, argv) != DDS::RETCODE_OK) {
-    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: controller: join_domain failed\n"));
-    return 1;
-  }
-
-  // Announce the controller and publish heartbeats
-  if (handshake.create_publishers() != DDS::RETCODE_OK) {
-    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: controller: create_publishers failed\n"));
-    return 1;
-  }
-
-  tms::DeviceInfo device_info;
-  device_info.deviceId(MICROGRID_CONTROLLER_IDENTITY);
+  device_info.deviceId(device_id_);
   device_info.role(tms::DeviceRole::ROLE_MICROGRID_CONTROLLER);
 
   tms::ProductInfo prod_info;
@@ -77,24 +114,4 @@ int main(int argc, char* argv[])
   // - controlParameters, metricParameters: optional depending whether we want to
   //   include these parameters information
   // - powerDevice: not applicable
-
-  if (handshake.send_device_info(device_info) != DDS::RETCODE_OK) {
-    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: controller: send_device_info failed\n"));
-    return 1;
-  }
-
-  tms::Identity id(MICROGRID_CONTROLLER_IDENTITY);
-
-  if (handshake.start_heartbeats(id) != DDS::RETCODE_OK) {
-    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: controller: start_heartbeat failed\n"));
-    return 1;
-  }
-
-  // Subscribe to the other devices' info and heartbeats
-  if (handshake.create_subscribers(device_info_cb, heartbeat_cb) != DDS::RETCODE_OK) {
-    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: controller: create_subscribers failed\n"));
-    return 1;
-  }
-
-  return 0;
 }

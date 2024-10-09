@@ -232,11 +232,12 @@ void init_datareader_common(DDS::DataReaderQos& qos)
 {
   qos.time_based_filter = TheServiceParticipant->initial_TimeBasedFilterQosPolicy();
   qos.reader_data_lifecycle = TheServiceParticipant->initial_ReaderDataLifecycleQosPolicy();
+  qos.type_consistency = TheServiceParticipant->initial_TypeConsistencyEnforcementQosPolicy();
 }
 
 void init_datawriter_common(DDS::DataWriterQos& qos)
 {
-  // durability_service is N/A
+  qos.durability_service = TheServiceParticipant->initial_DurabilityServiceQosPolicy();
   qos.transport_priority = TheServiceParticipant->initial_TransportPriorityQosPolicy();
   qos.lifespan = TheServiceParticipant->initial_LifespanQosPolicy();
   OpenDDS::DCPS::OwnershipStrengthQosPolicyBuilder ownership_strength_builder;

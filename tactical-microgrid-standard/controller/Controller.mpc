@@ -1,9 +1,8 @@
-project(*Controller): dcpsexe {
+project(*Controller): dcpsexe, opendds_uses_cxx17 {
   exename = controller
   includes += ..
-  libpaths += ../idl
-  libpaths += ../common
-  libs += tms Handshaking
+  libpaths += ../idl ../common ../qos
+  libs += tms Handshaking Qos
 
   Source_Files {
     Controller.cpp

@@ -145,34 +145,57 @@ DDS::ReturnCode_t Handshaking::send_device_info(tms::DeviceInfo device_info)
   return di_dw_->write(device_info, instance_handle);
 }
 
-DDS::ReturnCode_t Handshaking::start_heartbeats(tms::Identity id)
+DDS::ReturnCode_t Handshaking::start_heartbeats()
 {
   if (!hb_dw_) {
     ACE_ERROR((LM_NOTICE, "(%P|%t) NOTICE: Handshaking::start_heartbeats: create data writers first with create_publishers!\n"));
     return DDS::RETCODE_ERROR;
   }
 
-  const ACE_Time_Value period(1, 0);
-  tms::Heartbeat hb;
-  hb.deviceId(id);
-
-  const DDS::InstanceHandle_t instance_handle = hb_dw_->register_instance(hb);
-  if (instance_handle == DDS::HANDLE_NIL) {
-    return DDS::RETCODE_ERROR;
-  }
+  DDS::ReturnCode_t rc = DDS::RETCODE_OK;
 
   std::thread thr([&]() {
+    const ACE_Time_Value period(1, 0);
+    tms::Heartbeat hb;
+    hb.deviceId(device_id_);
+
+    // Make sure a thread calling stop_heartbeats will get notified.
+    NotifyGuard notify_guard(*this);
+
+    const DDS::InstanceHandle_t instance_handle = hb_dw_->register_instance(hb);
+    if (instance_handle == DDS::HANDLE_NIL) {
+      ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: Handshaking::send_heartbeats: register instance failed\n"));
+      rc = DDS::RETCODE_ERROR;
+      return;
+    }
+
     while (!stop_) {
       hb.sequenceNumber(seq_num_++);
-      const DDS::ReturnCode_t rc = hb_dw_->write(hb, instance_handle);
-      if (rc != DDS::RETCODE_OK) {
+      const DDS::ReturnCode_t ret = hb_dw_->write(hb, instance_handle);
+      if (ret != DDS::RETCODE_OK && ret != DDS::RETCODE_TIMEOUT) {
         ACE_ERROR((LM_WARNING, "(%P|%t) WARNING: Handshaking::send_heartbeats: write Heartbeat failed\n"));
+        rc = ret;
+        break;
       }
       ACE_OS::sleep(period);
     }
   });
 
-  return DDS::RETCODE_OK;
+  thr.detach();
+
+  return rc;
+}
+
+void Handshaking::stop_heartbeats()
+{
+  if (stop_) {
+    return;
+  }
+  stop_ = true;
+
+  // Wait for the spawned thread to finish
+  std::unique_lock<std::mutex> lk(mut_);
+  cond_.wait(lk, [this]{ return done_; });
 }
 
 DDS::ReturnCode_t Handshaking::create_subscribers(
