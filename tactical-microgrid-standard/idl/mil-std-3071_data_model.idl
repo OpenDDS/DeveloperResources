@@ -909,7 +909,7 @@ module tms {
    const uint32 Identity_MINLEN = 1;
    const uint32 Identity_MAXLEN = 32;
    /**
-    * Universally unique identifier for a device, person, platform, or other entity. 
+    * Universally unique identifier for a device, person, platform, or other entity.
     * Minimum length: 1
     * Maximum length: 32
     */
@@ -1141,7 +1141,7 @@ module tms {
 
 
 
-   /** 
+   /**
     * Represent a point in a two-dimensional space.
     */
    @nested
@@ -1171,7 +1171,7 @@ module tms {
 
 
 
-   /** 
+   /**
     * Represent a curve in a two-dimensional space.
     */
    @nested
@@ -1186,7 +1186,7 @@ module tms {
 
 
 
-   /** 
+   /**
     * Specify output variable y as a function of input variable x.
     */
    @nested
@@ -1211,7 +1211,7 @@ module tms {
 
 
 
-   /** 
+   /**
     * Key value for a request that targets all devices in the grid.
     */
    @nested
@@ -1226,7 +1226,7 @@ module tms {
 
 
 
-   /** 
+   /**
     * Local oscillator timestamp, not affected by clock jumps.
     */
    @nested
@@ -1246,7 +1246,7 @@ module tms {
 
 
 
-   /** 
+   /**
     * Design information for thermal management.
     */
    @nested
@@ -1261,7 +1261,7 @@ module tms {
 
 
 
-   /** 
+   /**
     * Provides operating information of the thermal management in this device.
     */
    @nested
@@ -1276,7 +1276,7 @@ module tms {
 
 
 
-   /** 
+   /**
     * Model a synchronous generator, motor, or similar device for simulation and control.  Direct-axis and quadrature-axis (DQ) synchronous machine model based on IEEE 115.
     */
    @nested
@@ -1426,7 +1426,7 @@ module tms {
 
 
 
-   /** 
+   /**
     * Design information for power electronics.
     */
    @nested
@@ -1456,7 +1456,7 @@ module tms {
 
 
 
-   /** 
+   /**
     * Operating state of the power electronics hardware.
     */
    @nested
@@ -1488,7 +1488,7 @@ module tms {
 
 
 
-   /** 
+   /**
     * Power measurement for direct current devices.
     */
    @nested
@@ -1547,7 +1547,7 @@ module tms {
 
 
 
-   /** 
+   /**
     * Operating state of the energy storage device or unit.
     */
    @nested
@@ -1585,21 +1585,21 @@ module tms {
        float maxTemperature;
 
        /**
-        * Cumulative time that the energy storage has been actively charging or discharging.  Usually displayed as an hour meter. 
+        * Cumulative time that the energy storage has been actively charging or discharging.  Usually displayed as an hour meter.
         * units: second (s)
         */
        @unit("s")
        float runTime;
 
        /**
-        * Information on each storage cell. 
+        * Information on each storage cell.
         */
        StorageCellStateSequence storageCells;
    }; // end struct EnergyStorageState
 
 
 
-   /** 
+   /**
     * Design information for an energy storage device or unit.
     */
    @nested
@@ -1663,7 +1663,7 @@ module tms {
 
 
 
-   /** 
+   /**
     * Design information for a power generator.
     */
    @nested
@@ -1697,7 +1697,7 @@ module tms {
 
 
 
-   /** 
+   /**
     * Report information on AVR and generator condition.
     */
    @nested
@@ -1721,7 +1721,7 @@ module tms {
 
 
 
-   /** 
+   /**
     * Design information for an engine, such as on a generator set (genset).
     */
    @nested
@@ -1823,7 +1823,7 @@ module tms {
 
 
 
-   /** 
+   /**
     * Report key parameters about the state of the engine.
     */
    @nested
@@ -1895,7 +1895,7 @@ module tms {
 
 
 
-   /** 
+   /**
     * Design information for the fuel associated with a power device.
     */
    @nested
@@ -1923,7 +1923,7 @@ module tms {
 
 
 
-   /** 
+   /**
     * Provides dynamic state information regarding fuel levels and pumps.
     */
    @nested
@@ -1945,7 +1945,7 @@ module tms {
 
 
 
-   /** 
+   /**
     * Design information for a device capable of load sharing.  Expected step response when directly connected to a load.  Both acceptance and rejection responses start from steady state and stop when the response settles.  The load step occurs at t=0, and the step size should be at least 50% of the rated power capacity of the load sharing device.
     */
    @nested
@@ -2049,7 +2049,7 @@ module tms {
 
 
 
-   /** 
+   /**
     * Design information for a device capable of load sharing.
     */
    @nested
@@ -2143,7 +2143,7 @@ module tms {
 
 
 
-   /** 
+   /**
     * Design information for power storage devices.
     */
    @nested
@@ -2175,7 +2175,7 @@ module tms {
 
 
 
-   /** 
+   /**
     * Design information for control hardware.
     */
    @nested
@@ -2216,9 +2216,9 @@ module tms {
 
 
 
-   /** 
+   /**
     * Operating state for the control hardware in this device.
-    * Topic Usage: 
+    * Topic Usage:
     * - TOPIC_CONTROL_HARDWARE_UPDATE
     */
    @topic
@@ -2297,7 +2297,7 @@ module tms {
 
 
 
-   /** 
+   /**
     * Design information for power hardware. Power hardware refers to accessories or supporting components of a power device, such as an engine, control boards, etc.
     */
    @nested
@@ -2349,9 +2349,9 @@ module tms {
 
 
 
-   /** 
+   /**
     * Operating state of the power hardware.
-    * Topic Usage: 
+    * Topic Usage:
     * - TOPIC_POWER_HARDWARE_UPDATE
     */
    @topic
@@ -2370,7 +2370,7 @@ module tms {
        ClockMonotonic timestamp;
 
        /**
-        * Operating state of the engine if present. 
+        * Operating state of the engine if present.
         */
        @optional
        EngineState engine;
@@ -2408,7 +2408,7 @@ module tms {
 
 
 
-   /** 
+   /**
     * Represent an individual alarm or fault condition originating from the indicated sensor or subsystem, as identified by the portNumber and suspectParameter.
     */
    @nested
@@ -2476,7 +2476,7 @@ module tms {
 
 
 
-   /** 
+   /**
     * Clock synchronized to a global time base.
     */
    @nested
@@ -2518,9 +2518,9 @@ module tms {
 
 
 
-   /** 
+   /**
     * Simultaneous measurement of both system clocks, and synchronization status for .
-    * Topic Usage: 
+    * Topic Usage:
     * - TOPIC_CLOCK_STATE
     */
    @topic
@@ -2567,7 +2567,7 @@ module tms {
 
 
 
-   /** 
+   /**
     * Key value for a request that targets one power device configuration.
     */
    @nested
@@ -2592,7 +2592,7 @@ module tms {
 
 
 
-   /** 
+   /**
     * Key value for a request that targets one device.
     */
    @nested
@@ -2612,7 +2612,7 @@ module tms {
 
 
 
-   /** 
+   /**
     * Identify a power port (often remote)
     */
    @nested
@@ -2632,7 +2632,7 @@ module tms {
 
 
 
-   /** 
+   /**
     * Design information for power connectors.
     */
    @nested
@@ -2657,7 +2657,7 @@ module tms {
 
 
 
-   /** 
+   /**
     * Design information for power switches.
     */
    @nested
@@ -2679,7 +2679,7 @@ module tms {
 
 
 
-   /** 
+   /**
     * Design information for the connector, rated circuit, and switching capabilities of a power port.
     */
    @nested
@@ -2815,7 +2815,7 @@ module tms {
 
 
 
-   /** 
+   /**
     * Describe the present state and most recent transition of a power switch
     */
    @nested
@@ -2856,7 +2856,7 @@ module tms {
 
 
 
-   /** 
+   /**
     * Describe the state of a grounding circuit.
     */
    @nested
@@ -2898,9 +2898,9 @@ module tms {
 
 
 
-   /** 
+   /**
     * Report the present state of all the ground circuits in a device.
-    * Topic Usage: 
+    * Topic Usage:
     * - TOPIC_DEVICE_GROUNDING_STATE
     */
    @topic
@@ -2921,7 +2921,7 @@ module tms {
 
 
 
-   /** 
+   /**
     * Design information describing a grounding circuit in a device.
     */
    @nested
@@ -2969,7 +2969,7 @@ module tms {
    /** Maximum number of parameters that a device may contain. */
    const uint32 MAX_PARAMETERS = 128;
 
-   /** 
+   /**
     * Describe the allowed values for a parameter.
     */
    @nested
@@ -3020,7 +3020,7 @@ module tms {
 
 
 
-   /** 
+   /**
     * Provide the value for a parameter.
     */
    @nested
@@ -3060,7 +3060,7 @@ module tms {
 
 
 
-   /** 
+   /**
     * Describe the state of a power port.
     */
    @nested
@@ -3108,7 +3108,7 @@ module tms {
 
 
 
-   /** 
+   /**
     * Specifies the operator priority for a single device or power port.
     */
    @nested
@@ -3128,7 +3128,7 @@ module tms {
 
 
 
-   /** 
+   /**
     * Specify the device power port level operator intent.
     */
    @nested
@@ -3153,7 +3153,7 @@ module tms {
 
 
 
-   /** 
+   /**
     * Identify a connection between power ports
     */
    @nested
@@ -3174,7 +3174,7 @@ module tms {
 
 
 
-   /** 
+   /**
     * Design information for power sources.
     */
    @nested
@@ -3199,9 +3199,9 @@ module tms {
 
 
 
-   /** 
+   /**
     * Active diagnostic messages.
-    * Topic Usage: 
+    * Topic Usage:
     * - TOPIC_ACTIVE_DIAGNOSTIC_STATE
     */
    @topic
@@ -3227,9 +3227,9 @@ module tms {
 
 
 
-   /** 
+   /**
     * Report the result of a request that required authorization.
-    * Topic Usage: 
+    * Topic Usage:
     * - TOPIC_AUTHORIZATION_TO_ENERGIZE_RESULT
     */
    @topic
@@ -3302,9 +3302,9 @@ module tms {
 
 
 
-   /** 
+   /**
     * Request authorization for a manual black start command.
-    * Topic Usage: 
+    * Topic Usage:
     * - TOPIC_AUTHORIZATION_TO_ENERGIZE_REQUEST
     */
    @topic
@@ -3340,9 +3340,9 @@ module tms {
 
 
 
-   /** 
+   /**
     * Provide the operator's response to an authorization request.
-    * Topic Usage: 
+    * Topic Usage:
     * - TOPIC_AUTHORIZATION_TO_ENERGIZE_REPLY
     */
    @topic
@@ -3404,9 +3404,9 @@ module tms {
 
 
 
-   /** 
+   /**
     * Change the nickname associated with a Identity.
-    * Topic Usage: 
+    * Topic Usage:
     * - TOPIC_IDENTITY_NICKNAME_REQUEST
     */
    @topic
@@ -3432,9 +3432,9 @@ module tms {
 
 
 
-   /** 
+   /**
     * Small image representing a device.
-    * Topic Usage: 
+    * Topic Usage:
     * - TOPIC_DEVICE_ICON
     */
    @topic
@@ -3460,7 +3460,7 @@ module tms {
 
 
 
-   /** 
+   /**
     * Specify the device level operator intent.
     */
    @nested
@@ -3495,9 +3495,9 @@ module tms {
 
 
 
-   /** 
+   /**
     * Request for a control parameter value.
-    * Topic Usage: 
+    * Topic Usage:
     * - TOPIC_CONTROL_PARAMETER_REQUEST
     */
    @topic
@@ -3523,9 +3523,9 @@ module tms {
 
 
 
-   /** 
+   /**
     * State of control parameters.
-    * Topic Usage: 
+    * Topic Usage:
     * - TOPIC_CONTROL_PARAMETER_STATE
     */
    @topic
@@ -3551,9 +3551,9 @@ module tms {
 
 
 
-   /** 
+   /**
     * Report the present state of all the power ports in a device.
-    * Topic Usage: 
+    * Topic Usage:
     * - TOPIC_POWER_PORT_STATE
     */
    @topic
@@ -3574,7 +3574,7 @@ module tms {
 
 
 
-   /** 
+   /**
     * Design information for the distribution device role.
     */
    @nested
@@ -3589,9 +3589,9 @@ module tms {
 
 
 
-   /** 
+   /**
     * Provide a short, human-readable name for a Identity.
-    * Topic Usage: 
+    * Topic Usage:
     * - TOPIC_IDENTITY_NICKNAME_STATE
     */
    @topic
@@ -3618,9 +3618,9 @@ module tms {
 
 
 
-   /** 
+   /**
     * Remotely transition a grounding circuit switch.
-    * Topic Usage: 
+    * Topic Usage:
     * - TOPIC_GROUNDING_CIRCUIT_REQUEST
     */
    @topic
@@ -3656,9 +3656,9 @@ module tms {
 
 
 
-   /** 
+   /**
     * Periodic indication of device availability.
-    * Topic Usage: 
+    * Topic Usage:
     * - TOPIC_HEARTBEAT
     */
    @topic
@@ -3679,7 +3679,7 @@ module tms {
 
 
 
-   /** 
+   /**
     * Design information for load devices.
     */
    @nested
@@ -3708,9 +3708,9 @@ module tms {
 
 
 
-   /** 
+   /**
     * Latest values for device metric parameters.
-    * Topic Usage: 
+    * Topic Usage:
     * - TOPIC_METRIC_PARAMETER_STATE
     */
    @topic
@@ -3731,7 +3731,7 @@ module tms {
 
 
 
-   /** 
+   /**
     * Specify the microgrid level load sharing intent.
     */
    @nested
@@ -3774,7 +3774,7 @@ module tms {
 
 
 
-   /** 
+   /**
     * Specify the storage device intent.
     */
    @nested
@@ -3812,7 +3812,7 @@ module tms {
 
 
 
-   /** 
+   /**
     * Specify the microgrid level operator intent.
     */
    @nested
@@ -3848,7 +3848,7 @@ module tms {
 
 
 
-   /** 
+   /**
     * Specifies a complete set of operator directives used by the MC to control the microgrid.
     */
    @nested
@@ -3883,9 +3883,9 @@ module tms {
 
 
 
-   /** 
+   /**
     * Used to request activation of an OperatorIntent.
-    * Topic Usage: 
+    * Topic Usage:
     * - TOPIC_OPERATOR_INTENT_REQUEST
     */
    @topic
@@ -3911,9 +3911,9 @@ module tms {
 
 
 
-   /** 
+   /**
     * The active OperatorIntent.
-    * Topic Usage: 
+    * Topic Usage:
     * - TOPIC_OPERATOR_INTENT_STATE
     */
    @topic
@@ -3934,7 +3934,7 @@ module tms {
 
 
 
-   /** 
+   /**
     * Key value for a request that targets one power port of a device.
     */
    @nested
@@ -3964,7 +3964,7 @@ module tms {
 
 
 
-   /** 
+   /**
     * Identify links between devices
     */
    @nested
@@ -4005,9 +4005,9 @@ module tms {
 
 
 
-   /** 
+   /**
     * List all power connections known to a device or user
-    * Topic Usage: 
+    * Topic Usage:
     * - TOPIC_OPERATOR_POWER_CONNECTION_STATE
     * - TOPIC_DISCOVERED_POWER_CONNECTION_STATE
     * - TOPIC_MICROGRID_POWER_CONNECTION_STATE
@@ -4030,7 +4030,7 @@ module tms {
 
 
 
-   /** 
+   /**
     * The associated request to close a switch should wait until all of these conditions are met.  The MC may use these to override any built-in device defaults, providing looser bounds to recover from abnormal conditions or tighter bounds to prevent a large transient.  These conditions do not modify any built-in protections such as a synchronization check.  Requires PSF_SWITCH_CONDITIONS in PowerSwitchInfo.features
     */
    @nested
@@ -4068,9 +4068,9 @@ module tms {
 
 
 
-   /** 
+   /**
     * Remotely transition a power port switch.
-    * Topic Usage: 
+    * Topic Usage:
     * - TOPIC_POWER_SWITCH_REQUEST
     */
    @topic
@@ -4102,7 +4102,7 @@ module tms {
 
 
 
-   /** 
+   /**
     * Topic information. Defines which conditional and optional topics are supported by this device.
     */
    @nested
@@ -4138,7 +4138,7 @@ module tms {
 
 
 
-   /** 
+   /**
     * Design information for active conversion load sharing devices.
     */
    @nested
@@ -4153,7 +4153,7 @@ module tms {
 
 
 
-   /** 
+   /**
     * Design information for conversion taps.
     */
    @nested
@@ -4188,7 +4188,7 @@ module tms {
 
 
 
-   /** 
+   /**
     * Design information for power port conversation devices.
     */
    @nested
@@ -4223,7 +4223,7 @@ module tms {
 
 
 
-   /** 
+   /**
     * Design information for a passive energy converter.
     */
    @nested
@@ -4238,7 +4238,7 @@ module tms {
 
 
 
-   /** 
+   /**
     * Design information for power conversion devices. Each power port must be listed once in either activeConversion or passiveConversion but not both.
     */
    @nested
@@ -4265,7 +4265,7 @@ module tms {
 
 
 
-   /** 
+   /**
     * Information on how a product is marketed.
     */
    @nested
@@ -4316,7 +4316,7 @@ module tms {
 
 
 
-   /** 
+   /**
     * Design information for a microgrid dashboard.
     */
    @nested
@@ -4331,7 +4331,7 @@ module tms {
 
 
 
-   /** 
+   /**
     * Design information for a microgrid controller.
     */
    @nested
@@ -4357,7 +4357,7 @@ module tms {
 
 
 
-   /** 
+   /**
     * Indicate the type of success or failure of a request.
     */
    @nested
@@ -4377,9 +4377,9 @@ module tms {
 
 
 
-   /** 
+   /**
     * Respond whether a request was accepted for execution or rejected.  Supported requestId types include GridRequest, DeviceRequest, DeviceConfigRequest, and PowerPortConfigRequest.
-    * Topic Usage: 
+    * Topic Usage:
     * - TOPIC_REPLY
     */
    @topic
@@ -4421,9 +4421,9 @@ module tms {
 
 
 
-   /** 
+   /**
     * Change the level of a SRC or STOR device.
-    * Topic Usage: 
+    * Topic Usage:
     * - TOPIC_ENERGY_START_STOP_REQUEST
     */
    @topic
@@ -4460,9 +4460,9 @@ module tms {
 
 
 
-   /** 
+   /**
     * Report the operating level of a SRC and STOR device, including the progress of any transitions.
-    * Topic Usage: 
+    * Topic Usage:
     * - TOPIC_ENERGY_START_STOP_STATE
     */
    @topic
@@ -4523,9 +4523,9 @@ module tms {
 
 
 
-   /** 
+   /**
     * Identify which :MC currently has write access to the active configuration.
-    * Topic Usage: 
+    * Topic Usage:
     * - TOPIC_ACTIVE_MICROGRID_CONTROLLER_STATE
     */
    @topic
@@ -4559,7 +4559,7 @@ module tms {
 
 
 
-      /** 
+      /**
        * Measurements for a single AC power line.
        */
       @nested
@@ -4629,7 +4629,7 @@ module tms {
 
 
 
-      /** 
+      /**
        * Power measurement for an alternating current port.
        */
       @nested
@@ -4680,9 +4680,9 @@ module tms {
 
 
 
-      /** 
+      /**
        * Publish measurements for all alternating current (AC) power ports on a device.
-       * Topic Usage: 
+       * Topic Usage:
        * - TOPIC_AC_MEASUREMENT_UPDATE
        * - TOPIC_AC_SUMMARY_MEASUREMENT_UPDATE
        */
@@ -4714,7 +4714,7 @@ module tms {
 
 
 
-      /** 
+      /**
        * Load sharing parameters for AC power ports.
        */
       @nested
@@ -4809,9 +4809,9 @@ module tms {
 
 
 
-      /** 
+      /**
        * Sets load sharing parameters for AC power ports.
-       * Topic Usage: 
+       * Topic Usage:
        * - TOPIC_AC_LOAD_SHARING_REQUEST
        */
       @topic
@@ -4837,9 +4837,9 @@ module tms {
 
 
 
-      /** 
+      /**
        * Report the present value of the load sharing parameters for alternating current devices.
-       * Topic Usage: 
+       * Topic Usage:
        * - TOPIC_AC_LOAD_SHARING_STATE
        */
       @topic
@@ -4868,7 +4868,7 @@ module tms {
    module dc {
 
 
-      /** 
+      /**
        * Measurements for a single DC power line.
        */
       @nested
@@ -4909,7 +4909,7 @@ module tms {
 
 
 
-      /** 
+      /**
        * Power measurement for a direct current power port.
        */
       @nested
@@ -4946,9 +4946,9 @@ module tms {
 
 
 
-      /** 
+      /**
        * Publish measurements for all direct current (DC) power ports on a device.
-       * Topic Usage: 
+       * Topic Usage:
        * - TOPIC_DC_MEASUREMENT_UPDATE
        * - TOPIC_DC_SUMMARY_MEASUREMENT_UPDATE
        */
@@ -4980,7 +4980,7 @@ module tms {
 
 
 
-      /** 
+      /**
        * Load sharing parameters for DC power ports.
        */
       @nested
@@ -5040,9 +5040,9 @@ module tms {
 
 
 
-      /** 
+      /**
        * Sets load sharing parameters for DC power ports.
-       * Topic Usage: 
+       * Topic Usage:
        * - TOPIC_DC_LOAD_SHARING_REQUEST
        */
       @topic
@@ -5068,9 +5068,9 @@ module tms {
 
 
 
-      /** 
+      /**
        * Report the present value of the load sharing parameters for direct current devices.
-       * Topic Usage: 
+       * Topic Usage:
        * - TOPIC_DC_LOAD_SHARING_STATE
        */
       @topic
@@ -5097,9 +5097,9 @@ module tms {
    }; //end module dc
 
 
-   /** 
+   /**
     * Report the state of a storage device.
-    * Topic Usage: 
+    * Topic Usage:
     * - TOPIC_STORAGE_UPDATE
     */
    @topic
@@ -5113,14 +5113,14 @@ module tms {
        Identity deviceId;
 
        /**
-        * Measurement indicating the DC bus voltage between the energy storage and power converter. 
+        * Measurement indicating the DC bus voltage between the energy storage and power converter.
         * units: volt (V)
         */
        @unit("V")
        float internalVoltage;
 
        /**
-        * Estimate of present charge as a fraction of rated capacity.  0=empty and 1=full. 
+        * Estimate of present charge as a fraction of rated capacity.  0=empty and 1=full.
         * Change History:
         *  1) Version: 2.0.1, Change: modify, Interoperability: No-xtypes
         *     Made the field optional.
@@ -5137,35 +5137,35 @@ module tms {
        float availableEnergy;
 
        /**
-        * Estimate of how long the energy storage can operate at the present power rate. 
+        * Estimate of how long the energy storage can operate at the present power rate.
         * units: second (s)
         */
        @unit("s")
        float holdTime;
 
        /**
-        * Estimate of how long the energy storage can charge at different power levels, without exceeding the highStateOfCharge. 
+        * Estimate of how long the energy storage can charge at different power levels, without exceeding the highStateOfCharge.
         * units: watt, second (W, s)
         */
        @unit("W, s")
        Curve2D chargeTime;
 
        /**
-        * Estimate of how long the energy storage can discharge at different power levels, without exceeding the lowStateOfCharge. 
+        * Estimate of how long the energy storage can discharge at different power levels, without exceeding the lowStateOfCharge.
         * units: watt, second (W, s)
         */
        @unit("W, s")
        Curve2D dischargeTime;
 
        /**
-        * Estimate of how long the energy storage can charge at different power levels, with battle short enabled.  Must be greater than or equal to the chargeTime. 
+        * Estimate of how long the energy storage can charge at different power levels, with battle short enabled.  Must be greater than or equal to the chargeTime.
         * units: watt, second (W, s)
         */
        @unit("W, s")
        Curve2D maxChargeTime;
 
        /**
-        * Estimate of how long the energy storage can discharge at different power levels, with battle short enabled.  Must be greater than or equal to the dischargeTime. 
+        * Estimate of how long the energy storage can discharge at different power levels, with battle short enabled.  Must be greater than or equal to the dischargeTime.
         * units: watt, second (W, s)
         */
        @unit("W, s")
@@ -5198,7 +5198,7 @@ module tms {
 
 
 
-   /** 
+   /**
     * Design information for control services on microgrid controllers and dashboards.
     */
    @nested
@@ -5220,7 +5220,7 @@ module tms {
 
 
 
-   /** 
+   /**
     * Design information for a power device which is any TMS device role that generates, distributes or consumes power. SRC, STOR, LOAD, DIST and CONV.
     */
    @nested
@@ -5270,9 +5270,9 @@ module tms {
 
 
 
-   /** 
+   /**
     * Design information for the device.
-    * Topic Usage: 
+    * Topic Usage:
     * - TOPIC_DEVICE_INFO
     */
    @topic
