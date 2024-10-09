@@ -17,7 +17,7 @@ void ControllerSelector::got_heartbeat(const tms::Heartbeat& hb)
       if (this->get_timer<MissedController>()->active()) {
         reschedule<MissedController>();
       } else {
-        // MissedController was tiggered, so we need to schedule it again.
+        // MissedController was triggered, so we need to schedule it again.
         schedule_once(MissedController{}, missed_controller_delay);
       }
     }
@@ -96,26 +96,13 @@ DDS::ReturnCode_t PowerDevice::init(DDS::DomainId_t domain, int argc, char* argv
   }
 
   rc = create_subscribers(
-    [&](const tms::DeviceInfo& di, const DDS::SampleInfo& si) {
-      got_device_info(di, si);
-    },
-    [&](const tms::Heartbeat& hb, const DDS::SampleInfo& si) {
-      got_heartbeat(hb, si);
-    }
-  );
+    [&](const auto& di, const auto& si) { got_device_info(di, si); },
+    [&](const auto& hb, const auto& si) { got_heartbeat(hb, si); });
   if (rc != DDS::RETCODE_OK) {
     return rc;
   }
 
   rc = create_publishers();
-  if (rc != DDS::RETCODE_OK) {
-    return rc;
-  }
-
-  tms::DeviceInfo device_info;
-  device_info.deviceId(device_id_);
-  device_info.role(tms::DeviceRole::ROLE_SOURCE);
-  rc = send_device_info(device_info);
   if (rc != DDS::RETCODE_OK) {
     return rc;
   }

@@ -42,6 +42,13 @@ public:
     return participant_;
   }
 
+  virtual tms::DeviceInfo get_device_info() const
+  {
+    tms::DeviceInfo device_info;
+    device_info.deviceId(device_id_);
+    return device_info;
+  }
+
 protected:
   const tms::Identity device_id_;
 

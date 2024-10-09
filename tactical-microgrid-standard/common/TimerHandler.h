@@ -12,6 +12,7 @@
 #include <type_traits>
 #include <memory>
 #include <stdexcept>
+#include <typeinfo>
 
 using Sec = std::chrono::seconds;
 using Clock = std::chrono::system_clock;
@@ -39,6 +40,15 @@ struct Timer {
   {
     return id != null_timer_id;
   }
+
+  std::string display_name() const
+  {
+    std::string rv = std::string("Timer<\"") + typeid(EventType).name() + "\">";
+    if (name.size()) {
+      rv += "\"" + name + "\"";
+    }
+    return rv;
+  }
 };
 
 template <typename EventType>
@@ -59,8 +69,8 @@ private:
 };
 
 /**
- * Wrapper around ACE_Event_Handler to make using a fixed set of timers easier
- * to use.
+ * Wrapper around ACE_Event_Handler to make using a set of timers easier to
+ * use.
  */
 template <typename... EventTypes>
 class TimerHandler : public ACE_Event_Handler, protected TimerHolder<EventTypes>...
@@ -79,12 +89,6 @@ public:
   }
 
   template <typename EventType>
-  typename Timer<EventType>::MapPtr get_timers()
-  {
-    return static_cast<typename Timer<EventType>::MapPtr>(*this);
-  }
-
-  template <typename EventType>
   typename Timer<EventType>::Ptr get_timer(const std::string& name = "")
   {
     auto& timers = *get_timers<EventType>();
@@ -96,14 +100,6 @@ public:
       return timer;
     }
     return it->second;
-  }
-
-  template <typename EventType>
-  void assert_inactive(typename Timer<EventType>::Ptr timer)
-  {
-    if (timer->active()) {
-      throw std::runtime_error("Can't schedule, timer already active!");
-    }
   }
 
   template <typename EventType>
@@ -123,6 +119,7 @@ public:
     Guard g(lock_);
     auto timer = this->get_timer<EventType>(name);
     assert_inactive<EventType>(timer);
+    timer->name = name;
     timer->arg = arg;
     timer->period = period;
     timer->delay = delay;
@@ -130,7 +127,7 @@ public:
   }
 
   template <typename EventType>
-  void schedule_once(const std::string& name , EventType arg, Sec delay)
+  void schedule_once(const std::string& name, EventType arg, Sec delay)
   {
     schedule(name, arg, Sec(0), delay);
   }
@@ -148,13 +145,6 @@ public:
   }
 
   template <typename EventType>
-  void timer_wont_run(typename Timer<EventType>::Ptr timer)
-  {
-    active_timers_.erase(timer->id);
-    timer->id = null_timer_id;
-  }
-
-  template <typename EventType>
   void cancel(typename Timer<EventType>::Ptr timer)
   {
     if (!timer->active()) {
@@ -169,22 +159,6 @@ public:
   {
     Guard g(lock_);
     cancel<EventType>(this->get_timer<EventType>(name));
-  }
-
-  template <typename EventType>
-  void reschedule(const std::string& name, EventType arg)
-  {
-    Guard g(lock_);
-    auto timer = this->get_timer<EventType>(name);
-    cancel<EventType>(timer);
-    timer->arg = arg;
-    schedule(name, timer);
-  }
-
-  template <typename EventType>
-  void reschedule(EventType arg)
-  {
-    reschedule("", arg);
   }
 
   template <typename EventType>
@@ -208,17 +182,6 @@ public:
     active_timers_.clear();
   }
 
-  int end_event_loop(bool yes = true)
-  {
-    if (yes) {
-      reactor_->end_reactor_event_loop();
-      return -1;
-    }
-    return 0;
-  }
-
-  virtual void any_timer_fired(AnyTimer timer) = 0;
-
   int handle_timeout(const ACE_Time_Value&, const void* arg)
   {
     Guard g(lock_);
@@ -239,7 +202,39 @@ protected:
   mutable Mutex lock_;
   ACE_Reactor* const reactor_;
 
+  int end_event_loop(bool yes = true)
+  {
+    if (yes) {
+      reactor_->end_reactor_event_loop();
+      return -1;
+    }
+    return 0;
+  }
+
+  virtual void any_timer_fired(AnyTimer timer) = 0;
+
 private:
+  template <typename EventType>
+  typename Timer<EventType>::MapPtr get_timers()
+  {
+    return static_cast<typename Timer<EventType>::MapPtr>(*this);
+  }
+
+  template <typename EventType>
+  void assert_inactive(typename Timer<EventType>::Ptr timer)
+  {
+    if (timer->active()) {
+      throw std::runtime_error("Can't schedule " + timer->display_name() + ", already active!");
+    }
+  }
+
+  template <typename EventType>
+  void timer_wont_run(typename Timer<EventType>::Ptr timer)
+  {
+    active_timers_.erase(timer->id);
+    timer->id = null_timer_id;
+  }
+
   std::map<TimerId, AnyTimer> active_timers_;
 };
 

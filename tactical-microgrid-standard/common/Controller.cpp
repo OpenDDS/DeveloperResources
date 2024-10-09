@@ -8,26 +8,13 @@ DDS::ReturnCode_t Controller::init(DDS::DomainId_t domain, int argc, char* argv[
   }
 
   rc = create_subscribers(
-    [&](const tms::DeviceInfo& di, const DDS::SampleInfo& si) {
-      got_device_info(di, si);
-    },
-    [&](const tms::Heartbeat& hb, const DDS::SampleInfo& si) {
-      got_heartbeat(hb, si);
-    }
-  );
+    [&](const auto& di, const auto& si) { got_device_info(di, si); },
+    [&](const auto& hb, const auto& si) { got_heartbeat(hb, si); });
   if (rc != DDS::RETCODE_OK) {
     return rc;
   }
 
   rc = create_publishers();
-  if (rc != DDS::RETCODE_OK) {
-    return rc;
-  }
-
-  tms::DeviceInfo device_info;
-  device_info.deviceId(device_id_);
-  device_info.role(tms::DeviceRole::ROLE_MICROGRID_CONTROLLER);
-  rc = send_device_info(device_info);
   if (rc != DDS::RETCODE_OK) {
     return rc;
   }
