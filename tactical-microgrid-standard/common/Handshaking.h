@@ -1,5 +1,5 @@
-#ifndef HANDSHAKING
-#define HANDSHAKING
+#ifndef HANDSHAKING_H
+#define HANDSHAKING_H
 
 #include "idl/mil-std-3071_data_modelTypeSupportImpl.h"
 
@@ -80,4 +80,4 @@ private:
   bool done_;
 };
 
-#endif // HANDSHAKING
+#endif // HANDSHAKING_H

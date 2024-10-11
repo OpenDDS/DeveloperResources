@@ -1,0 +1,23 @@
+#include "mil-std-3071_data_model.idl"
+
+module cli {
+
+  const string TOPIC_POWER_DEVICES_REQUEST = "Power Devices Request";
+  const string TOPIC_POWER_DEVICES_REPLY = "Power Devices Reply";
+
+  @topic
+  @extensibility(FINAL)
+  struct PowerDevicesRequest {
+    tms::Identity mc_id;
+  };
+
+  typedef sequence<tms::DeviceInfo> DeviceInfoSeq;
+
+  @topic
+  @extensibility(FINAL)
+  struct PowerDevicesReply {
+    tms::Identity mc_id;
+    DeviceInfoSeq devices;
+  };
+
+};

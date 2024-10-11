@@ -1,10 +1,17 @@
-project(*Controller): dcpsexe, opendds_uses_cxx17 {
+project(*Controller): dcpsexe {
   exename = controller
   includes += ..
   libpaths += ../idl ../common ../qos
   libs += tms Handshaking Qos
 
+  specific (gnuace) {
+    compile_flags -= -std=c++11
+    compile_flags += -std=c++17
+  }
+
   Source_Files {
+    main.cpp
     Controller.cpp
+    CLI.cpp
   }
 }

@@ -213,7 +213,7 @@ DDS::ReturnCode_t Handshaking::create_subscribers(
                                                             ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
   if (!sub) {
     ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: Handshaking::create_subscribers: create_subscriber failed\n"));
-    return DDS::RETCODE_OK;
+    return DDS::RETCODE_ERROR;
   }
 
   DDS::DataReaderListener_var di_listener(new DeviceInfoDataReaderListenerImpl(di_cb));

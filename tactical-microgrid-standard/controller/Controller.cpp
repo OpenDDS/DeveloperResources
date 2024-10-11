@@ -1,6 +1,6 @@
 #include "Controller.h"
 
-DDS::ReturnCode_t Controller::run(DDS::DomainId_t domain_id, int argc = 0, char* argv[] = nullptr)
+DDS::ReturnCode_t Controller::run(DDS::DomainId_t domain_id, int argc, char* argv[])
 {
   DDS::ReturnCode_t rc = join_domain(domain_id, argc, argv);
   if (rc != DDS::RETCODE_OK) {
@@ -44,7 +44,7 @@ tms::Identity Controller::id() const
   return device_id_;
 }
 
-PowerDevices Controller::power_devices() const
+Controller::PowerDevices Controller::power_devices() const
 {
   std::lock_guard<std::mutex> guard(mut_);
   return power_devices_;
@@ -56,7 +56,7 @@ void Controller::device_info_cb(const tms::DeviceInfo& di, const DDS::SampleInfo
     return;
   }
 
-  ACE_DEBUG((LM_DEBUG, "(%P|%t) DEBUG: device_info_cb: device: \"%C\"\n", di.deviceId().c_str()));
+  ACE_DEBUG((LM_DEBUG, "(%P|%t) DEBUG: Controller::device_info_cb: device: \"%C\"\n", di.deviceId().c_str()));
   power_devices_.insert(std::make_pair(di.deviceId(), di));
 }
 
@@ -70,9 +70,9 @@ void Controller::heartbeat_cb(const tms::Heartbeat& hb, const DDS::SampleInfo& s
   const uint32_t seqnum = hb.sequenceNumber();
 
   if (power_devices_.count(id) > 0) {
-    ACE_DEBUG((LM_DEBUG, "(%P|%t) DEBUG: heartbeat_cb: known device: \"%C\", seqnum: %u\n", id.c_str(), seqnum));
+    ACE_DEBUG((LM_DEBUG, "(%P|%t) DEBUG: Controller::heartbeat_cb: known device: \"%C\", seqnum: %u\n", id.c_str(), seqnum));
   } else {
-    ACE_DEBUG((LM_DEBUG, "(%P|%t) DEBUG: heartbeat_cb: new device: \"%C\", seqnum: %u\n", id.c_str(), seqnum));
+    ACE_DEBUG((LM_DEBUG, "(%P|%t) DEBUG: Controller::heartbeat_cb: new device: \"%C\", seqnum: %u\n", id.c_str(), seqnum));
   }
 }
 
