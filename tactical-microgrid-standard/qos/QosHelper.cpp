@@ -236,7 +236,7 @@ void init_datareader_common(DDS::DataReaderQos& qos)
 
 void init_datawriter_common(DDS::DataWriterQos& qos)
 {
-  // durability_service is N/A
+  qos.durability_service = TheServiceParticipant->initial_DurabilityServiceQosPolicy();
   qos.transport_priority = TheServiceParticipant->initial_TransportPriorityQosPolicy();
   qos.lifespan = TheServiceParticipant->initial_LifespanQosPolicy();
   OpenDDS::DCPS::OwnershipStrengthQosPolicyBuilder ownership_strength_builder;

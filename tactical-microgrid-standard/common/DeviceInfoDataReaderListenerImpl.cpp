@@ -21,7 +21,6 @@ void DeviceInfoDataReaderListenerImpl::on_data_available(DDS::DataReader_ptr rea
         ACE_DEBUG((LM_INFO, "(%P|%t) INFO: DeviceInfoDataReaderListenerImpl::on_data_available: received device info\n"));
       }
     } else if (rc == DDS::RETCODE_NO_DATA) {
-      ACE_DEBUG((LM_INFO, "(%P|%t) INFO: DeviceInfoDataReaderListenerImpl::on_data_available: no more samples available\n"));
       break;
     } else {
       ACE_ERROR((LM_WARNING, "(%P|%t) WARNING: DeviceInfoDataReaderListenerImpl::on_data_available: take_next_sample failed (%C)\n",
