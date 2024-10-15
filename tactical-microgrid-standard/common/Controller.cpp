@@ -19,11 +19,6 @@ DDS::ReturnCode_t Controller::init(DDS::DomainId_t domain, int argc, char* argv[
     return rc;
   }
 
-  rc = start_heartbeats();
-  if (rc != DDS::RETCODE_OK) {
-    return rc;
-  }
-
   return DDS::RETCODE_OK;
 }
 

@@ -154,7 +154,12 @@ DDS::ReturnCode_t Handshaking::send_device_info(tms::DeviceInfo device_info)
     return DDS::RETCODE_ERROR;
   }
 
-  return di_dw_->write(device_info, instance_handle);
+  const DDS::ReturnCode_t rc = di_dw_->write(device_info, instance_handle);
+  if (rc != DDS::RETCODE_OK) {
+    return rc;
+  }
+
+  return start_heartbeats();
 }
 
 DDS::ReturnCode_t Handshaking::start_heartbeats()
@@ -164,9 +169,11 @@ DDS::ReturnCode_t Handshaking::start_heartbeats()
     return DDS::RETCODE_ERROR;
   }
 
-  tms::Heartbeat hb;
-  hb.deviceId(device_id_);
-  schedule(hb, heartbeat_period);
+  if (!get_timer<tms::Heartbeat>()->active()) {
+    tms::Heartbeat hb;
+    hb.deviceId(device_id_);
+    schedule(hb, heartbeat_period);
+  }
 
   return DDS::RETCODE_OK;
 }
