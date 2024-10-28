@@ -15,3 +15,9 @@ lib*.dylib
 /idl/mil-std-3071_data_modelTypeSupportImpl.*
 
 /controller/controller
+/controller/cli
+/controller/CLICommandsC.*
+/controller/CLICommandsTypeSupport.idl
+/controller/CLICommandsTypeSupportC.*
+/controller/CLICommandsTypeSupportS.*
+/controller/CLICommandsTypeSupportImpl.*

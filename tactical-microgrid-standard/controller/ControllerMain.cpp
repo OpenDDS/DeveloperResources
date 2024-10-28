@@ -1,5 +1,5 @@
 #include "Controller.h"
-#include "CLI.h"
+#include "CLIServer.h"
 
 int main(int argc, char* argv[])
 {
@@ -23,8 +23,7 @@ int main(int argc, char* argv[])
   Controller controller(mc_id);
   controller.run(domain_id, argc, argv);
 
-  CLI cli(controller);
-  cli.run();
+  CLIServer cli_server(controller);
 
   return 0;
 }

@@ -23,9 +23,9 @@ private:
 
   void stop_device(const OpArgPair& oparg) const;
 
-  void stop_controller() const;
+  void stop_controller();
 
-  void resume_controller() const;
+  void resume_controller();
 
   void terminate() const;
 

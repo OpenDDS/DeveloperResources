@@ -1,4 +1,10 @@
 #include "CLIClient.h"
+#include "PowerDevicesReplyDataReaderListenerImpl.h"
+#include "qos/QosHelper.h"
+
+#include <dds/DCPS/PublisherImpl.h>
+#include <dds/DCPS/SubscriberImpl.h>
+#include <dds/DCPS/Marked_Default_Qos.h>
 
 DDS::ReturnCode_t CLIClient::init(DDS::DomainId_t domain_id, int argc, char* argv[])
 {
@@ -65,7 +71,7 @@ DDS::ReturnCode_t CLIClient::init(DDS::DomainId_t domain_id, int argc, char* arg
 
   // Publish to the TMS OperatorIntentRequest topic
   tms::OperatorIntentRequestTypeSupport_var oir_ts = new tms::OperatorIntentRequestTypeSupportImpl;
-  if (DDS::RETCODE_OK != oir_ts->register_type(participant_.in())) {
+  if (DDS::RETCODE_OK != oir_ts->register_type(participant_.in(), "")) {
     ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIClient::init: register_type OperatorIntentRequest failed\n"));
     return DDS::RETCODE_ERROR;
   }
@@ -77,7 +83,7 @@ DDS::ReturnCode_t CLIClient::init(DDS::DomainId_t domain_id, int argc, char* arg
                                                         0,
                                                         ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
   if (!oir_topic) {
-    ACE_ERROR(("(%P|%t) ERROR: CLIClient::init: create_topic \"\" failed\n", tms::topic::TOPIC_OPERATOR_INTENT_REQUEST.c_str()));
+    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIClient::init: create_topic \"%C\" failed\n", tms::topic::TOPIC_OPERATOR_INTENT_REQUEST.c_str()));
     return DDS::RETCODE_ERROR;
   }
 
@@ -109,7 +115,7 @@ DDS::ReturnCode_t CLIClient::init(DDS::DomainId_t domain_id, int argc, char* arg
 
   // Subscriber to the Power Devices Reply topic
   cli::PowerDevicesReplyTypeSupport_var pdrep_ts = new cli::PowerDevicesReplyTypeSupportImpl;
-  if (DDS::RETCODE_OK != pdrep_ts->register_type(participant_.in())) {
+  if (DDS::RETCODE_OK != pdrep_ts->register_type(participant_.in(), "")) {
     ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIClient::init: register_type PowerDevicesReply failed\n"));
     return DDS::RETCODE_ERROR;
   }
@@ -186,7 +192,7 @@ void CLIClient::run()
   }
 }
 
-CLIClient::OpArgPair CLIClient::parse(const std::string& input) const
+OpArgPair CLIClient::parse(const std::string& input) const
 {
   const std::string whitespace = " \t";
   const size_t first = input.find_first_not_of(whitespace);
@@ -215,7 +221,7 @@ void CLIClient::display_commands() const
   //   the CLI client takes the role of a microgrid dashboard.
   // - Commands L, S, R, T needs a new topic since they are commands for the MC directly
   //   and OperatorIntentRequest topic does not support these commands.
-  std::cout << "\n=== CLI for Microgrid Controller (MC): " << controller_.id() << std::endl;
+  std::cout << "\n=== CLI for Microgrid Controller (MC): " /*<< controller_.id()*/ << std::endl;
   std::cout << "[L/l]ist connected power devices" << std::endl;
   std::cout << "[E/e]nable (start) a power device with Id" << std::endl;
   std::cout << "[D/d]isable (stop) a power device with Id" << std::endl;

@@ -2,6 +2,7 @@
 #define CLI_CLIENT_H
 
 #include "Controller.h"
+#include "CLICommandsTypeSupportImpl.h"
 
 #include <string>
 #include <utility>
@@ -16,7 +17,6 @@ public:
   void run();
 
 private:
-  using OpArgPair = std::pair<std::string, OpenDDS::DCPS::optional<std::string>>;
   OpArgPair parse(const std::string& input) const;
 
   void display_commands() const;

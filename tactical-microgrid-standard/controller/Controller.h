@@ -5,6 +5,8 @@
 
 #include <unordered_map>
 
+using OpArgPair = std::pair<std::string, OpenDDS::DCPS::optional<std::string>>;
+
 class Controller : public Handshaking {
 public:
   Controller(const tms::Identity& id) : Handshaking(id) {}

@@ -8,6 +8,11 @@ CLIServer::CLIServer(Controller& mc)
   init();
 }
 
+void CLIServer::init()
+{
+  // TODO: Init pub and sub for CLI commands
+}
+
 void CLIServer::start_device(const OpArgPair& oparg) const
 {
   // TODO:
@@ -32,7 +37,7 @@ void CLIServer::stop_device(const OpArgPair& oparg) const
   std::cout << "Sending EnergyStartStopRequest to stop device Id: " << device_id << std::endl;
 }
 
-void CLIServer::stop_controller() const
+void CLIServer::stop_controller()
 {
   if (!controller_active_) {
     std::cout << "Controller is already stopped!" << std::endl;
@@ -44,7 +49,7 @@ void CLIServer::stop_controller() const
   std::cout << "Controller stopped!" << std::endl;
 }
 
-void CLIServer::resume_controller() const
+void CLIServer::resume_controller()
 {
   if (controller_active_) {
     std::cout << "Controller is already running!" << std::endl;
