@@ -1,26 +1,31 @@
 #include "CLIClient.h"
-#include "PowerDevicesReplyDataReaderListenerImpl.h"
+//#include "PowerDevicesReplyDataReaderListenerImpl.h"
 #include "qos/QosHelper.h"
 
 #include <dds/DCPS/PublisherImpl.h>
 #include <dds/DCPS/SubscriberImpl.h>
 #include <dds/DCPS/Marked_Default_Qos.h>
 
+#include <cctype>
+
+CLIClient::CLIClient(const tms::Identity& id)
+  : Handshaking(id)
+{}
+
 DDS::ReturnCode_t CLIClient::init(DDS::DomainId_t domain_id, int argc, char* argv[])
 {
-  if (argc != 0) {
-    dpf_ = TheParticipantFactoryWithArgs(argc, argv);
-  } else {
-    dpf_ = TheParticipantFactory;
+  DDS::ReturnCode_t rc = join_domain(domain_id, argc, argv);
+  if (rc != DDS::RETCODE_OK) {
+    return rc;
   }
 
-  participant_ = dpf_->create_participant(domain_id,
-                                          PARTICIPANT_QOS_DEFAULT,
-                                          0,
-                                          OpenDDS::DCPS::DEFAULT_STATUS_MASK);
-  if (!participant_) {
-    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIClient::init: create_participant failed\n"));
-    return DDS::RETCODE_ERROR;
+  // Subscribe to the DeviceInfo and Heartbeat to learn about microgrid controllers
+  // But not publish to these topics.
+  rc = create_subscribers(
+    [&](const tms::DeviceInfo& di, const DDS::SampleInfo& si) { process_device_info(di, si); },
+    [&](const tms::Heartbeat& hb, const DDS::SampleInfo& si) { process_heartbeat(hb, si); });
+  if (rc != DDS::RETCODE_OK) {
+    return rc;
   }
 
   // Publish to the Power Devices Request topic
@@ -63,7 +68,7 @@ DDS::ReturnCode_t CLIClient::init(DDS::DomainId_t domain_id, int argc, char* arg
     return DDS::RETCODE_ERROR;
   }
 
-  pdreq_dw_ = cli::PowerDevicesRequestDataWriter::_narrow(pdreq_dw_base.in());
+  pdreq_dw_ = cli::PowerDevicesRequestDataWriter::_narrow(pdreq_dw_base);
   if (!pdreq_dw_) {
     ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIClient::init: PowerDevicesRequestDataWriter narrow failed\n"));
     return DDS::RETCODE_ERROR;
@@ -107,7 +112,7 @@ DDS::ReturnCode_t CLIClient::init(DDS::DomainId_t domain_id, int argc, char* arg
     return DDS::RETCODE_ERROR;
   }
 
-  oir_dw_ = tms::OperatorIntentRequestDataWriter::_narrow(oir_dw_base.in());
+  oir_dw_ = tms::OperatorIntentRequestDataWriter::_narrow(oir_dw_base);
   if (!oir_dw_) {
     ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIClient::init: OperatorIntentRequestDataWriter narrow failed\n"));
     return DDS::RETCODE_ERROR;
@@ -143,14 +148,20 @@ DDS::ReturnCode_t CLIClient::init(DDS::DomainId_t domain_id, int argc, char* arg
   sub->get_default_datareader_qos(dr_qos);
   dr_qos.reliability.kind = DDS::ReliabilityQosPolicyKind::RELIABLE_RELIABILITY_QOS;
 
-  DDS::DataReaderListener_var pdrep_listener(new PowerDevicesReplyDataReaderListenerImpl);
+  //  DDS::DataReaderListener_var pdrep_listener(new PowerDevicesReplyDataReaderListenerImpl);
   DDS::DataReader_var pdrep_dr_base = sub->create_datareader(pdrep_topic,
                                                              dr_qos,
-                                                             pdrep_listener,
+                                                             0, //pdrep_listener,
                                                              ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
   if (!pdrep_dr_base) {
     ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIClient::init: create_datareader for topic \"%C\" failed\n",
                cli::TOPIC_POWER_DEVICES_REPLY.c_str()));
+    return DDS::RETCODE_ERROR;
+  }
+
+  pdrep_dr_ = cli::PowerDevicesReplyDataReader::_narrow(pdrep_dr_base);
+  if (!pdrep_dr_) {
+    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIClient::init: PowerDevicesReplyDataReader narrow failed\n"));
     return DDS::RETCODE_ERROR;
   }
 
@@ -164,31 +175,41 @@ void CLIClient::run()
   std::string line;
   while (true) {
     std::getline(std::cin, line);
-    const auto op_pair = parse(line);
+    auto op_pair = parse(line);
+    tolower(op_pair.first);
     const std::string& op = op_pair.first;
-    if (op == "L" || op == "l") {
-      // const auto pd = controller_.power_devices();
-      // display_power_devices(pd);
-      send_power_devices_request();
-    } else if (op == "E" || op == "e") {
-      //      start_device(op_pair);
+
+    if (op == "list") {
+      if (curr_controller_.empty()) {
+        // No controller specified yet
+        display_controllers();
+      } else {
+        send_power_devices_request();
+        display_power_devices();
+      }
+    } else if (op == "set") {
+      set_controller(op_pair);
+    } else if (op == "enable") {
       send_start_device_cmd(op_pair);
-    } else if (op == "D" || op == "d") {
-      //      stop_device(op_pair);
+    } else if (op == "disable") {
       send_stop_device_cmd(op_pair);
-    } else if (op == "S" || op == "s") {
-      //      stop_controller();
+    } else if (op == "stop") {
       send_stop_controller_cmd();
-    } else if (op == "R" || op == "r") {
-      //      resume_controller();
+    } else if (op == "resume") {
       send_resume_controller_cmd();
-    } else if (op == "T" || op == "t") {
-      //      terminate();
+    } else if (op == "term") {
       send_terminate_cmd();
     } else {
       std::cout << "Unknown operation entered!\n" << std::endl;
     }
     display_commands();
+  }
+}
+
+void CLIClient::tolower(std::string& s) const
+{
+  for (size_t i = 0; i < s.size(); ++i) {
+    s[i] = static_cast<char>(std::tolower(static_cast<unsigned char>(s[i])));
   }
 }
 
@@ -221,14 +242,19 @@ void CLIClient::display_commands() const
   //   the CLI client takes the role of a microgrid dashboard.
   // - Commands L, S, R, T needs a new topic since they are commands for the MC directly
   //   and OperatorIntentRequest topic does not support these commands.
-  std::cout << "\n=== CLI for Microgrid Controller (MC): " /*<< controller_.id()*/ << std::endl;
-  std::cout << "[L/l]ist connected power devices" << std::endl;
-  std::cout << "[E/e]nable (start) a power device with Id" << std::endl;
-  std::cout << "[D/d]isable (stop) a power device with Id" << std::endl;
-  std::cout << "[S/s]top the MC's heartbeats" << std::endl;
-  std::cout << "[R/r]esume the MC's heartbeats" << std::endl;
-  std::cout << "[T/t]erminate the MC" << std::endl;
-  std::cout << "Enter next operation: ";
+  std::cout << "\n=== Command-Line Interface for Microgrid Controller === " << std::endl;
+  std::cout << "\nTop-level commands:" << std::endl;
+  std::cout << "[list] the connected microgrid controllers." << std::endl;
+  std::cout << "[set] the current microgrid controller. Subsequent commands" << std::endl;
+  std::cout << "      affect this controller until another Set command." << std::endl;
+  std::cout << "\nController-bounded commands:" << std::endl;
+  std::cout << "[list] the connected power devices." << std::endl;
+  std::cout << "[enable] (start) a power device with Id." << std::endl;
+  std::cout << "[disable] (stop) a power device with Id." << std::endl;
+  std::cout << "[stop] the controller's heartbeats." << std::endl;
+  std::cout << "[resume] the controller's heartbeats." << std::endl;
+  std::cout << "[term](inate) the controller." << std::endl;
+  std::cout << "\nEnter next operation: ";
 }
 
 std::string CLIClient::device_role_to_string(tms::DeviceRole role) const
@@ -255,35 +281,144 @@ std::string CLIClient::device_role_to_string(tms::DeviceRole role) const
   }
 }
 
-void CLIClient::display_power_devices(const Controller::PowerDevices& pd) const
+void CLIClient::display_power_devices() const
 {
-  std::cout << "Number of connected power devices: " << pd.size() << std::endl;
-  for (auto it = pd.begin(); it != pd.end(); ++it) {
+  std::cout << "Current Microgrid Controller: " << curr_controller_ << std::endl;
+  std::cout << "Number of Connected Power Devices: " << power_devices_.size() << std::endl;
+  for (auto it = power_devices_.begin(); it != power_devices_.end(); ++it) {
     std::cout << "Device Id: " << it->first <<
       ". Type: " << device_role_to_string(it->second.role()) << std::endl;
   }
 }
 
+void CLIClient::display_controllers() const
+{
+  std::cout << "Connected Microgrid Controllers:" << std::endl;
+  for (auto it = controllers_.begin(); it != controllers_.end(); ++it) {
+    std::cout << "Controller Id: " << *it << std::endl;
+  }
+}
+
+void CLIClient::set_controller(const OpArgPair& op_arg)
+{
+  const auto& arg = op_arg.second;
+  if (!arg.has_value()) {
+    std::cout << "No microgrid controller specified!" << std::endl;
+    return;
+  }
+
+  curr_controller_ = op_arg.second.value();
+  std::cout << "Current microgrid controller set to: " << curr_controller_ << std::endl;
+}
+
 void CLIClient::send_power_devices_request()
 {
+  if (curr_controller_.empty()) {
+    std::cout << "Microgrid controller has not been set!" << std::endl;
+    return;
+  }
+
+  cli::PowerDevicesRequest pd_req;
+  pd_req.mc_id(curr_controller_);
+
+  DDS::ReturnCode_t rc = pdreq_dw_->write(pd_req, DDS::HANDLE_NIL);
+  if (rc != DDS::RETCODE_OK) {
+    ACE_ERROR((LM_WARNING, "(%P|%t) WARNING: CLIClient::send_power_devices_request: "
+               "write to controller \"%C\" failed\n", curr_controller_.c_str()));
+    return;
+  }
+
+  DDS::StringSeq params;
+  params.length(1);
+  params[0] = curr_controller_.c_str();
+  DDS::QueryCondition_var qc = pdrep_dr_->create_querycondition(DDS::NOT_READ_SAMPLE_STATE,
+                                                                DDS::ANY_VIEW_STATE,
+                                                                DDS::ANY_INSTANCE_STATE,
+                                                                "mc_id == %0",
+                                                                params);
+  if (!qc) {
+    ACE_ERROR((LM_WARNING, "(%P|%t) WARNING: CLIClient::send_power_devices_request: "
+               "create_querycondition to receive from controller \"%C\" failed\n",
+               curr_controller_.c_str()));
+    return;
+  }
+
+  cli::PowerDevicesReplySeq data;
+  DDS::SampleInfoSeq info_seq;
+  rc = pdrep_dr_->take(data, info_seq, DDS::LENGTH_UNLIMITED,
+                       DDS::ANY_SAMPLE_STATE, DDS::ANY_VIEW_STATE, DDS::ANY_INSTANCE_STATE);
+  if (rc != DDS::RETCODE_OK) {
+    ACE_ERROR((LM_WARNING, "(%P|%t) WARNING: CLIClient::send_power_devices_request: "
+               "take data failed\n"));
+    return;
+  }
+
+  bool received = false;
+  for (CORBA::ULong i = 0; i < data.length(); ++i) {
+    if (data[i].mc_id() != curr_controller_) {
+      ACE_ERROR((LM_WARNING, "(%P|%t) WARNING: CLIClient::send_power_devices_request: "
+                 "reply expected from controller \"%C\". Received from \"%C\"\n",
+                 curr_controller_.c_str(), data[i].mc_id().c_str()));
+      continue;
+    }
+
+    if (info_seq[i].valid_data) {
+      const cli::DeviceInfoSeq& power_devices = data[i].devices();
+      for (auto it = power_devices.begin(); it != power_devices.end(); ++it) {
+        power_devices_.insert(std::make_pair(it->deviceId(), *it));
+      }
+      received = true;
+      break;
+    } else if (info_seq[i].instance_state == DDS::NOT_ALIVE_DISPOSED_INSTANCE_STATE) {
+      power_devices_.clear();
+      received = true;
+      break;
+    }
+  }
+
+  if (!received) {
+    ACE_DEBUG((LM_DEBUG, "(%P|%t) DEBUG: CLIClient::send_power_devices_request: "
+               "Failed to receive data from current controller\n"));
+  }
 }
 
-void CLIClient::send_start_device_cmd(const OpArgPair& op_arg)
+void CLIClient::send_start_device_cmd(const OpArgPair& op_arg) const
 {
+  // TODO:
 }
 
-void CLIClient::send_stop_device_cmd(const OpArgPair& op_arg)
+void CLIClient::send_stop_device_cmd(const OpArgPair& op_arg) const
 {
+  // TODO:
 }
 
-void CLIClient::send_stop_controller_cmd()
+void CLIClient::send_stop_controller_cmd() const
 {
+  // TODO:
 }
 
-void CLIClient::send_resume_controller_cmd()
+void CLIClient::send_resume_controller_cmd() const
 {
+  // TODO:
 }
 
-void CLIClient::send_terminate_cmd()
+void CLIClient::send_terminate_cmd() const
 {
+  // TODO:
+}
+
+void CLIClient::process_device_info(const tms::DeviceInfo& di, const DDS::SampleInfo& si)
+{
+  if (si.valid_data) {
+    if (di.role() == tms::DeviceRole::ROLE_MICROGRID_CONTROLLER) {
+      controllers_.insert(di.deviceId());
+    }
+  } else if (si.instance_state & DDS::NOT_ALIVE_DISPOSED_INSTANCE_STATE){
+    controllers_.erase(di.deviceId());
+  }
+}
+
+void CLIClient::process_heartbeat(const tms::Heartbeat& hb, const DDS::SampleInfo& si)
+{
+  // TODO: Use heartbeat to detect and delete inactive controller?
 }

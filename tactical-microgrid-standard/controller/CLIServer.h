@@ -1,5 +1,5 @@
-#ifndef CLI_SERVER_H
-#define CLI_SERVER_H
+#ifndef CONTROLLER_CLI_SERVER_H
+#define CONTROLLER_CLI_SERVER_H
 
 #include "Controller.h"
 

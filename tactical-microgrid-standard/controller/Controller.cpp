@@ -44,7 +44,7 @@ tms::Identity Controller::id() const
   return device_id_;
 }
 
-Controller::PowerDevices Controller::power_devices() const
+PowerDevices Controller::power_devices() const
 {
   std::lock_guard<std::mutex> guard(mut_);
   return power_devices_;

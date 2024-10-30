@@ -1,11 +1,8 @@
-#ifndef CONTROLLER_H
-#define CONTROLLER_H
+#ifndef CONTROLLER_CONTROLLER_H
+#define CONTROLLER_CONTROLLER_H
 
+#include "Common.h"
 #include "common/Handshaking.h"
-
-#include <unordered_map>
-
-using OpArgPair = std::pair<std::string, OpenDDS::DCPS::optional<std::string>>;
 
 class Controller : public Handshaking {
 public:
@@ -15,7 +12,6 @@ public:
 
   tms::Identity id() const;
 
-  using PowerDevices = std::unordered_map<tms::Identity, tms::DeviceInfo>;
   PowerDevices power_devices() const;
 
 private:

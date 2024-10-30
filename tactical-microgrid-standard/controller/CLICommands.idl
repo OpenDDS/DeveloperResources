@@ -8,7 +8,7 @@ module cli {
   @topic
   @extensibility(FINAL)
   struct PowerDevicesRequest {
-    tms::Identity mc_id;
+    @key tms::Identity mc_id;
   };
 
   typedef sequence<tms::DeviceInfo> DeviceInfoSeq;
@@ -16,7 +16,7 @@ module cli {
   @topic
   @extensibility(FINAL)
   struct PowerDevicesReply {
-    tms::Identity mc_id;
+    @key tms::Identity mc_id;
     DeviceInfoSeq devices;
   };
 
