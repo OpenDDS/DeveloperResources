@@ -6,8 +6,10 @@
 #include <dds/DCPS/PublisherImpl.h>
 #include <dds/DCPS/SubscriberImpl.h>
 #include <dds/DCPS/Marked_Default_Qos.h>
-
-#include <thread>
+#include <dds/DCPS/DCPS_Utils.h>
+#include <dds/DCPS/transport/framework/TransportRegistry.h>
+#include <dds/DCPS/transport/framework/TransportConfig.h>
+#include <dds/DCPS/transport/framework/TransportInst.h>
 
 Handshaking::~Handshaking()
 {
@@ -21,6 +23,14 @@ Handshaking::~Handshaking()
 
 DDS::ReturnCode_t Handshaking::join_domain(DDS::DomainId_t domain_id, int argc, char* argv[])
 {
+  TheServiceParticipant->set_default_discovery(OpenDDS::DCPS::Discovery::DEFAULT_RTPS);
+  OpenDDS::DCPS::TransportConfig_rch transport_config =
+    TheTransportRegistry->create_config("default_rtps_transport_config");
+  OpenDDS::DCPS::TransportInst_rch transport_inst =
+    TheTransportRegistry->create_inst("default_rtps_transport", "rtps_udp");
+  transport_config->instances_.push_back(transport_inst);
+  TheTransportRegistry->global_config(transport_config);
+
   if (argc != 0) {
     dpf_ = TheParticipantFactoryWithArgs(argc, argv);
   } else {
@@ -38,9 +48,10 @@ DDS::ReturnCode_t Handshaking::join_domain(DDS::DomainId_t domain_id, int argc, 
 
   // Create a topic for the DeviceInfo type
   tms::DeviceInfoTypeSupport_var di_ts = new tms::DeviceInfoTypeSupportImpl();
-  if (DDS::RETCODE_OK != di_ts->register_type(participant_.in(), "")) {
+  DDS::ReturnCode_t rc = di_ts->register_type(participant_.in(), "");
+  if (DDS::RETCODE_OK != rc) {
     ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: Handshaking::join_domain: register_type for DeviceInfo failed\n"));
-    return DDS::RETCODE_ERROR;
+    return rc;
   }
 
   CORBA::String_var di_type_name = di_ts->get_type_name();
@@ -57,9 +68,10 @@ DDS::ReturnCode_t Handshaking::join_domain(DDS::DomainId_t domain_id, int argc, 
 
   // and another topic for the Heartbeat type
   tms::HeartbeatTypeSupport_var hb_ts = new tms::HeartbeatTypeSupportImpl();
-  if (DDS::RETCODE_OK != hb_ts->register_type(participant_.in(), "")) {
+  rc = hb_ts->register_type(participant_.in(), "");
+  if (DDS::RETCODE_OK != rc) {
     ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: Handshaking::join_domain: register_type for Heartbeat failed\n"));
-    return DDS::RETCODE_ERROR;
+    return rc;
   }
 
   CORBA::String_var hb_type_name = hb_ts->get_type_name();
@@ -142,7 +154,12 @@ DDS::ReturnCode_t Handshaking::send_device_info(tms::DeviceInfo device_info)
     return DDS::RETCODE_ERROR;
   }
 
-  return di_dw_->write(device_info, instance_handle);
+  const DDS::ReturnCode_t rc = di_dw_->write(device_info, instance_handle);
+  if (rc != DDS::RETCODE_OK) {
+    return rc;
+  }
+
+  return start_heartbeats();
 }
 
 DDS::ReturnCode_t Handshaking::start_heartbeats()
@@ -152,50 +169,18 @@ DDS::ReturnCode_t Handshaking::start_heartbeats()
     return DDS::RETCODE_ERROR;
   }
 
-  DDS::ReturnCode_t rc = DDS::RETCODE_OK;
-
-  std::thread thr([&]() {
-    const ACE_Time_Value period(1, 0);
+  if (!get_timer<tms::Heartbeat>()->active()) {
     tms::Heartbeat hb;
     hb.deviceId(device_id_);
+    schedule(hb, heartbeat_period);
+  }
 
-    // Make sure a thread calling stop_heartbeats will get notified.
-    NotifyGuard notify_guard(*this);
-
-    const DDS::InstanceHandle_t instance_handle = hb_dw_->register_instance(hb);
-    if (instance_handle == DDS::HANDLE_NIL) {
-      ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: Handshaking::send_heartbeats: register instance failed\n"));
-      rc = DDS::RETCODE_ERROR;
-      return;
-    }
-
-    while (!stop_) {
-      hb.sequenceNumber(seq_num_++);
-      const DDS::ReturnCode_t ret = hb_dw_->write(hb, instance_handle);
-      if (ret != DDS::RETCODE_OK && ret != DDS::RETCODE_TIMEOUT) {
-        ACE_ERROR((LM_WARNING, "(%P|%t) WARNING: Handshaking::send_heartbeats: write Heartbeat failed\n"));
-        rc = ret;
-        break;
-      }
-      ACE_OS::sleep(period);
-    }
-  });
-
-  thr.detach();
-
-  return rc;
+  return DDS::RETCODE_OK;
 }
 
 void Handshaking::stop_heartbeats()
 {
-  if (stop_) {
-    return;
-  }
-  stop_ = true;
-
-  // Wait for the spawned thread to finish
-  std::unique_lock<std::mutex> lk(mut_);
-  cond_.wait(lk, [this]{ return done_; });
+  // TODO:
 }
 
 DDS::ReturnCode_t Handshaking::create_subscribers(
@@ -217,8 +202,6 @@ DDS::ReturnCode_t Handshaking::create_subscribers(
   }
 
   DDS::DataReaderListener_var di_listener(new DeviceInfoDataReaderListenerImpl(di_cb));
-  DDS::DataReaderListener_var hb_listener(new HeartbeatDataReaderListenerImpl(hb_cb));
-
   const DDS::DataReaderQos di_qos = Qos::DataReader::fn_map.at(tms::topic::TOPIC_DEVICE_INFO)(device_id_);
   DDS::DataReader_var di_dr = sub->create_datareader(di_topic_.in(),
                                                      di_qos,
@@ -230,6 +213,7 @@ DDS::ReturnCode_t Handshaking::create_subscribers(
     return DDS::RETCODE_ERROR;
   }
 
+  DDS::DataReaderListener_var hb_listener(new HeartbeatDataReaderListenerImpl(hb_cb));
   const DDS::DataReaderQos hb_qos = Qos::DataReader::fn_map.at(tms::topic::TOPIC_HEARTBEAT)(device_id_);
   DDS::DataReader_var hb_dr = sub->create_datareader(hb_topic_.in(),
                                                      hb_qos,
@@ -242,4 +226,13 @@ DDS::ReturnCode_t Handshaking::create_subscribers(
   }
 
   return DDS::RETCODE_OK;
+}
+
+void Handshaking::timer_fired(Timer<tms::Heartbeat>& timer)
+{
+  timer.arg.sequenceNumber(seq_num_++);
+  const DDS::ReturnCode_t rc = hb_dw_->write(timer.arg, DDS::HANDLE_NIL);
+  if (rc != DDS::RETCODE_OK) {
+    ACE_ERROR((LM_WARNING, "(%P|%t) WARNING: Handshaking::send_heartbeats: write Heartbeat failed\n"));
+  }
 }

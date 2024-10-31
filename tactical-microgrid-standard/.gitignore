@@ -7,6 +7,7 @@ GNUmakefile*
 lib*.a
 lib*.so*
 lib*.dylib
+build
 
 /idl/mil-std-3071_data_modelC.*
 /idl/mil-std-3071_data_modelTypeSupport.idl
