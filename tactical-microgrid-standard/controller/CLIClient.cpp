@@ -1,5 +1,4 @@
 #include "CLIClient.h"
-//#include "PowerDevicesReplyDataReaderListenerImpl.h"
 #include "qos/QosHelper.h"
 
 #include <dds/DCPS/PublisherImpl.h>
@@ -28,7 +27,7 @@ DDS::ReturnCode_t CLIClient::init(DDS::DomainId_t domain_id, int argc, char* arg
     return rc;
   }
 
-  // Publish to the Power Devices Request topic
+  // Publish to the PowerDevicesRequest topic
   cli::PowerDevicesRequestTypeSupport_var pdreq_ts = new cli::PowerDevicesRequestTypeSupportImpl;
   if (DDS::RETCODE_OK != pdreq_ts->register_type(participant_.in(), "")) {
     ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIClient::init: register_type PowerDevicesRequest failed\n"));
@@ -42,7 +41,8 @@ DDS::ReturnCode_t CLIClient::init(DDS::DomainId_t domain_id, int argc, char* arg
                                                           0,
                                                           ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
   if (!pdreq_topic) {
-    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIClient::init: create_topic \"%C\" failed\n", cli::TOPIC_POWER_DEVICES_REQUEST.c_str()));
+    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIClient::init: create_topic \"%C\" failed\n",
+               cli::TOPIC_POWER_DEVICES_REQUEST.c_str()));
     return DDS::RETCODE_ERROR;
   }
 
@@ -55,8 +55,8 @@ DDS::ReturnCode_t CLIClient::init(DDS::DomainId_t domain_id, int argc, char* arg
   }
 
   DDS::DataWriterQos dw_qos;
-  dw_qos.reliability.kind = DDS::ReliabilityQosPolicyKind::RELIABLE_RELIABILITY_QOS;
   pub->get_default_datawriter_qos(dw_qos);
+  dw_qos.reliability.kind = DDS::ReliabilityQosPolicyKind::RELIABLE_RELIABILITY_QOS;
 
   DDS::DataWriter_var pdreq_dw_base = pub->create_datawriter(pdreq_topic,
                                                              dw_qos,
@@ -88,7 +88,8 @@ DDS::ReturnCode_t CLIClient::init(DDS::DomainId_t domain_id, int argc, char* arg
                                                         0,
                                                         ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
   if (!oir_topic) {
-    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIClient::init: create_topic \"%C\" failed\n", tms::topic::TOPIC_OPERATOR_INTENT_REQUEST.c_str()));
+    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIClient::init: create_topic \"%C\" failed\n",
+               tms::topic::TOPIC_OPERATOR_INTENT_REQUEST.c_str()));
     return DDS::RETCODE_ERROR;
   }
 
@@ -97,7 +98,7 @@ DDS::ReturnCode_t CLIClient::init(DDS::DomainId_t domain_id, int argc, char* arg
                                                               0,
                                                               ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
   if (!tms_pub) {
-    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIClient::init: create publisher with TMS QoS failed\n"));
+    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIClient::init: create_publisher with TMS QoS failed\n"));
     return DDS::RETCODE_ERROR;
   }
 
@@ -118,7 +119,7 @@ DDS::ReturnCode_t CLIClient::init(DDS::DomainId_t domain_id, int argc, char* arg
     return DDS::RETCODE_ERROR;
   }
 
-  // Subscriber to the Power Devices Reply topic
+  // Subscribe to the PowerDevicesReply topic
   cli::PowerDevicesReplyTypeSupport_var pdrep_ts = new cli::PowerDevicesReplyTypeSupportImpl;
   if (DDS::RETCODE_OK != pdrep_ts->register_type(participant_.in(), "")) {
     ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIClient::init: register_type PowerDevicesReply failed\n"));
@@ -132,7 +133,8 @@ DDS::ReturnCode_t CLIClient::init(DDS::DomainId_t domain_id, int argc, char* arg
                                                           0,
                                                           ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
   if (!pdrep_topic) {
-    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIClient::init: create_topic \"%C\" failed\n", cli::TOPIC_POWER_DEVICES_REPLY.c_str()));
+    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIClient::init: create_topic \"%C\" failed\n",
+               cli::TOPIC_POWER_DEVICES_REPLY.c_str()));
     return DDS::RETCODE_ERROR;
   }
 
@@ -148,10 +150,9 @@ DDS::ReturnCode_t CLIClient::init(DDS::DomainId_t domain_id, int argc, char* arg
   sub->get_default_datareader_qos(dr_qos);
   dr_qos.reliability.kind = DDS::ReliabilityQosPolicyKind::RELIABLE_RELIABILITY_QOS;
 
-  //  DDS::DataReaderListener_var pdrep_listener(new PowerDevicesReplyDataReaderListenerImpl);
   DDS::DataReader_var pdrep_dr_base = sub->create_datareader(pdrep_topic,
                                                              dr_qos,
-                                                             0, //pdrep_listener,
+                                                             0,
                                                              ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
   if (!pdrep_dr_base) {
     ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIClient::init: create_datareader for topic \"%C\" failed\n",
@@ -184,6 +185,7 @@ void CLIClient::run()
         // No controller specified yet
         display_controllers();
       } else {
+        // List the power devices connected to the selected controller
         send_power_devices_request();
         display_power_devices();
       }
@@ -236,12 +238,6 @@ OpArgPair CLIClient::parse(const std::string& input) const
 
 void CLIClient::display_commands() const
 {
-  // TODO: If we implements a CLI client, the CLI client and server can use the following
-  // topics to communicate the operation commands:
-  // - Commands E, D can use the tms topic OperatorIntentRequest (B.11). In this case,
-  //   the CLI client takes the role of a microgrid dashboard.
-  // - Commands L, S, R, T needs a new topic since they are commands for the MC directly
-  //   and OperatorIntentRequest topic does not support these commands.
   std::cout << "\n=== Command-Line Interface for Microgrid Controller === " << std::endl;
   std::cout << "\nTop-level commands:" << std::endl;
   std::cout << "[list] the connected microgrid controllers." << std::endl;
@@ -334,7 +330,7 @@ void CLIClient::send_power_devices_request()
   DDS::QueryCondition_var qc = pdrep_dr_->create_querycondition(DDS::NOT_READ_SAMPLE_STATE,
                                                                 DDS::ANY_VIEW_STATE,
                                                                 DDS::ANY_INSTANCE_STATE,
-                                                                "mc_id == %0",
+                                                                "mc_id = %0",
                                                                 params);
   if (!qc) {
     ACE_ERROR((LM_WARNING, "(%P|%t) WARNING: CLIClient::send_power_devices_request: "
@@ -349,7 +345,7 @@ void CLIClient::send_power_devices_request()
                        DDS::ANY_SAMPLE_STATE, DDS::ANY_VIEW_STATE, DDS::ANY_INSTANCE_STATE);
   if (rc != DDS::RETCODE_OK) {
     ACE_ERROR((LM_WARNING, "(%P|%t) WARNING: CLIClient::send_power_devices_request: "
-               "take data failed\n"));
+               "take data failed: %C\n", OpenDDS::DCPS::retcode_to_string(rc)));
     return;
   }
 

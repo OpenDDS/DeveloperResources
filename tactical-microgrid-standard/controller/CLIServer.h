@@ -2,22 +2,25 @@
 #define CONTROLLER_CLI_SERVER_H
 
 #include "Controller.h"
+#include "CLICommandsTypeSupportImpl.h"
 
-#include <dds/DCPS/optional.h>
-
-// TODO: Create DDS readers for:
-// - PowerDevicesRequest
-// - OperatorIntentRequest
-// Create DDS writer for:
-// - PowerDevicesReply
-// - OperatorIntentState (maybe not)
 class CLIServer {
 public:
   CLIServer(Controller& mc);
   ~CLIServer() {}
 
+  Controller& get_controller() const
+  {
+    return controller_;
+  }
+
+  cli::PowerDevicesReplyDataWriter_var get_PowerDevicesReply_writer() const
+  {
+    return pdrep_dw_;
+  }
+
 private:
-  void init();
+  DDS::ReturnCode_t init();
 
   void start_device(const OpArgPair& oparg) const;
 
@@ -29,9 +32,12 @@ private:
 
   void terminate() const;
 
-private:
   Controller& controller_;
   bool controller_active_;
+
+  cli::PowerDevicesRequestDataReader_var pdreq_dr_;
+  tms::OperatorIntentRequestDataReader_var oir_dr_;
+  cli::PowerDevicesReplyDataWriter_var pdrep_dw_;
 };
 
 #endif

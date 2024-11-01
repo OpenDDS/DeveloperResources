@@ -31,6 +31,8 @@ project(*MC): dcpsexe {
     ControllerMain.cpp
     Controller.cpp
     CLIServer.cpp
+    PowerDevicesRequestDataReaderListenerImpl.cpp
+    OperatorIntentRequestDataReaderListenerImpl.cpp
   }
 }
 
@@ -50,6 +52,5 @@ project(*CLI): dcpsexe {
   Source_Files {
     CLIMain.cpp
     CLIClient.cpp
-    PowerDevicesReplyDataReaderListenerImpl.cpp
   }
 }

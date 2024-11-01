@@ -39,9 +39,14 @@ public:
     std::function<void(const tms::DeviceInfo&, const DDS::SampleInfo&)> di_cb = nullptr,
     std::function<void(const tms::Heartbeat&, const DDS::SampleInfo&)> hb_cb = nullptr);
 
-  DDS::DomainParticipant_var get_domain_participant()
+  DDS::DomainParticipant_var get_domain_participant() const
   {
     return participant_;
+  }
+
+  tms::Identity get_device_id() const
+  {
+    return device_id_;
   }
 
   virtual tms::DeviceInfo get_device_info() const
