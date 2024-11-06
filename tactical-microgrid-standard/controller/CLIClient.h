@@ -10,7 +10,7 @@
 
 class CLIClient : public Handshaking {
 public:
-  CLIClient(const tms::Identity& id = "CLI Client");
+  CLIClient(const tms::Identity& id);
   ~CLIClient() {}
 
   DDS::ReturnCode_t init(DDS::DomainId_t domain_id, int argc = 0, char* argv[] = nullptr);
@@ -22,11 +22,11 @@ private:
 
   void display_commands() const;
   std::string device_role_to_string(tms::DeviceRole role) const;
-  void display_power_devices() const;
-
   void display_controllers() const;
   void set_controller(const OpArgPair& op_arg);
-  void send_power_devices_request();
+  void list_power_devices();
+  bool send_power_devices_request();
+  void display_power_devices() const;
   void send_start_device_cmd(const OpArgPair& op_arg) const;
   void send_stop_device_cmd(const OpArgPair& op_arg) const;
   void send_stop_controller_cmd() const;
@@ -36,14 +36,9 @@ private:
   void process_device_info(const tms::DeviceInfo& di, const DDS::SampleInfo& si);
   void process_heartbeat(const tms::Heartbeat& hb, const DDS::SampleInfo& si);
 
-  DDS::DomainParticipantFactory_var dpf_;
-  DDS::DomainParticipant_var participant_;
   cli::PowerDevicesRequestDataWriter_var pdreq_dw_;
   tms::OperatorIntentRequestDataWriter_var oir_dw_;
   cli::PowerDevicesReplyDataReader_var pdrep_dr_;
-
-  // Identity of this CLI client
-  tms::Identity device_id_;
 
   // Set of microgrid controllers to which the CLI client is connected
   std::unordered_set<tms::Identity> controllers_;

@@ -15,14 +15,16 @@ namespace DataReader {
 // Add an entry for each supported topic
 const FnMap fn_map = {
   {tms::topic::TOPIC_HEARTBEAT, get_Medium},
-  {tms::topic::TOPIC_DEVICE_INFO, get_PublishLast}};
+  {tms::topic::TOPIC_DEVICE_INFO, get_PublishLast},
+  {tms::topic::TOPIC_OPERATOR_INTENT_REQUEST, get_Command}};
 }
 
 namespace DataWriter {
 // Add an entry for each supported topic
 const FnMap fn_map = {
   {tms::topic::TOPIC_HEARTBEAT, get_Medium},
-  {tms::topic::TOPIC_DEVICE_INFO, get_PublishLast}};
+  {tms::topic::TOPIC_DEVICE_INFO, get_PublishLast},
+  {tms::topic::TOPIC_OPERATOR_INTENT_REQUEST, get_Command}};
 }
 
 }

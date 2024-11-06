@@ -17,7 +17,7 @@ public:
     , seq_num_(0)
   {}
 
-  ~Handshaking();
+  virtual ~Handshaking();
 
   // Initialize a domain participant for the given domain ID.
   // Create the DeviceInfo and Heartbeat topics.
@@ -58,6 +58,7 @@ public:
 
 protected:
   const tms::Identity device_id_;
+  DDS::DomainParticipant_var participant_;
 
 private:
   static constexpr Sec heartbeat_period = Sec(1);
@@ -69,7 +70,6 @@ private:
   }
 
   DDS::DomainParticipantFactory_var dpf_;
-  DDS::DomainParticipant_var participant_;
   DDS::Topic_var di_topic_, hb_topic_;
   tms::DeviceInfoDataWriter_var di_dw_;
   tms::HeartbeatDataWriter_var hb_dw_;

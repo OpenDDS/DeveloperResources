@@ -1,29 +1,39 @@
 #include "Controller.h"
 #include "CLIServer.h"
 
-int main(int argc, char* argv[])
-{
-  if (argc < 5) {
-    ACE_ERROR((LM_ERROR, "main: Must specify Domain Id and Device Id\n"));
+#include <ace/Get_Opt.h>
+
+int main(int argc, char* argv[]) {
+  DDS::DomainId_t domain_id = OpenDDS::DOMAIN_UNKNOWN;
+  const char* mc_id = nullptr;
+
+  ACE_Get_Opt get_opt(argc, argv, "i:d:");
+  int c;
+  while ((c = get_opt()) != -1) {
+    switch (c) {
+    case 'i':
+      mc_id = get_opt.opt_arg();
+      break;
+    case 'd':
+      domain_id = static_cast<DDS::DomainId_t>(ACE_OS::atoi(get_opt.opt_arg()));
+      break;
+    default:
+      break;
+    }
+  }
+
+  if (domain_id == OpenDDS::DOMAIN_UNKNOWN || mc_id == nullptr) {
+    ACE_ERROR((LM_ERROR, "Usage: %C -d DDS Domain Id -i Microgrid Controller Id\n", argv[0]));
     return 1;
   }
 
-  DDS::DomainId_t domain_id = OpenDDS::DOMAIN_UNKNOWN;
-  std::string mc_id;
-
-  for (int i = 1; i < argc; ++i) {
-    const std::string arg(argv[i++]);
-    if (arg == "-DomainId") {
-      domain_id = std::stoi(argv[i]);
-    } else if (arg == "-DeviceId") {
-      mc_id = argv[i];
-    }
-  }
 
   Controller controller(mc_id);
   controller.run(domain_id, argc, argv);
 
   CLIServer cli_server(controller);
+
+  ACE_Reactor::instance()->run_reactor_event_loop();
 
   return 0;
 }

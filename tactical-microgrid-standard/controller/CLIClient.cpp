@@ -4,6 +4,7 @@
 #include <dds/DCPS/PublisherImpl.h>
 #include <dds/DCPS/SubscriberImpl.h>
 #include <dds/DCPS/Marked_Default_Qos.h>
+#include <dds/DCPS/WaitSet.h>
 
 #include <cctype>
 
@@ -169,10 +170,12 @@ DDS::ReturnCode_t CLIClient::init(DDS::DomainId_t domain_id, int argc, char* arg
   return DDS::RETCODE_OK;
 }
 
-// TODO: Send request and commands to the CLI server
 void CLIClient::run()
 {
+  const std::string prompt = "ENTER COMMAND:> ";
   display_commands();
+  std::cout << prompt;
+
   std::string line;
   while (true) {
     std::getline(std::cin, line);
@@ -180,15 +183,10 @@ void CLIClient::run()
     tolower(op_pair.first);
     const std::string& op = op_pair.first;
 
-    if (op == "list") {
-      if (curr_controller_.empty()) {
-        // No controller specified yet
-        display_controllers();
-      } else {
-        // List the power devices connected to the selected controller
-        send_power_devices_request();
-        display_power_devices();
-      }
+    if (op == "list-mc") {
+      display_controllers();
+    } else if (op == "list-pd") {
+      list_power_devices();
     } else if (op == "set") {
       set_controller(op_pair);
     } else if (op == "enable") {
@@ -201,10 +199,12 @@ void CLIClient::run()
       send_resume_controller_cmd();
     } else if (op == "term") {
       send_terminate_cmd();
+    } else if (op == "show") {
+      display_commands();
     } else {
-      std::cout << "Unknown operation entered!\n" << std::endl;
+      std::cout << "Unknown operation entered!" << std::endl;
     }
-    display_commands();
+    std::cout << '\n' << prompt;
   }
 }
 
@@ -238,19 +238,18 @@ OpArgPair CLIClient::parse(const std::string& input) const
 
 void CLIClient::display_commands() const
 {
-  std::cout << "\n=== Command-Line Interface for Microgrid Controller === " << std::endl;
-  std::cout << "\nTop-level commands:" << std::endl;
-  std::cout << "[list] the connected microgrid controllers." << std::endl;
-  std::cout << "[set] the current microgrid controller. Subsequent commands" << std::endl;
-  std::cout << "      affect this controller until another Set command." << std::endl;
-  std::cout << "\nController-bounded commands:" << std::endl;
-  std::cout << "[list] the connected power devices." << std::endl;
-  std::cout << "[enable] (start) a power device with Id." << std::endl;
-  std::cout << "[disable] (stop) a power device with Id." << std::endl;
-  std::cout << "[stop] the controller's heartbeats." << std::endl;
-  std::cout << "[resume] the controller's heartbeats." << std::endl;
-  std::cout << "[term](inate) the controller." << std::endl;
-  std::cout << "\nEnter next operation: ";
+  std::cout << "=== Command-Line Interface for Microgrid Controller === " << std::endl;
+  std::cout << "list-mc        : list the connected microgrid controllers." << std::endl;
+  std::cout << "set <mc_id>    : set the current microgrid controller." << std::endl;
+  std::cout << "                 Subsequent commands target this controller" << std::endl;
+  std::cout << "                 until another set command is used." << std::endl;
+  std::cout << "list-pd        : list the power devices connected to the current controller." << std::endl;
+  std::cout << "enable <pd_id> : start a power device with the given Id." << std::endl;
+  std::cout << "disable <pd_id>: stop a power device with the given Id." << std::endl;
+  std::cout << "stop           : stop the current controller's heartbeats." << std::endl;
+  std::cout << "resume         : resume the current controller's heartbeats." << std::endl;
+  std::cout << "term           : terminate the current controller." << std::endl;
+  std::cout << "show           : display the list of CLI commands." << std::endl;
 }
 
 std::string CLIClient::device_role_to_string(tms::DeviceRole role) const
@@ -277,21 +276,35 @@ std::string CLIClient::device_role_to_string(tms::DeviceRole role) const
   }
 }
 
+void CLIClient::list_power_devices()
+{
+  if (curr_controller_.empty()) {
+    std::cerr << "Must set the current controller first!" << std::endl;
+    return;
+  }
+
+  if (send_power_devices_request()) {
+    display_power_devices();
+  }
+}
+
 void CLIClient::display_power_devices() const
 {
-  std::cout << "Current Microgrid Controller: " << curr_controller_ << std::endl;
+  std::cout << "Current Microgrid Controller's Id: " << curr_controller_ << std::endl;
   std::cout << "Number of Connected Power Devices: " << power_devices_.size() << std::endl;
+  size_t i = 1;
   for (auto it = power_devices_.begin(); it != power_devices_.end(); ++it) {
-    std::cout << "Device Id: " << it->first <<
+    std::cout << i << ". Device Id: " << it->first <<
       ". Type: " << device_role_to_string(it->second.role()) << std::endl;
   }
 }
 
 void CLIClient::display_controllers() const
 {
-  std::cout << "Connected Microgrid Controllers:" << std::endl;
+  std::cout << "Number of Connected Microgrid Controllers: " << controllers_.size() << std::endl;
+  size_t i = 1;
   for (auto it = controllers_.begin(); it != controllers_.end(); ++it) {
-    std::cout << "Controller Id: " << *it << std::endl;
+    std::cout << i <<  ". Controller Id: " << *it << std::endl;
   }
 }
 
@@ -299,19 +312,25 @@ void CLIClient::set_controller(const OpArgPair& op_arg)
 {
   const auto& arg = op_arg.second;
   if (!arg.has_value()) {
-    std::cout << "No microgrid controller specified!" << std::endl;
+    std::cerr << "No microgrid controller specified!" << std::endl;
     return;
   }
 
-  curr_controller_ = op_arg.second.value();
+  auto& value = op_arg.second.value();
+  if (!controllers_.count(value)) {
+    std::cerr << "No controller with Id: " << value << std::endl;
+    return;
+  }
+
+  curr_controller_ = value;
   std::cout << "Current microgrid controller set to: " << curr_controller_ << std::endl;
 }
 
-void CLIClient::send_power_devices_request()
+bool CLIClient::send_power_devices_request()
 {
   if (curr_controller_.empty()) {
     std::cout << "Microgrid controller has not been set!" << std::endl;
-    return;
+    return false;
   }
 
   cli::PowerDevicesRequest pd_req;
@@ -321,9 +340,10 @@ void CLIClient::send_power_devices_request()
   if (rc != DDS::RETCODE_OK) {
     ACE_ERROR((LM_WARNING, "(%P|%t) WARNING: CLIClient::send_power_devices_request: "
                "write to controller \"%C\" failed\n", curr_controller_.c_str()));
-    return;
+    return false;
   }
 
+  // Wait for the reply
   DDS::StringSeq params;
   params.length(1);
   params[0] = curr_controller_.c_str();
@@ -336,7 +356,19 @@ void CLIClient::send_power_devices_request()
     ACE_ERROR((LM_WARNING, "(%P|%t) WARNING: CLIClient::send_power_devices_request: "
                "create_querycondition to receive from controller \"%C\" failed\n",
                curr_controller_.c_str()));
-    return;
+    return false;
+  }
+
+  DDS::WaitSet_var ws = new DDS::WaitSet;
+  ws->attach_condition(qc);
+  DDS::ConditionSeq cond_seq;
+  const DDS::Duration_t forever = { DDS::DURATION_INFINITE_SEC, DDS::DURATION_INFINITE_NSEC };
+  rc = ws->wait(cond_seq, forever);
+  ws->detach_condition(qc);
+  if (rc != DDS::RETCODE_OK) {
+    ACE_ERROR((LM_WARNING, "(%P|%t) WARNING: CLIClient::send_power_devices_request: "
+               "WaitSet's wait returned \"%C\"\n", OpenDDS::DCPS::retcode_to_string(rc)));
+    return false;
   }
 
   cli::PowerDevicesReplySeq data;
@@ -346,7 +378,7 @@ void CLIClient::send_power_devices_request()
   if (rc != DDS::RETCODE_OK) {
     ACE_ERROR((LM_WARNING, "(%P|%t) WARNING: CLIClient::send_power_devices_request: "
                "take data failed: %C\n", OpenDDS::DCPS::retcode_to_string(rc)));
-    return;
+    return false;
   }
 
   bool received = false;
@@ -376,6 +408,7 @@ void CLIClient::send_power_devices_request()
     ACE_DEBUG((LM_DEBUG, "(%P|%t) DEBUG: CLIClient::send_power_devices_request: "
                "Failed to receive data from current controller\n"));
   }
+  return true;
 }
 
 void CLIClient::send_start_device_cmd(const OpArgPair& op_arg) const
@@ -417,4 +450,6 @@ void CLIClient::process_device_info(const tms::DeviceInfo& di, const DDS::Sample
 void CLIClient::process_heartbeat(const tms::Heartbeat& hb, const DDS::SampleInfo& si)
 {
   // TODO: Use heartbeat to detect and delete inactive controller?
+  ACE_UNUSED_ARG(hb);
+  ACE_UNUSED_ARG(si);
 }
