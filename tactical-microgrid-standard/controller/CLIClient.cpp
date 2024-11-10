@@ -304,14 +304,14 @@ void CLIClient::display_controllers() const
   std::cout << "Number of Connected Microgrid Controllers: " << controllers_.size() << std::endl;
   size_t i = 1;
   for (auto it = controllers_.begin(); it != controllers_.end(); ++it) {
-    std::cout << i <<  ". Controller Id: " << *it << std::endl;
+    std::cout << i <<  ". Controller Id: " << it->first << " (" <<
+      (it->second.status == ControllerInfo::Status::AVAILABLE ? "available)" : "unavailable)") << std::endl;
   }
 }
 
 void CLIClient::set_controller(const OpArgPair& op_arg)
 {
-  const auto& arg = op_arg.second;
-  if (!arg.has_value()) {
+  if (!op_arg.second.has_value()) {
     std::cerr << "No microgrid controller specified!" << std::endl;
     return;
   }
@@ -411,24 +411,63 @@ bool CLIClient::send_power_devices_request()
   return true;
 }
 
+void CLIClient::send_start_stop_request(const OpArgPair& op_arg,
+                                        tms::OperatorPriorityType opt) const
+{
+  if (!op_arg.second.has_value()) {
+    std::cerr << "No power device specified!" << std::endl;
+    return;
+  }
+
+  auto& value = op_arg.second.value();
+  if (!power_devices_.count(value)) {
+    std::cerr << "The current controller has no connected device with Id: " << value << std::endl;
+    return;
+  }
+
+  tms::OperatorIntentRequest oir;
+  oir.requestId().requestingDeviceId() = device_id_;
+  // This doesn't seem to get used since there is no reply for this request.
+  oir.sequenceId() = 0;
+  tms::OperatorIntent oi;
+  oi.requestId().requestingDeviceId() = device_id_;
+  oi.intentType() = tms::OperatorIntentType::OIT_OPERATOR_DEFINED;
+  tms::DeviceIntent intent;
+  intent.deviceId() = value;
+  intent.battleShort() = false;
+  intent.priority().priorityType() = opt;
+  oi.devices().push_back(intent);
+  oir.desiredOperatorIntent() = oi;
+
+  DDS::ReturnCode_t rc = oir_dw_->write(oir, DDS::HANDLE_NIL);
+  if (rc != DDS::RETCODE_OK) {
+    ACE_ERROR((LM_WARNING, "(%P|%t) WARNING: CLIClient::send_start_stop_request: write %C request returned \"%C\"\n",
+               opt == tms::OperatorPriorityType::OPT_ALWAYS_OPERATE ? "start" : "stop",
+               OpenDDS::DCPS::retcode_to_string(rc)));
+    return;
+  }
+}
+
 void CLIClient::send_start_device_cmd(const OpArgPair& op_arg) const
 {
-  // TODO:
+  send_start_stop_request(op_arg, tms::OperatorPriorityType::OPT_ALWAYS_OPERATE);
 }
 
 void CLIClient::send_stop_device_cmd(const OpArgPair& op_arg) const
 {
-  // TODO:
+  send_start_stop_request(op_arg, tms::OperatorPriorityType::OPT_NEVER_OPERATE);
 }
 
 void CLIClient::send_stop_controller_cmd() const
 {
   // TODO:
+  ACE_DEBUG((LM_INFO, "INFO: CLIClient::send_stop_controller_cmd is not implemented\n"));
 }
 
 void CLIClient::send_resume_controller_cmd() const
 {
   // TODO:
+  ACE_DEBUG((LM_INFO, "INFO: CLIClient::send_resume_controller_cmd is not implemented\n"));
 }
 
 void CLIClient::send_terminate_cmd() const
@@ -440,16 +479,40 @@ void CLIClient::process_device_info(const tms::DeviceInfo& di, const DDS::Sample
 {
   if (si.valid_data) {
     if (di.role() == tms::DeviceRole::ROLE_MICROGRID_CONTROLLER) {
-      controllers_.insert(di.deviceId());
+      controllers_.insert(std::make_pair(di.deviceId(), ControllerInfo{di, ControllerInfo::Status::AVAILABLE, Clock::now()}));
+      TimerHandler<UnavailableController>::schedule_once(di.deviceId(), UnavailableController{di.deviceId()}, unavail_controller_delay);
     }
   } else if (si.instance_state & DDS::NOT_ALIVE_DISPOSED_INSTANCE_STATE){
+    ACE_DEBUG((LM_DEBUG, "CLIClient::process_device_info: receive NOT_ALIVE_DISPOSED sample\n"));
+    TimerHandler<UnavailableController>::cancel<UnavailableController>(di.deviceId());
     controllers_.erase(di.deviceId());
   }
 }
 
 void CLIClient::process_heartbeat(const tms::Heartbeat& hb, const DDS::SampleInfo& si)
 {
-  // TODO: Use heartbeat to detect and delete inactive controller?
-  ACE_UNUSED_ARG(hb);
-  ACE_UNUSED_ARG(si);
+  if (si.valid_data) {
+    auto it = controllers_.find(hb.deviceId());
+    if (it != controllers_.end()) {
+      it->second.status = ControllerInfo::Status::AVAILABLE;
+      it->second.last_hb = Clock::now();
+      TimerHandler<UnavailableController>::reschedule<UnavailableController>(hb.deviceId());
+    }
+  } else if (si.instance_state & DDS::NOT_ALIVE_DISPOSED_INSTANCE_STATE) {
+    ACE_DEBUG((LM_DEBUG, "CLIClient::process_heartbeat: receive NOT_ALIVE_DISPOSED sample\n"));
+    TimerHandler<UnavailableController>::cancel<UnavailableController>(hb.deviceId());
+    controllers_.erase(hb.deviceId());
+  }
+}
+
+void CLIClient::any_timer_fired(TimerHandler<UnavailableController>::AnyTimer any_timer)
+{
+  std::cout << "CLIClient::any_timer_fired being called" << std::endl;
+  const tms::Identity& mc_id = std::get<Timer<UnavailableController>::Ptr>(any_timer)->arg.id;
+  auto it = controllers_.find(mc_id);
+  if (it != controllers_.end()) {
+    it->second.status = ControllerInfo::Status::UNAVAILABLE;
+  } else {
+    ACE_ERROR((LM_WARNING, "(%P|%t) WARNING: CLIClient::any_timer_fired: Could't find controller with Id \"%C\"\n", mc_id.c_str()));;
+  }
 }

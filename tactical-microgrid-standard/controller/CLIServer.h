@@ -23,13 +23,9 @@ private:
   DDS::ReturnCode_t init();
 
   void start_device(const OpArgPair& oparg) const;
-
   void stop_device(const OpArgPair& oparg) const;
-
   void stop_controller();
-
   void resume_controller();
-
   void terminate() const;
 
   Controller& controller_;
