@@ -180,7 +180,9 @@ DDS::ReturnCode_t Handshaking::start_heartbeats()
 
 void Handshaking::stop_heartbeats()
 {
-  // TODO:
+  if (get_timer<tms::Heartbeat>()->active()) {
+    cancel<tms::Heartbeat>();
+  }
 }
 
 DDS::ReturnCode_t Handshaking::create_subscribers(

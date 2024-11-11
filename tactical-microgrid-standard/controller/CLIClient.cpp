@@ -7,49 +7,53 @@
 #include <dds/DCPS/WaitSet.h>
 
 #include <cctype>
+#include <thread>
 
 CLIClient::CLIClient(const tms::Identity& id)
-  : Handshaking(id)
+  : handshaking_(id)
+  , stop_cli_(false)
 {}
 
 DDS::ReturnCode_t CLIClient::init(DDS::DomainId_t domain_id, int argc, char* argv[])
 {
-  DDS::ReturnCode_t rc = join_domain(domain_id, argc, argv);
+  DDS::ReturnCode_t rc = handshaking_.join_domain(domain_id, argc, argv);
   if (rc != DDS::RETCODE_OK) {
     return rc;
   }
 
   // Subscribe to the DeviceInfo and Heartbeat to learn about microgrid controllers
   // But not publish to these topics.
-  rc = create_subscribers(
+  rc = handshaking_.create_subscribers(
     [&](const tms::DeviceInfo& di, const DDS::SampleInfo& si) { process_device_info(di, si); },
     [&](const tms::Heartbeat& hb, const DDS::SampleInfo& si) { process_heartbeat(hb, si); });
   if (rc != DDS::RETCODE_OK) {
     return rc;
   }
 
+  DDS::DomainParticipant_var dp = handshaking_.get_domain_participant();
+
   // Publish to the PowerDevicesRequest topic
   cli::PowerDevicesRequestTypeSupport_var pdreq_ts = new cli::PowerDevicesRequestTypeSupportImpl;
-  if (DDS::RETCODE_OK != pdreq_ts->register_type(participant_.in(), "")) {
+  if (DDS::RETCODE_OK != pdreq_ts->register_type(dp.in(), "")) {
     ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIClient::init: register_type PowerDevicesRequest failed\n"));
     return DDS::RETCODE_ERROR;
   }
 
   CORBA::String_var pdreq_type_name = pdreq_ts->get_type_name();
-  DDS::Topic_var pdreq_topic = participant_->create_topic(cli::TOPIC_POWER_DEVICES_REQUEST.c_str(),
-                                                          pdreq_type_name.in(),
-                                                          TOPIC_QOS_DEFAULT,
-                                                          0,
-                                                          ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
+  DDS::Topic_var pdreq_topic = dp->create_topic(cli::TOPIC_POWER_DEVICES_REQUEST.c_str(),
+                                                pdreq_type_name.in(),
+                                                TOPIC_QOS_DEFAULT,
+                                                0,
+                                                ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
   if (!pdreq_topic) {
     ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIClient::init: create_topic \"%C\" failed\n",
                cli::TOPIC_POWER_DEVICES_REQUEST.c_str()));
     return DDS::RETCODE_ERROR;
   }
 
-  DDS::Publisher_var pub = participant_->create_publisher(PUBLISHER_QOS_DEFAULT,
-                                                          0,
-                                                          ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
+  DDS::Publisher_var pub = dp->create_publisher(PUBLISHER_QOS_DEFAULT,
+                                                0,
+                                                ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
   if (!pub) {
     ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIClient::init: create_publisher failed\n"));
     return DDS::RETCODE_ERROR;
@@ -77,17 +81,17 @@ DDS::ReturnCode_t CLIClient::init(DDS::DomainId_t domain_id, int argc, char* arg
 
   // Publish to the TMS OperatorIntentRequest topic
   tms::OperatorIntentRequestTypeSupport_var oir_ts = new tms::OperatorIntentRequestTypeSupportImpl;
-  if (DDS::RETCODE_OK != oir_ts->register_type(participant_.in(), "")) {
+  if (DDS::RETCODE_OK != oir_ts->register_type(dp.in(), "")) {
     ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIClient::init: register_type OperatorIntentRequest failed\n"));
     return DDS::RETCODE_ERROR;
   }
 
   CORBA::String_var oir_type_name = oir_ts->get_type_name();
-  DDS::Topic_var oir_topic = participant_->create_topic(tms::topic::TOPIC_OPERATOR_INTENT_REQUEST.c_str(),
-                                                        oir_type_name,
-                                                        TOPIC_QOS_DEFAULT,
-                                                        0,
-                                                        ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
+  DDS::Topic_var oir_topic = dp->create_topic(tms::topic::TOPIC_OPERATOR_INTENT_REQUEST.c_str(),
+                                              oir_type_name,
+                                              TOPIC_QOS_DEFAULT,
+                                              0,
+                                              ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
   if (!oir_topic) {
     ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIClient::init: create_topic \"%C\" failed\n",
                tms::topic::TOPIC_OPERATOR_INTENT_REQUEST.c_str()));
@@ -95,15 +99,16 @@ DDS::ReturnCode_t CLIClient::init(DDS::DomainId_t domain_id, int argc, char* arg
   }
 
   const DDS::PublisherQos tms_pub_qos = Qos::Publisher::get_qos();
-  DDS::Publisher_var tms_pub = participant_->create_publisher(tms_pub_qos,
-                                                              0,
-                                                              ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
+  DDS::Publisher_var tms_pub = dp->create_publisher(tms_pub_qos,
+                                                    0,
+                                                    ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
   if (!tms_pub) {
     ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIClient::init: create_publisher with TMS QoS failed\n"));
     return DDS::RETCODE_ERROR;
   }
 
-  const DDS::DataWriterQos oir_qos = Qos::DataWriter::fn_map.at(tms::topic::TOPIC_OPERATOR_INTENT_REQUEST)(device_id_);
+  const tms::Identity device_id = handshaking_.get_device_id();
+  const DDS::DataWriterQos oir_qos = Qos::DataWriter::fn_map.at(tms::topic::TOPIC_OPERATOR_INTENT_REQUEST)(device_id);
   DDS::DataWriter_var oir_dw_base = tms_pub->create_datawriter(oir_topic,
                                                                oir_qos,
                                                                0,
@@ -120,28 +125,63 @@ DDS::ReturnCode_t CLIClient::init(DDS::DomainId_t domain_id, int argc, char* arg
     return DDS::RETCODE_ERROR;
   }
 
+  // Publish to the ControllerCommand topic
+  cli::ControllerCommandTypeSupport_var cc_ts = new cli::ControllerCommandTypeSupportImpl;
+  if (DDS::RETCODE_OK != cc_ts->register_type(dp.in(), "")) {
+    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIClient::init: register_type ControllerCommand failed\n"));
+    return DDS::RETCODE_ERROR;
+  }
+
+  CORBA::String_var cc_type_name = cc_ts->get_type_name();
+  DDS::Topic_var cc_topic = dp->create_topic(cli::TOPIC_CONTROLLER_COMMAND.c_str(),
+                                             cc_type_name,
+                                             TOPIC_QOS_DEFAULT,
+                                             0,
+                                             ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
+  if (!cc_topic) {
+    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIClient::init: create_topic \"%C\" failed\n",
+               cli::TOPIC_CONTROLLER_COMMAND.c_str()));
+    return DDS::RETCODE_ERROR;
+  }
+
+  DDS::DataWriter_var cc_dw_base = pub->create_datawriter(cc_topic,
+                                                          dw_qos,
+                                                          0,
+                                                          ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
+  if (!cc_dw_base) {
+    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIClient::init: create_datawriter for topic \"%C\" failed\n",
+               cli::TOPIC_CONTROLLER_COMMAND.c_str()));
+    return DDS::RETCODE_ERROR;
+  }
+
+  cc_dw_ = cli::ControllerCommandDataWriter::_narrow(cc_dw_base);
+  if (!cc_dw_) {
+    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIClient::init: ControllerCommandDataWriter narrow failed\n"));
+    return DDS::RETCODE_ERROR;
+  }
+
   // Subscribe to the PowerDevicesReply topic
   cli::PowerDevicesReplyTypeSupport_var pdrep_ts = new cli::PowerDevicesReplyTypeSupportImpl;
-  if (DDS::RETCODE_OK != pdrep_ts->register_type(participant_.in(), "")) {
+  if (DDS::RETCODE_OK != pdrep_ts->register_type(dp.in(), "")) {
     ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIClient::init: register_type PowerDevicesReply failed\n"));
     return DDS::RETCODE_ERROR;
   }
 
   CORBA::String_var pdrep_type_name = pdrep_ts->get_type_name();
-  DDS::Topic_var pdrep_topic = participant_->create_topic(cli::TOPIC_POWER_DEVICES_REPLY.c_str(),
-                                                          pdrep_type_name.in(),
-                                                          TOPIC_QOS_DEFAULT,
-                                                          0,
-                                                          ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
+  DDS::Topic_var pdrep_topic = dp->create_topic(cli::TOPIC_POWER_DEVICES_REPLY.c_str(),
+                                                pdrep_type_name.in(),
+                                                TOPIC_QOS_DEFAULT,
+                                                0,
+                                                ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
   if (!pdrep_topic) {
     ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIClient::init: create_topic \"%C\" failed\n",
                cli::TOPIC_POWER_DEVICES_REPLY.c_str()));
     return DDS::RETCODE_ERROR;
   }
 
-  DDS::Subscriber_var sub = participant_->create_subscriber(SUBSCRIBER_QOS_DEFAULT,
-                                                            0,
-                                                            ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
+  DDS::Subscriber_var sub = dp->create_subscriber(SUBSCRIBER_QOS_DEFAULT,
+                                                  0,
+                                                  ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
   if (!sub) {
     ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIClient::init: create_subscriber failed\n"));
     return DDS::RETCODE_ERROR;
@@ -170,14 +210,20 @@ DDS::ReturnCode_t CLIClient::init(DDS::DomainId_t domain_id, int argc, char* arg
   return DDS::RETCODE_OK;
 }
 
-void CLIClient::run()
+bool CLIClient::cli_stopped() const
+{
+  std::lock_guard<std::mutex> guard(cli_m_);
+  return stop_cli_;
+}
+
+void CLIClient::run_cli()
 {
   const std::string prompt = "ENTER COMMAND:> ";
   display_commands();
   std::cout << prompt;
 
   std::string line;
-  while (true) {
+  while (!cli_stopped()) {
     std::getline(std::cin, line);
     auto op_pair = parse(line);
     tolower(op_pair.first);
@@ -198,7 +244,7 @@ void CLIClient::run()
     } else if (op == "resume") {
       send_resume_controller_cmd();
     } else if (op == "term") {
-      send_terminate_cmd();
+      send_terminate_controller_cmd();
     } else if (op == "show") {
       display_commands();
     } else {
@@ -206,6 +252,13 @@ void CLIClient::run()
     }
     std::cout << '\n' << prompt;
   }
+}
+
+void CLIClient::run()
+{
+  std::thread thr(&CLIClient::run_cli, this);
+  reactor_->run_reactor_event_loop();
+  thr.join();
 }
 
 void CLIClient::tolower(std::string& s) const
@@ -278,6 +331,7 @@ std::string CLIClient::device_role_to_string(tms::DeviceRole role) const
 
 void CLIClient::list_power_devices()
 {
+  std::lock_guard<std::mutex> guard(data_m_);
   if (curr_controller_.empty()) {
     std::cerr << "Must set the current controller first!" << std::endl;
     return;
@@ -301,6 +355,7 @@ void CLIClient::display_power_devices() const
 
 void CLIClient::display_controllers() const
 {
+  std::lock_guard<std::mutex> guard(data_m_);
   std::cout << "Number of Connected Microgrid Controllers: " << controllers_.size() << std::endl;
   size_t i = 1;
   for (auto it = controllers_.begin(); it != controllers_.end(); ++it) {
@@ -316,6 +371,7 @@ void CLIClient::set_controller(const OpArgPair& op_arg)
     return;
   }
 
+  std::lock_guard<std::mutex> guard(data_m_);
   auto& value = op_arg.second.value();
   if (!controllers_.count(value)) {
     std::cerr << "No controller with Id: " << value << std::endl;
@@ -328,11 +384,6 @@ void CLIClient::set_controller(const OpArgPair& op_arg)
 
 bool CLIClient::send_power_devices_request()
 {
-  if (curr_controller_.empty()) {
-    std::cout << "Microgrid controller has not been set!" << std::endl;
-    return false;
-  }
-
   cli::PowerDevicesRequest pd_req;
   pd_req.mc_id(curr_controller_);
 
@@ -419,18 +470,31 @@ void CLIClient::send_start_stop_request(const OpArgPair& op_arg,
     return;
   }
 
-  auto& value = op_arg.second.value();
-  if (!power_devices_.count(value)) {
-    std::cerr << "The current controller has no connected device with Id: " << value << std::endl;
+  if (curr_controller_.empty()) {
+    std::cerr << "Must set the current controller first!" << std::endl;
     return;
   }
 
+  auto& value = op_arg.second.value();
+  {
+    std::lock_guard<std::mutex> guard(data_m_);
+    if (!power_devices_.count(value)) {
+      std::cerr << "The current controller has no connected device with Id: " << value << std::endl;
+      return;
+    }
+  }
+
+  const tms::Identity device_id = handshaking_.get_device_id();
+
   tms::OperatorIntentRequest oir;
-  oir.requestId().requestingDeviceId() = device_id_;
+  oir.requestId().requestingDeviceId() = device_id;
   // This doesn't seem to get used since there is no reply for this request.
   oir.sequenceId() = 0;
   tms::OperatorIntent oi;
-  oi.requestId().requestingDeviceId() = device_id_;
+  {
+    std::lock_guard<std::mutex> guard(data_m_);
+    oi.requestId().requestingDeviceId() = curr_controller_;
+  }
   oi.intentType() = tms::OperatorIntentType::OIT_OPERATOR_DEFINED;
   tms::DeviceIntent intent;
   intent.deviceId() = value;
@@ -458,61 +522,87 @@ void CLIClient::send_stop_device_cmd(const OpArgPair& op_arg) const
   send_start_stop_request(op_arg, tms::OperatorPriorityType::OPT_NEVER_OPERATE);
 }
 
+void CLIClient::send_controller_cmd(cli::ControllerCmdType cmd_type) const
+{
+  std::lock_guard<std::mutex> guard(data_m_);
+  if (curr_controller_.empty()) {
+    std::cerr << "Must set the current controller first!" << std::endl;
+    return;
+  }
+
+  cli::ControllerCommand cmd;
+  cmd.mc_id() = curr_controller_;
+  cmd.type() = cmd_type;
+
+  DDS::ReturnCode_t rc = cc_dw_->write(cmd, DDS::HANDLE_NIL);
+  if (rc != DDS::RETCODE_OK) {
+    ACE_ERROR((LM_WARNING, "CLIClient::send_controller_cmd: write ControllerCommand failed: \"%C\"\n",
+               OpenDDS::DCPS::retcode_to_string(rc)));
+  }
+}
+
 void CLIClient::send_stop_controller_cmd() const
 {
-  // TODO:
-  ACE_DEBUG((LM_INFO, "INFO: CLIClient::send_stop_controller_cmd is not implemented\n"));
+  send_controller_cmd(cli::ControllerCmdType::CCT_STOP);
 }
 
 void CLIClient::send_resume_controller_cmd() const
 {
-  // TODO:
-  ACE_DEBUG((LM_INFO, "INFO: CLIClient::send_resume_controller_cmd is not implemented\n"));
+  send_controller_cmd(cli::ControllerCmdType::CCT_RESUME);
 }
 
-void CLIClient::send_terminate_cmd() const
+void CLIClient::send_terminate_controller_cmd() const
 {
-  // TODO:
+  send_controller_cmd(cli::ControllerCmdType::CCT_TERMINATE);
 }
 
 void CLIClient::process_device_info(const tms::DeviceInfo& di, const DDS::SampleInfo& si)
 {
+  std::lock_guard<std::mutex> guard(data_m_);
   if (si.valid_data) {
     if (di.role() == tms::DeviceRole::ROLE_MICROGRID_CONTROLLER) {
       controllers_.insert(std::make_pair(di.deviceId(), ControllerInfo{di, ControllerInfo::Status::AVAILABLE, Clock::now()}));
-      TimerHandler<UnavailableController>::schedule_once(di.deviceId(), UnavailableController{di.deviceId()}, unavail_controller_delay);
+      schedule_once(di.deviceId(), UnavailableController{di.deviceId()}, unavail_controller_delay);
     }
   } else if (si.instance_state & DDS::NOT_ALIVE_DISPOSED_INSTANCE_STATE){
-    ACE_DEBUG((LM_DEBUG, "CLIClient::process_device_info: receive NOT_ALIVE_DISPOSED sample\n"));
-    TimerHandler<UnavailableController>::cancel<UnavailableController>(di.deviceId());
+    cancel<UnavailableController>(di.deviceId());
     controllers_.erase(di.deviceId());
   }
 }
 
 void CLIClient::process_heartbeat(const tms::Heartbeat& hb, const DDS::SampleInfo& si)
 {
+  std::lock_guard<std::mutex> guard(data_m_);
   if (si.valid_data) {
     auto it = controllers_.find(hb.deviceId());
     if (it != controllers_.end()) {
       it->second.status = ControllerInfo::Status::AVAILABLE;
       it->second.last_hb = Clock::now();
-      TimerHandler<UnavailableController>::reschedule<UnavailableController>(hb.deviceId());
+      reschedule<UnavailableController>(hb.deviceId());
     }
   } else if (si.instance_state & DDS::NOT_ALIVE_DISPOSED_INSTANCE_STATE) {
-    ACE_DEBUG((LM_DEBUG, "CLIClient::process_heartbeat: receive NOT_ALIVE_DISPOSED sample\n"));
-    TimerHandler<UnavailableController>::cancel<UnavailableController>(hb.deviceId());
+    cancel<UnavailableController>(hb.deviceId());
     controllers_.erase(hb.deviceId());
   }
 }
 
 void CLIClient::any_timer_fired(TimerHandler<UnavailableController>::AnyTimer any_timer)
 {
-  std::cout << "CLIClient::any_timer_fired being called" << std::endl;
   const tms::Identity& mc_id = std::get<Timer<UnavailableController>::Ptr>(any_timer)->arg.id;
+  std::lock_guard<std::mutex> guard(data_m_);
   auto it = controllers_.find(mc_id);
   if (it != controllers_.end()) {
     it->second.status = ControllerInfo::Status::UNAVAILABLE;
   } else {
     ACE_ERROR((LM_WARNING, "(%P|%t) WARNING: CLIClient::any_timer_fired: Could't find controller with Id \"%C\"\n", mc_id.c_str()));;
   }
+}
+
+int CLIClient::handle_signal(int, siginfo_t*, ucontext_t*)
+{
+  std::lock_guard<std::mutex> cli_guard(cli_m_);
+  stop_cli_ = true;
+
+  reactor_->end_reactor_event_loop();
+  return -1;
 }

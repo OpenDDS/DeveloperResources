@@ -19,21 +19,16 @@ public:
     return pdrep_dw_;
   }
 
+  void start_stop_device(const tms::Identity& pd_id, tms::OperatorPriorityType opt);
+
 private:
   DDS::ReturnCode_t init();
 
-  void start_device(const OpArgPair& oparg) const;
-  void stop_device(const OpArgPair& oparg) const;
-  void stop_controller();
-  void resume_controller();
-  void terminate() const;
-
   Controller& controller_;
-  bool controller_active_;
-
   cli::PowerDevicesRequestDataReader_var pdreq_dr_;
   tms::OperatorIntentRequestDataReader_var oir_dr_;
   cli::PowerDevicesReplyDataWriter_var pdrep_dw_;
+  cli::ControllerCommandDataReader_var cc_dr_;
 };
 
 #endif

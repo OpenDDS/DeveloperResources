@@ -6,13 +6,13 @@
 
 #include <string>
 #include <utility>
-#include <unordered_set>
+#include <mutex>
 
 struct UnavailableController {
   tms::Identity id;
 };
 
-class CLIClient : public Handshaking, public TimerHandler<UnavailableController> {
+class CLIClient : public TimerHandler<UnavailableController> {
 public:
   CLIClient(const tms::Identity& id);
   ~CLIClient() {}
@@ -21,6 +21,9 @@ public:
   void run();
 
 private:
+  void run_cli();
+  bool cli_stopped() const;
+
   void tolower(std::string& s) const;
   OpArgPair parse(const std::string& input) const;
 
@@ -36,16 +39,20 @@ private:
   void send_start_stop_request(const OpArgPair& op_arg, tms::OperatorPriorityType opt) const;
   void send_stop_controller_cmd() const;
   void send_resume_controller_cmd() const;
-  void send_terminate_cmd() const;
+  void send_terminate_controller_cmd() const;
+  void send_controller_cmd(cli::ControllerCmdType cmd_type) const;
 
   void process_device_info(const tms::DeviceInfo& di, const DDS::SampleInfo& si);
   void process_heartbeat(const tms::Heartbeat& hb, const DDS::SampleInfo& si);
 
   void any_timer_fired(TimerHandler<UnavailableController>::AnyTimer any_timer) final;
+  int handle_signal(int, siginfo_t*, ucontext_t*);
 
+  Handshaking handshaking_;
   cli::PowerDevicesRequestDataWriter_var pdreq_dw_;
   tms::OperatorIntentRequestDataWriter_var oir_dw_;
   cli::PowerDevicesReplyDataReader_var pdrep_dr_;
+  cli::ControllerCommandDataWriter_var cc_dw_;
 
   // If a heartbeat hasn't been received from a controller in this amount of time
   // since its last heartbeat, the controller is deemed unavailable.
@@ -64,9 +71,12 @@ private:
     TimePoint last_hb;
   };
 
-  // Set of microgrid controllers to which the CLI client is connected
-  //  std::unordered_set<tms::Identity> controllers_;
+  mutable std::mutex cli_m_;
+  bool stop_cli_;
 
+  mutable std::mutex data_m_;
+
+  // Microgrid controllers to which the CLI client is connected
   std::unordered_map<tms::Identity, ControllerInfo> controllers_;
 
   // The power devices that are connected to the current controller

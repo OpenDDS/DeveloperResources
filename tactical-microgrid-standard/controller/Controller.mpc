@@ -33,6 +33,7 @@ project(*MC): dcpsexe {
     CLIServer.cpp
     PowerDevicesRequestDataReaderListenerImpl.cpp
     OperatorIntentRequestDataReaderListenerImpl.cpp
+    ControllerCommandDataReaderListenerImpl.cpp
   }
 }
 

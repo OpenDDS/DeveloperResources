@@ -4,6 +4,7 @@ module cli {
 
   const string TOPIC_POWER_DEVICES_REQUEST = "Power Devices Request";
   const string TOPIC_POWER_DEVICES_REPLY = "Power Devices Reply";
+  const string TOPIC_CONTROLLER_COMMAND = "Controller Command";
 
   @topic
   @extensibility(FINAL)
@@ -18,6 +19,19 @@ module cli {
   struct PowerDevicesReply {
     @key tms::Identity mc_id;
     DeviceInfoSeq devices;
+  };
+
+  enum ControllerCmdType {
+    CCT_STOP,
+    CCT_RESUME,
+    CCT_TERMINATE
+  };
+
+  @topic
+  @extensibility(FINAL)
+  struct ControllerCommand {
+    @key tms::Identity mc_id;
+    ControllerCmdType type;
   };
 
 };

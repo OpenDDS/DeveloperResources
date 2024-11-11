@@ -2,13 +2,12 @@
 #include "qos/QosHelper.h"
 #include "PowerDevicesRequestDataReaderListenerImpl.h"
 #include "OperatorIntentRequestDataReaderListenerImpl.h"
+#include "ControllerCommandDataReaderListenerImpl.h"
 
 #include <dds/DCPS/Marked_Default_Qos.h>
 
-// Assume the controller is active (i.e. actively sending heartbeats)
 CLIServer::CLIServer(Controller& mc)
   : controller_(mc)
-  , controller_active_(true)
 {
   init();
 }
@@ -96,7 +95,7 @@ DDS::ReturnCode_t CLIServer::init()
 
   const DDS::DataReaderQos oir_qos = Qos::DataReader::fn_map.at(tms::topic::TOPIC_OPERATOR_INTENT_REQUEST)(controller_.get_device_id());
 
-  DDS::DataReaderListener_var oir_listener(new OperatorIntentRequestDataReaderListenerImpl);
+  DDS::DataReaderListener_var oir_listener(new OperatorIntentRequestDataReaderListenerImpl(*this));
   DDS::DataReader_var oir_dr_base = tms_sub->create_datareader(oir_topic,
                                                                oir_qos,
                                                                oir_listener,
@@ -110,6 +109,42 @@ DDS::ReturnCode_t CLIServer::init()
   oir_dr_ = tms::OperatorIntentRequestDataReader::_narrow(oir_dr_base);
   if (!oir_dr_) {
     ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIServer::init: OperatorIntentRequestDataReader narrow failed\n"));
+    return DDS::RETCODE_ERROR;
+  }
+
+  // Subscribe to the ControllerCommand topic
+  cli::ControllerCommandTypeSupport_var cc_ts = new cli::ControllerCommandTypeSupportImpl;
+  if (DDS::RETCODE_OK != cc_ts->register_type(dp, "")) {
+    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIServer::init: register_type ControllerCommand failed\n"));
+    return DDS::RETCODE_ERROR;
+  }
+
+  CORBA::String_var cc_type_name = cc_ts->get_type_name();
+  DDS::Topic_var cc_topic = dp->create_topic(cli::TOPIC_CONTROLLER_COMMAND.c_str(),
+                                             cc_type_name,
+                                             TOPIC_QOS_DEFAULT,
+                                             0,
+                                             ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
+  if (!cc_topic) {
+    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIServer::init: create_topic \"%C\" failed\n",
+               cli::TOPIC_CONTROLLER_COMMAND.c_str()));
+    return DDS::RETCODE_ERROR;
+  }
+
+  DDS::DataReaderListener_var cc_listener(new ControllerCommandDataReaderListenerImpl(*this));
+  DDS::DataReader_var cc_dr_base = sub->create_datareader(cc_topic,
+                                                          dr_qos,
+                                                          cc_listener,
+                                                          ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
+  if (!cc_dr_base) {
+    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIServer::init: create_datareader for topic \"%C\" failed\n",
+               cli::TOPIC_CONTROLLER_COMMAND.c_str()));
+    return DDS::RETCODE_ERROR;
+  }
+
+  cc_dr_ = cli::ControllerCommandDataReader::_narrow(cc_dr_base);
+  if (!cc_dr_) {
+    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIServer::init: ControllerCommandDataReader narrow failed\n"));
     return DDS::RETCODE_ERROR;
   }
 
@@ -163,60 +198,7 @@ DDS::ReturnCode_t CLIServer::init()
   return DDS::RETCODE_OK;
 }
 
-void CLIServer::start_device(const OpArgPair& oparg) const
+void CLIServer::start_stop_device(const tms::Identity& /*pd_id*/, tms::OperatorPriorityType /*opt*/)
 {
-  // TODO:
-  if (!oparg.second.has_value()) {
-    std::cerr << "Device Id is required to start a device!" << std::endl;
-    return;
-  }
-
-  const std::string& device_id = oparg.second.value();
-  std::cout << "Sending EnergyStartStopRequest to start device Id: " << device_id << std::endl;
-}
-
-void CLIServer::stop_device(const OpArgPair& oparg) const
-{
-  // TODO:
-  if (!oparg.second.has_value()) {
-    std::cerr << "Device Id is required to stop a device!" << std::endl;
-    return;
-  }
-
-  const std::string& device_id = oparg.second.value();
-  std::cout << "Sending EnergyStartStopRequest to stop device Id: " << device_id << std::endl;
-}
-
-void CLIServer::stop_controller()
-{
-  if (!controller_active_) {
-    std::cout << "Controller is already stopped!" << std::endl;
-    return;
-  }
-
-  controller_.stop_heartbeats();
-  controller_active_ = false;
-  std::cout << "Controller stopped!" << std::endl;
-}
-
-void CLIServer::resume_controller()
-{
-  if (controller_active_) {
-    std::cout << "Controller is already running!" << std::endl;
-    return;
-  }
-
-  const DDS::ReturnCode_t rc = controller_.start_heartbeats();
-  if (rc != DDS::RETCODE_OK) {
-    ACE_ERROR((LM_WARNING, "(%P|%t) WARNING: CLI::resume_controller: start heartbeats thread failed\n"));
-    return;
-  }
-  controller_active_ = true;
-  std::cout << "Controller resumed!" << std::endl;
-}
-
-void CLIServer::terminate() const
-{
-  // TODO: gracefully terminate the controller
-  std::cout << "Terminating the controller..." << std::endl;
+  // TODO: Send EnergyStartStopRequest to the power device.
 }

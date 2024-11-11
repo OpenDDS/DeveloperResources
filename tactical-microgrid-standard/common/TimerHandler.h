@@ -111,8 +111,6 @@ public:
       this, &timer->id, ACE_Time_Value(timer->delay), ACE_Time_Value(timer->period));
     timer->id = id;
     active_timers_[id] = timer;
-    std::cout << "TimerHandler::schedule: scheduled timer id: " << id << ". Timer name: " << timer->name <<
-      ". EventType: " << typeid(EventType).name() << std::endl;
   }
 
   template <typename EventType>
@@ -188,7 +186,6 @@ public:
   {
     Guard g(lock_);
     auto timer = active_timers_[*reinterpret_cast<const TimerId*>(arg)];
-    std::cout << "TimerHandler::handle_timeout: Timer Id: " << *reinterpret_cast<const TimerId*>(arg) << std::endl;
     any_timer_fired(timer);
     bool exit_after = false;
     std::visit([&](auto&& value) {

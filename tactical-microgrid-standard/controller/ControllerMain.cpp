@@ -27,13 +27,7 @@ int main(int argc, char* argv[]) {
     return 1;
   }
 
-
   Controller controller(mc_id);
-  controller.run(domain_id, argc, argv);
-
   CLIServer cli_server(controller);
-
-  ACE_Reactor::instance()->run_reactor_event_loop();
-
-  return 0;
+  return controller.run(domain_id, argc, argv) == DDS::RETCODE_OK ? 0 : 1;
 }

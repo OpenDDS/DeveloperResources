@@ -39,10 +39,10 @@ void PowerDevicesRequestDataReaderListenerImpl::on_data_available(DDS::DataReade
   cli::PowerDevicesReply reply;
   reply.mc_id(id);
   const size_t num_devices = power_devices.size();
-  cli::DeviceInfoSeq di_seq(num_devices);
-  size_t i = 0;
-  for (auto it = power_devices.begin(); it != power_devices.end(); ++it, ++i) {
-    di_seq[i] = it->second;
+  cli::DeviceInfoSeq& di_seq = reply.devices();
+  di_seq.reserve(num_devices);
+  for (auto it = power_devices.begin(); it != power_devices.end(); ++it) {
+    di_seq.push_back(it->second);
   }
 
   cli::PowerDevicesReplyDataWriter_var pdreply_writer = cli_server_.get_PowerDevicesReply_writer();

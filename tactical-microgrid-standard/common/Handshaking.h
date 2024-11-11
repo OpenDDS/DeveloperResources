@@ -31,6 +31,7 @@ public:
   // Send heartbeats in a separate thread
   DDS::ReturnCode_t start_heartbeats();
 
+  // Temporarily stop sending heartbeats
   void stop_heartbeats();
 
   // Create subscribers and data readers for the DeviceInfo and Heartbeat topics.

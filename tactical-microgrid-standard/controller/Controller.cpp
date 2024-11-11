@@ -31,12 +31,14 @@ DDS::ReturnCode_t Controller::run(DDS::DomainId_t domain_id, int argc, char* arg
     return rc;
   }
 
-  rc = start_heartbeats();
-  if (rc != DDS::RETCODE_OK) {
-    return rc;
-  }
+  return reactor_->run_reactor_event_loop() == 0 ? DDS::RETCODE_OK : DDS::RETCODE_ERROR;
+}
 
-  return DDS::RETCODE_OK;
+void Controller::terminate()
+{
+  // TODO:
+  stop_heartbeats();
+  reactor_->end_reactor_event_loop();
 }
 
 tms::Identity Controller::id() const
