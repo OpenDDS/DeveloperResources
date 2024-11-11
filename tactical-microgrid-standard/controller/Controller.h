@@ -8,7 +8,8 @@ class Controller : public Handshaking {
 public:
   Controller(const tms::Identity& id) : Handshaking(id) {}
 
-  DDS::ReturnCode_t run(DDS::DomainId_t domain_id, int argc = 0, char* argv[] = nullptr);
+  DDS::ReturnCode_t init(DDS::DomainId_t domain_id, int argc = 0, char* argv[] = nullptr);
+  int run();
   tms::Identity id() const;
   PowerDevices power_devices() const;
   void terminate();

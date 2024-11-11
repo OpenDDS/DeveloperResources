@@ -1,6 +1,6 @@
 #include "Controller.h"
 
-DDS::ReturnCode_t Controller::run(DDS::DomainId_t domain_id, int argc, char* argv[])
+DDS::ReturnCode_t Controller::init(DDS::DomainId_t domain_id, int argc, char* argv[])
 {
   DDS::ReturnCode_t rc = join_domain(domain_id, argc, argv);
   if (rc != DDS::RETCODE_OK) {
@@ -31,7 +31,12 @@ DDS::ReturnCode_t Controller::run(DDS::DomainId_t domain_id, int argc, char* arg
     return rc;
   }
 
-  return reactor_->run_reactor_event_loop() == 0 ? DDS::RETCODE_OK : DDS::RETCODE_ERROR;
+  return DDS::RETCODE_OK;
+}
+
+int Controller::run()
+{
+  return reactor_->run_reactor_event_loop() == 0 ? 0 : 1;
 }
 
 void Controller::terminate()

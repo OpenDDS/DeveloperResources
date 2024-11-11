@@ -28,6 +28,8 @@ int main(int argc, char* argv[]) {
   }
 
   Controller controller(mc_id);
+  controller.init(domain_id, argc, argv);
   CLIServer cli_server(controller);
-  return controller.run(domain_id, argc, argv) == DDS::RETCODE_OK ? 0 : 1;
+
+  return controller.run();
 }
