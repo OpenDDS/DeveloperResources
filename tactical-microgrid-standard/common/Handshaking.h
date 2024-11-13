@@ -12,7 +12,7 @@
 
 class opendds_tms_Export Handshaking : public TimerHandler<tms::Heartbeat> {
 public:
-  Handshaking(const tms::Identity& device_id)
+  explicit Handshaking(const tms::Identity& device_id)
     : device_id_(device_id)
     , seq_num_(0)
   {}

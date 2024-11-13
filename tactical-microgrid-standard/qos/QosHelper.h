@@ -15,14 +15,14 @@ DDS::SubscriberQos get_qos();
 }
 
 namespace DataReader {
-DDS::DataReaderQos get_PublishLast(const tms::Identity& device_id);
-DDS::DataReaderQos get_Rare(const tms::Identity& device_id);
-DDS::DataReaderQos get_Slow(const tms::Identity& device_id);
-DDS::DataReaderQos get_Medium(const tms::Identity& device_id);
-DDS::DataReaderQos get_Continuous(const tms::Identity& device_id);
-DDS::DataReaderQos get_Command(const tms::Identity& device_id);
-DDS::DataReaderQos get_Response(const tms::Identity& device_id);
-DDS::DataReaderQos get_Reply(const tms::Identity& device_id);
+const DDS::DataReaderQos& get_PublishLast(const tms::Identity& device_id);
+const DDS::DataReaderQos& get_Rare(const tms::Identity& device_id);
+const DDS::DataReaderQos& get_Slow(const tms::Identity& device_id);
+const DDS::DataReaderQos& get_Medium(const tms::Identity& device_id);
+const DDS::DataReaderQos& get_Continuous(const tms::Identity& device_id);
+const DDS::DataReaderQos& get_Command(const tms::Identity& device_id);
+const DDS::DataReaderQos& get_Response(const tms::Identity& device_id);
+const DDS::DataReaderQos& get_Reply(const tms::Identity& device_id);
 
 using Fn = std::function<DDS::DataReaderQos(const tms::Identity&)>;
 using FnMap = std::unordered_map<std::string, Fn>;
@@ -34,14 +34,14 @@ DDS::PublisherQos get_qos();
 }
 
 namespace DataWriter {
-DDS::DataWriterQos get_PublishLast(const tms::Identity& device_id);
-DDS::DataWriterQos get_Rare(const tms::Identity& device_id);
-DDS::DataWriterQos get_Slow(const tms::Identity& device_id);
-DDS::DataWriterQos get_Medium(const tms::Identity& device_id);
-DDS::DataWriterQos get_Continuous(const tms::Identity& device_id);
-DDS::DataWriterQos get_Command(const tms::Identity& device_id);
-DDS::DataWriterQos get_Response(const tms::Identity& device_id);
-DDS::DataWriterQos get_Reply(const tms::Identity& device_id);
+const DDS::DataWriterQos& get_PublishLast(const tms::Identity& device_id);
+const DDS::DataWriterQos& get_Rare(const tms::Identity& device_id);
+const DDS::DataWriterQos& get_Slow(const tms::Identity& device_id);
+const DDS::DataWriterQos& get_Medium(const tms::Identity& device_id);
+const DDS::DataWriterQos& get_Continuous(const tms::Identity& device_id);
+const DDS::DataWriterQos& get_Command(const tms::Identity& device_id);
+const DDS::DataWriterQos& get_Response(const tms::Identity& device_id);
+const DDS::DataWriterQos& get_Reply(const tms::Identity& device_id);
 
 using Fn = std::function<DDS::DataWriterQos(const tms::Identity&)>;
 using FnMap = std::unordered_map<std::string, Fn>;

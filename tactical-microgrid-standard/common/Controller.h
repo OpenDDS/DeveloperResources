@@ -5,7 +5,7 @@
 
 class opendds_tms_Export Controller : public Handshaking {
 public:
-  Controller(const tms::Identity& id)
+  explicit Controller(const tms::Identity& id)
     : Handshaking(id)
   {
   }

@@ -57,10 +57,8 @@ void init_UserDataQosPolicy(DDS::UserDataQosPolicy& user_data, const tms::Identi
 
 // Common Qos values for DataReaderQos and DataWriterQos
 template <typename T>
-void init_endpoint_PublishLast_profile(T& qos, const tms::Identity& device_id)
+void init_endpoint_PublishLast_profile(T& qos)
 {
-  init_UserDataQosPolicy(qos.user_data, device_id);
-
   OpenDDS::DCPS::DurabilityQosPolicyBuilder durability_builder;
   qos.durability = durability_builder.transient_local();
 
@@ -81,9 +79,8 @@ void init_endpoint_PublishLast_profile(T& qos, const tms::Identity& device_id)
 }
 
 template <typename T>
-void init_endpoint_Rare_profile(T& qos, const tms::Identity& device_id)
+void init_endpoint_Rare_profile(T& qos)
 {
-  init_UserDataQosPolicy(qos.user_data, device_id);
   qos.durability = TheServiceParticipant->initial_DurabilityQosPolicy();
 
   OpenDDS::DCPS::DeadlineQosPolicyBuilder deadline_builder;
@@ -102,9 +99,8 @@ void init_endpoint_Rare_profile(T& qos, const tms::Identity& device_id)
 }
 
 template <typename T>
-void init_endpoint_Slow_profile(T& qos, const tms::Identity& device_id)
+void init_endpoint_Slow_profile(T& qos)
 {
-  init_UserDataQosPolicy(qos.user_data, device_id);
   qos.durability = TheServiceParticipant->initial_DurabilityQosPolicy();
 
   OpenDDS::DCPS::DeadlineQosPolicyBuilder deadline_builder;
@@ -123,9 +119,8 @@ void init_endpoint_Slow_profile(T& qos, const tms::Identity& device_id)
 }
 
 template <typename T>
-void init_endpoint_Medium_profile(T& qos, const tms::Identity& device_id)
+void init_endpoint_Medium_profile(T& qos)
 {
-  init_UserDataQosPolicy(qos.user_data, device_id);
   qos.durability = TheServiceParticipant->initial_DurabilityQosPolicy();
 
   OpenDDS::DCPS::DeadlineQosPolicyBuilder deadline_builder;
@@ -144,9 +139,8 @@ void init_endpoint_Medium_profile(T& qos, const tms::Identity& device_id)
 }
 
 template <typename T>
-void init_endpoint_Continuous_profile(T& qos, const tms::Identity& device_id)
+void init_endpoint_Continuous_profile(T& qos)
 {
-  init_UserDataQosPolicy(qos.user_data, device_id);
   qos.durability = TheServiceParticipant->initial_DurabilityQosPolicy();
 
   OpenDDS::DCPS::DeadlineQosPolicyBuilder deadline_builder;
@@ -165,9 +159,8 @@ void init_endpoint_Continuous_profile(T& qos, const tms::Identity& device_id)
 }
 
 template <typename T>
-void init_endpoint_Command_profile(T& qos, const tms::Identity& device_id)
+void init_endpoint_Command_profile(T& qos)
 {
-  init_UserDataQosPolicy(qos.user_data, device_id);
   qos.durability = TheServiceParticipant->initial_DurabilityQosPolicy();
   qos.deadline = TheServiceParticipant->initial_DeadlineQosPolicy();
   qos.latency_budget = TheServiceParticipant->initial_LatencyBudgetQosPolicy();
@@ -186,9 +179,8 @@ void init_endpoint_Command_profile(T& qos, const tms::Identity& device_id)
 }
 
 template <typename T>
-void init_endpoint_Response_profile(T& qos, const tms::Identity& device_id)
+void init_endpoint_Response_profile(T& qos)
 {
-  init_UserDataQosPolicy(qos.user_data, device_id);
   qos.durability = TheServiceParticipant->initial_DurabilityQosPolicy();
   qos.deadline = TheServiceParticipant->initial_DeadlineQosPolicy();
   qos.latency_budget = TheServiceParticipant->initial_LatencyBudgetQosPolicy();
@@ -207,9 +199,8 @@ void init_endpoint_Response_profile(T& qos, const tms::Identity& device_id)
 }
 
 template <typename T>
-void init_endpoint_Reply_profile(T& qos, const tms::Identity& device_id)
+void init_endpoint_Reply_profile(T& qos)
 {
-  init_UserDataQosPolicy(qos.user_data, device_id);
   qos.durability = TheServiceParticipant->initial_DurabilityQosPolicy();
   qos.deadline = TheServiceParticipant->initial_DeadlineQosPolicy();
   qos.latency_budget = TheServiceParticipant->initial_LatencyBudgetQosPolicy();
@@ -260,67 +251,107 @@ DDS::SubscriberQos get_qos()
 
 namespace DataReader {
 
-DDS::DataReaderQos get_PublishLast(const tms::Identity& device_id)
+const DDS::DataReaderQos& get_PublishLast(const tms::Identity& device_id)
 {
-  DDS::DataReaderQos qos;
-  init_endpoint_PublishLast_profile(qos, device_id);
-  init_datareader_common(qos);
+  static DDS::DataReaderQos qos;
+  static bool ready = false;
+  if (!ready) {
+    init_endpoint_PublishLast_profile(qos);
+    init_datareader_common(qos);
+    ready = true;
+  }
+  init_UserDataQosPolicy(qos.user_data, device_id);
   return qos;
 }
 
-DDS::DataReaderQos get_Rare(const tms::Identity& device_id)
+const DDS::DataReaderQos& get_Rare(const tms::Identity& device_id)
 {
-  DDS::DataReaderQos qos;
-  init_endpoint_Rare_profile(qos, device_id);
-  init_datareader_common(qos);
+  static DDS::DataReaderQos qos;
+  static bool ready = false;
+  if (!ready) {
+    init_endpoint_Rare_profile(qos);
+    init_datareader_common(qos);
+    ready = true;
+  }
+  init_UserDataQosPolicy(qos.user_data, device_id);
   return qos;
 }
 
-DDS::DataReaderQos get_Slow(const tms::Identity& device_id)
+const DDS::DataReaderQos& get_Slow(const tms::Identity& device_id)
 {
-  DDS::DataReaderQos qos;
-  init_endpoint_Slow_profile(qos, device_id);
-  init_datareader_common(qos);
+  static DDS::DataReaderQos qos;
+  static bool ready = false;
+  if (!ready) {
+    init_endpoint_Slow_profile(qos);
+    init_datareader_common(qos);
+    ready = true;
+  }
+  init_UserDataQosPolicy(qos.user_data, device_id);
   return qos;
 }
 
-DDS::DataReaderQos get_Medium(const tms::Identity& device_id)
+const DDS::DataReaderQos& get_Medium(const tms::Identity& device_id)
 {
-  DDS::DataReaderQos qos;
-  init_endpoint_Medium_profile(qos, device_id);
-  init_datareader_common(qos);
+  static DDS::DataReaderQos qos;
+  static bool ready = false;
+  if (!ready) {
+    init_endpoint_Medium_profile(qos);
+    init_datareader_common(qos);
+    ready = true;
+  }
+  init_UserDataQosPolicy(qos.user_data, device_id);
   return qos;
 }
 
-DDS::DataReaderQos get_Continuous(const tms::Identity& device_id)
+const DDS::DataReaderQos& get_Continuous(const tms::Identity& device_id)
 {
-  DDS::DataReaderQos qos;
-  init_endpoint_Continuous_profile(qos, device_id);
-  init_datareader_common(qos);
+  static DDS::DataReaderQos qos;
+  static bool ready = false;
+  if (!ready) {
+    init_endpoint_Continuous_profile(qos);
+    init_datareader_common(qos);
+    ready = true;
+  }
+  init_UserDataQosPolicy(qos.user_data, device_id);
   return qos;
 }
 
-DDS::DataReaderQos get_Command(const tms::Identity& device_id)
+const DDS::DataReaderQos& get_Command(const tms::Identity& device_id)
 {
-  DDS::DataReaderQos qos;
-  init_endpoint_Command_profile(qos, device_id);
-  init_datareader_common(qos);
+  static DDS::DataReaderQos qos;
+  static bool ready = false;
+  if (!ready) {
+    init_endpoint_Command_profile(qos);
+    init_datareader_common(qos);
+    ready = true;
+  }
+  init_UserDataQosPolicy(qos.user_data, device_id);
   return qos;
 }
 
-DDS::DataReaderQos get_Response(const tms::Identity& device_id)
+const DDS::DataReaderQos& get_Response(const tms::Identity& device_id)
 {
-  DDS::DataReaderQos qos;
-  init_endpoint_Response_profile(qos, device_id);
-  init_datareader_common(qos);
+  static DDS::DataReaderQos qos;
+  static bool ready = false;
+  if (!ready) {
+    init_endpoint_Response_profile(qos);
+    init_datareader_common(qos);
+    ready = true;
+  }
+  init_UserDataQosPolicy(qos.user_data, device_id);
   return qos;
 }
 
-DDS::DataReaderQos get_Reply(const tms::Identity& device_id)
+const DDS::DataReaderQos& get_Reply(const tms::Identity& device_id)
 {
-  DDS::DataReaderQos qos;
-  init_endpoint_Reply_profile(qos, device_id);
-  init_datareader_common(qos);
+  static DDS::DataReaderQos qos;
+  static bool ready = false;
+  if (!ready) {
+    init_endpoint_Reply_profile(qos);
+    init_datareader_common(qos);
+    ready = true;
+  }
+  init_UserDataQosPolicy(qos.user_data, device_id);
   return qos;
 }
 
@@ -334,67 +365,107 @@ DDS::PublisherQos get_qos()
 } // namespace Publisher
 
 namespace DataWriter {
-DDS::DataWriterQos get_PublishLast(const tms::Identity& device_id)
+const DDS::DataWriterQos& get_PublishLast(const tms::Identity& device_id)
 {
-  DDS::DataWriterQos qos;
-  init_endpoint_PublishLast_profile(qos, device_id);
-  init_datawriter_common(qos);
+  static DDS::DataWriterQos qos;
+  static bool ready = false;
+  if (!ready) {
+    init_endpoint_PublishLast_profile(qos);
+    init_datawriter_common(qos);
+    ready = true;
+  }
+  init_UserDataQosPolicy(qos.user_data, device_id);
   return qos;
 }
 
-DDS::DataWriterQos get_Rare(const tms::Identity& device_id)
+const DDS::DataWriterQos& get_Rare(const tms::Identity& device_id)
 {
-  DDS::DataWriterQos qos;
-  init_endpoint_Rare_profile(qos, device_id);
-  init_datawriter_common(qos);
+  static DDS::DataWriterQos qos;
+  static bool ready = false;
+  if (!ready) {
+    init_endpoint_Rare_profile(qos);
+    init_datawriter_common(qos);
+    ready = true;
+  }
+  init_UserDataQosPolicy(qos.user_data, device_id);
   return qos;
 }
 
-DDS::DataWriterQos get_Slow(const tms::Identity& device_id)
+const DDS::DataWriterQos& get_Slow(const tms::Identity& device_id)
 {
-  DDS::DataWriterQos qos;
-  init_endpoint_Slow_profile(qos, device_id);
-  init_datawriter_common(qos);
+  static DDS::DataWriterQos qos;
+  static bool ready = false;
+  if (!ready) {
+    init_endpoint_Slow_profile(qos);
+    init_datawriter_common(qos);
+    ready = true;
+  }
+  init_UserDataQosPolicy(qos.user_data, device_id);
   return qos;
 }
 
-DDS::DataWriterQos get_Medium(const tms::Identity& device_id)
+const DDS::DataWriterQos& get_Medium(const tms::Identity& device_id)
 {
-  DDS::DataWriterQos qos;
-  init_endpoint_Medium_profile(qos, device_id);
-  init_datawriter_common(qos);
+  static DDS::DataWriterQos qos;
+  static bool ready = false;
+  if (!ready) {
+    init_endpoint_Medium_profile(qos);
+    init_datawriter_common(qos);
+    ready = true;
+  }
+  init_UserDataQosPolicy(qos.user_data, device_id);
   return qos;
 }
 
-DDS::DataWriterQos get_Continuous(const tms::Identity& device_id)
+const DDS::DataWriterQos& get_Continuous(const tms::Identity& device_id)
 {
-  DDS::DataWriterQos qos;
-  init_endpoint_Continuous_profile(qos, device_id);
-  init_datawriter_common(qos);
+  static DDS::DataWriterQos qos;
+  static bool ready = false;
+  if (!ready) {
+    init_endpoint_Continuous_profile(qos);
+    init_datawriter_common(qos);
+    ready = true;
+  }
+  init_UserDataQosPolicy(qos.user_data, device_id);
   return qos;
 }
 
-DDS::DataWriterQos get_Command(const tms::Identity& device_id)
+const DDS::DataWriterQos& get_Command(const tms::Identity& device_id)
 {
-  DDS::DataWriterQos qos;
-  init_endpoint_Command_profile(qos, device_id);
-  init_datawriter_common(qos);
+  static DDS::DataWriterQos qos;
+  static bool ready = false;
+  if (!ready) {
+    init_endpoint_Command_profile(qos);
+    init_datawriter_common(qos);
+    ready = true;
+  }
+  init_UserDataQosPolicy(qos.user_data, device_id);
   return qos;
 }
 
-DDS::DataWriterQos get_Response(const tms::Identity& device_id)
+const DDS::DataWriterQos& get_Response(const tms::Identity& device_id)
 {
-  DDS::DataWriterQos qos;
-  init_endpoint_Response_profile(qos, device_id);
-  init_datawriter_common(qos);
+  static DDS::DataWriterQos qos;
+  static bool ready = false;
+  if (!ready) {
+    init_endpoint_Response_profile(qos);
+    init_datawriter_common(qos);
+    ready = true;
+  }
+  init_UserDataQosPolicy(qos.user_data, device_id);
   return qos;
 }
 
-DDS::DataWriterQos get_Reply(const tms::Identity& device_id)
+const DDS::DataWriterQos& get_Reply(const tms::Identity& device_id)
 {
-  DDS::DataWriterQos qos;
-  init_endpoint_Reply_profile(qos, device_id);
-  init_datawriter_common(qos);
+  static DDS::DataWriterQos qos;
+  static bool ready = false;
+  if (!ready) {
+    init_endpoint_Reply_profile(qos);
+    init_datawriter_common(qos);
+    ready = true;
+  }
+  init_UserDataQosPolicy(qos.user_data, device_id);
   return qos;
 }
 

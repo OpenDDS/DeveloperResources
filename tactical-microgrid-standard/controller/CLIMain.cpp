@@ -2,7 +2,8 @@
 
 #include <ace/Get_Opt.h>
 
-int main(int argc, char* argv[]) {
+int main(int argc, char* argv[])
+{
   const char* id = "CLI Client";
   DDS::DomainId_t domain_id = OpenDDS::DOMAIN_UNKNOWN;
 

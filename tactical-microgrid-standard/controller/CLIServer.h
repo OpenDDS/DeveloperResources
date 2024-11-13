@@ -6,7 +6,7 @@
 
 class CLIServer {
 public:
-  CLIServer(Controller& mc);
+  explicit CLIServer(Controller& mc);
   ~CLIServer() {}
 
   Controller& get_controller() const

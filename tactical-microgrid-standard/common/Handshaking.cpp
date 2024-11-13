@@ -105,7 +105,7 @@ DDS::ReturnCode_t Handshaking::create_publishers()
     return DDS::RETCODE_ERROR;
   }
 
-  const DDS::DataWriterQos di_qos = Qos::DataWriter::fn_map.at(tms::topic::TOPIC_DEVICE_INFO)(device_id_);
+  const DDS::DataWriterQos& di_qos = Qos::DataWriter::fn_map.at(tms::topic::TOPIC_DEVICE_INFO)(device_id_);
   DDS::DataWriter_var di_dw_base = pub->create_datawriter(di_topic_.in(),
                                                           di_qos,
                                                           DDS::DataWriterListener::_nil(),
@@ -122,7 +122,7 @@ DDS::ReturnCode_t Handshaking::create_publishers()
     return DDS::RETCODE_ERROR;
   }
 
-  const DDS::DataWriterQos hb_qos = Qos::DataWriter::fn_map.at(tms::topic::TOPIC_HEARTBEAT)(device_id_);
+  const DDS::DataWriterQos& hb_qos = Qos::DataWriter::fn_map.at(tms::topic::TOPIC_HEARTBEAT)(device_id_);
   DDS::DataWriter_var hb_dw_base = pub->create_datawriter(hb_topic_.in(),
                                                           hb_qos,
                                                           DDS::DataWriterListener::_nil(),
@@ -204,7 +204,7 @@ DDS::ReturnCode_t Handshaking::create_subscribers(
   }
 
   DDS::DataReaderListener_var di_listener(new DeviceInfoDataReaderListenerImpl(di_cb));
-  const DDS::DataReaderQos di_qos = Qos::DataReader::fn_map.at(tms::topic::TOPIC_DEVICE_INFO)(device_id_);
+  const DDS::DataReaderQos& di_qos = Qos::DataReader::fn_map.at(tms::topic::TOPIC_DEVICE_INFO)(device_id_);
   DDS::DataReader_var di_dr = sub->create_datareader(di_topic_.in(),
                                                      di_qos,
                                                      di_listener.in(),
@@ -216,7 +216,7 @@ DDS::ReturnCode_t Handshaking::create_subscribers(
   }
 
   DDS::DataReaderListener_var hb_listener(new HeartbeatDataReaderListenerImpl(hb_cb));
-  const DDS::DataReaderQos hb_qos = Qos::DataReader::fn_map.at(tms::topic::TOPIC_HEARTBEAT)(device_id_);
+  const DDS::DataReaderQos& hb_qos = Qos::DataReader::fn_map.at(tms::topic::TOPIC_HEARTBEAT)(device_id_);
   DDS::DataReader_var hb_dr = sub->create_datareader(hb_topic_.in(),
                                                      hb_qos,
                                                      hb_listener.in(),

@@ -6,7 +6,7 @@
 
 class PowerDevicesRequestDataReaderListenerImpl : public DataReaderListenerBase {
 public:
-  PowerDevicesRequestDataReaderListenerImpl(CLIServer& cli_server) : cli_server_(cli_server) {}
+  explicit PowerDevicesRequestDataReaderListenerImpl(CLIServer& cli_server) : cli_server_(cli_server) {}
 
   virtual ~PowerDevicesRequestDataReaderListenerImpl() {}
 

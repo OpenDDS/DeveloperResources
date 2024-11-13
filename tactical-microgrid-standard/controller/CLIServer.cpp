@@ -26,7 +26,7 @@ DDS::ReturnCode_t CLIServer::init()
 
   CORBA::String_var pdreq_type_name = pdreq_ts->get_type_name();
   DDS::Topic_var pdreq_topic = dp->create_topic(cli::TOPIC_POWER_DEVICES_REQUEST.c_str(),
-                                                pdreq_type_name.in(),
+                                                pdreq_type_name,
                                                 TOPIC_QOS_DEFAULT,
                                                 0,
                                                 ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
@@ -93,7 +93,7 @@ DDS::ReturnCode_t CLIServer::init()
     return DDS::RETCODE_ERROR;
   }
 
-  const DDS::DataReaderQos oir_qos = Qos::DataReader::fn_map.at(tms::topic::TOPIC_OPERATOR_INTENT_REQUEST)(controller_.get_device_id());
+  const DDS::DataReaderQos& oir_qos = Qos::DataReader::fn_map.at(tms::topic::TOPIC_OPERATOR_INTENT_REQUEST)(controller_.get_device_id());
 
   DDS::DataReaderListener_var oir_listener(new OperatorIntentRequestDataReaderListenerImpl(*this));
   DDS::DataReader_var oir_dr_base = tms_sub->create_datareader(oir_topic,

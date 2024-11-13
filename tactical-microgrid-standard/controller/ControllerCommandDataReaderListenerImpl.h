@@ -6,7 +6,7 @@
 
 class ControllerCommandDataReaderListenerImpl : public DataReaderListenerBase {
 public:
-  ControllerCommandDataReaderListenerImpl(CLIServer& cli_server) : cli_server_(cli_server) {}
+  explicit ControllerCommandDataReaderListenerImpl(CLIServer& cli_server) : cli_server_(cli_server) {}
 
   virtual ~ControllerCommandDataReaderListenerImpl() {}
 

@@ -14,7 +14,7 @@ struct UnavailableController {
 
 class CLIClient : public TimerHandler<UnavailableController> {
 public:
-  CLIClient(const tms::Identity& id);
+  explicit CLIClient(const tms::Identity& id);
   ~CLIClient() {}
 
   DDS::ReturnCode_t init(DDS::DomainId_t domain_id, int argc = 0, char* argv[] = nullptr);

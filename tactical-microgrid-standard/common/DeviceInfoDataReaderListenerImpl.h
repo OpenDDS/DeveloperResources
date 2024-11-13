@@ -7,7 +7,7 @@
 
 class DeviceInfoDataReaderListenerImpl : public DataReaderListenerBase {
 public:
-  DeviceInfoDataReaderListenerImpl(std::function<void(const tms::DeviceInfo&, const DDS::SampleInfo&)> cb = nullptr)
+  explicit DeviceInfoDataReaderListenerImpl(std::function<void(const tms::DeviceInfo&, const DDS::SampleInfo&)> cb = nullptr)
     : callback_(cb)
   {}
 

@@ -6,7 +6,7 @@
 
 class OperatorIntentRequestDataReaderListenerImpl : public DataReaderListenerBase {
 public:
-  OperatorIntentRequestDataReaderListenerImpl(CLIServer& cli_server) : cli_server_(cli_server) {}
+  explicit OperatorIntentRequestDataReaderListenerImpl(CLIServer& cli_server) : cli_server_(cli_server) {}
 
   virtual ~OperatorIntentRequestDataReaderListenerImpl() {}
 

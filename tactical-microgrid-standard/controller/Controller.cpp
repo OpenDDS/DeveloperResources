@@ -41,7 +41,6 @@ int Controller::run()
 
 void Controller::terminate()
 {
-  // TODO:
   stop_heartbeats();
   reactor_->end_reactor_event_loop();
 }

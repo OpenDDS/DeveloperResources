@@ -34,14 +34,14 @@ DDS::ReturnCode_t CLIClient::init(DDS::DomainId_t domain_id, int argc, char* arg
 
   // Publish to the PowerDevicesRequest topic
   cli::PowerDevicesRequestTypeSupport_var pdreq_ts = new cli::PowerDevicesRequestTypeSupportImpl;
-  if (DDS::RETCODE_OK != pdreq_ts->register_type(dp.in(), "")) {
+  if (DDS::RETCODE_OK != pdreq_ts->register_type(dp, "")) {
     ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIClient::init: register_type PowerDevicesRequest failed\n"));
     return DDS::RETCODE_ERROR;
   }
 
   CORBA::String_var pdreq_type_name = pdreq_ts->get_type_name();
   DDS::Topic_var pdreq_topic = dp->create_topic(cli::TOPIC_POWER_DEVICES_REQUEST.c_str(),
-                                                pdreq_type_name.in(),
+                                                pdreq_type_name,
                                                 TOPIC_QOS_DEFAULT,
                                                 0,
                                                 ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
@@ -81,7 +81,7 @@ DDS::ReturnCode_t CLIClient::init(DDS::DomainId_t domain_id, int argc, char* arg
 
   // Publish to the TMS OperatorIntentRequest topic
   tms::OperatorIntentRequestTypeSupport_var oir_ts = new tms::OperatorIntentRequestTypeSupportImpl;
-  if (DDS::RETCODE_OK != oir_ts->register_type(dp.in(), "")) {
+  if (DDS::RETCODE_OK != oir_ts->register_type(dp, "")) {
     ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIClient::init: register_type OperatorIntentRequest failed\n"));
     return DDS::RETCODE_ERROR;
   }
@@ -108,7 +108,7 @@ DDS::ReturnCode_t CLIClient::init(DDS::DomainId_t domain_id, int argc, char* arg
   }
 
   const tms::Identity device_id = handshaking_.get_device_id();
-  const DDS::DataWriterQos oir_qos = Qos::DataWriter::fn_map.at(tms::topic::TOPIC_OPERATOR_INTENT_REQUEST)(device_id);
+  const DDS::DataWriterQos& oir_qos = Qos::DataWriter::fn_map.at(tms::topic::TOPIC_OPERATOR_INTENT_REQUEST)(device_id);
   DDS::DataWriter_var oir_dw_base = tms_pub->create_datawriter(oir_topic,
                                                                oir_qos,
                                                                0,
@@ -127,7 +127,7 @@ DDS::ReturnCode_t CLIClient::init(DDS::DomainId_t domain_id, int argc, char* arg
 
   // Publish to the ControllerCommand topic
   cli::ControllerCommandTypeSupport_var cc_ts = new cli::ControllerCommandTypeSupportImpl;
-  if (DDS::RETCODE_OK != cc_ts->register_type(dp.in(), "")) {
+  if (DDS::RETCODE_OK != cc_ts->register_type(dp, "")) {
     ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIClient::init: register_type ControllerCommand failed\n"));
     return DDS::RETCODE_ERROR;
   }
@@ -162,14 +162,14 @@ DDS::ReturnCode_t CLIClient::init(DDS::DomainId_t domain_id, int argc, char* arg
 
   // Subscribe to the PowerDevicesReply topic
   cli::PowerDevicesReplyTypeSupport_var pdrep_ts = new cli::PowerDevicesReplyTypeSupportImpl;
-  if (DDS::RETCODE_OK != pdrep_ts->register_type(dp.in(), "")) {
+  if (DDS::RETCODE_OK != pdrep_ts->register_type(dp, "")) {
     ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIClient::init: register_type PowerDevicesReply failed\n"));
     return DDS::RETCODE_ERROR;
   }
 
   CORBA::String_var pdrep_type_name = pdrep_ts->get_type_name();
   DDS::Topic_var pdrep_topic = dp->create_topic(cli::TOPIC_POWER_DEVICES_REPLY.c_str(),
-                                                pdrep_type_name.in(),
+                                                pdrep_type_name,
                                                 TOPIC_QOS_DEFAULT,
                                                 0,
                                                 ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);

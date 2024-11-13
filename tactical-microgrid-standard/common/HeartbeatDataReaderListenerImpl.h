@@ -7,7 +7,7 @@
 
 class HeartbeatDataReaderListenerImpl : public DataReaderListenerBase {
 public:
-  HeartbeatDataReaderListenerImpl(std::function<void(const tms::Heartbeat&, const DDS::SampleInfo&)> cb = nullptr)
+  explicit HeartbeatDataReaderListenerImpl(std::function<void(const tms::Heartbeat&, const DDS::SampleInfo&)> cb = nullptr)
     : callback_(cb)
   {}
 

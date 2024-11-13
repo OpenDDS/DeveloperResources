@@ -3,7 +3,8 @@
 
 #include <ace/Get_Opt.h>
 
-int main(int argc, char* argv[]) {
+int main(int argc, char* argv[])
+{
   DDS::DomainId_t domain_id = OpenDDS::DOMAIN_UNKNOWN;
   const char* mc_id = nullptr;
 

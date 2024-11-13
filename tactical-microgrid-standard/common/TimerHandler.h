@@ -78,7 +78,7 @@ class TimerHandler : public ACE_Event_Handler, protected TimerHolder<EventTypes>
 public:
   using AnyTimer = std::variant<typename Timer<EventTypes>::Ptr...>;
 
-  TimerHandler(ACE_Reactor* reactor = nullptr)
+  explicit TimerHandler(ACE_Reactor* reactor = nullptr)
     : reactor_(reactor ? reactor : ACE_Reactor::instance())
   {
   }

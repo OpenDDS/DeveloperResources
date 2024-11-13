@@ -44,7 +44,7 @@ class PowerDevice;
 class ControllerSelector :
   public TimerHandler<NewController, MissedController, LostController, NoControllers> {
 public:
-  ControllerSelector(PowerDevice& pd)
+  explicit ControllerSelector(PowerDevice& pd)
     : pd_(pd)
   {
   }
@@ -88,7 +88,7 @@ private:
 
 class opendds_tms_Export PowerDevice : public Handshaking {
 public:
-  PowerDevice(const tms::Identity& id)
+  explicit PowerDevice(const tms::Identity& id)
     : Handshaking(id)
     , controller_selector_(*this)
   {
