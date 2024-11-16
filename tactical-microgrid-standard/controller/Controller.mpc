@@ -18,8 +18,8 @@ project(*MC): dcpsexe {
   after += *Commands
   exename = controller
   includes += ..
-  libpaths += ../idl ../common ../qos
-  libs += tms Commands Handshaking Qos
+  libpaths += ../idl ../common
+  libs += tms Commands Common
 
   IDL_Files {
   }
@@ -41,8 +41,8 @@ project(*CLI): dcpsexe {
   after += *Commands
   exename = cli
   includes += ..
-  libpaths += ../idl ../common ../qos
-  libs += tms Commands Handshaking Qos
+  libpaths += ../idl ../common
+  libs += tms Commands Common
 
   IDL_Files {
   }

@@ -3,7 +3,7 @@
 
 #include "Handshaking.h"
 
-class opendds_tms_Export Controller : public Handshaking {
+class OpenDDS_TMS_Export Controller : public Handshaking {
 public:
   explicit Controller(const tms::Identity& id)
     : Handshaking(id)

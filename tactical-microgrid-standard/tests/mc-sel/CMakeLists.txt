@@ -7,9 +7,9 @@ find_package(OpenDDS REQUIRED)
 include(opendds_testing)
 
 add_executable(mc-sel-test mc-sel-test.cpp)
-target_link_libraries(mc-sel-test PUBLIC opendds_tms)
+target_link_libraries(mc-sel-test PUBLIC Common)
 
 add_executable(basic-mc basic-mc.cpp)
-target_link_libraries(basic-mc PUBLIC opendds_tms)
+target_link_libraries(basic-mc PUBLIC Common)
 
 opendds_add_test(COMMAND ./mc-sel-test)

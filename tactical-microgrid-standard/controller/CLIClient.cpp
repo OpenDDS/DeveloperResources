@@ -1,5 +1,5 @@
 #include "CLIClient.h"
-#include "qos/QosHelper.h"
+#include "common/QosHelper.h"
 
 #include <dds/DCPS/PublisherImpl.h>
 #include <dds/DCPS/SubscriberImpl.h>

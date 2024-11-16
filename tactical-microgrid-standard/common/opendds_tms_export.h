@@ -1,7 +1,7 @@
 
 // -*- C++ -*-
 // Definition for Win32 Export directives.
-// This file is generated automatically by generate_export_file.pl opendds_tms
+// This file is generated automatically by generate_export_file.pl OpenDDS_TMS
 // ------------------------------
 #ifndef OPENDDS_TMS_EXPORT_H
 #define OPENDDS_TMS_EXPORT_H
@@ -18,16 +18,16 @@
 
 #if defined (OPENDDS_TMS_HAS_DLL) && (OPENDDS_TMS_HAS_DLL == 1)
 #  if defined (OPENDDS_TMS_BUILD_DLL)
-#    define opendds_tms_Export ACE_Proper_Export_Flag
+#    define OpenDDS_TMS_Export ACE_Proper_Export_Flag
 #    define OPENDDS_TMS_SINGLETON_DECLARATION(T) ACE_EXPORT_SINGLETON_DECLARATION (T)
 #    define OPENDDS_TMS_SINGLETON_DECLARE(SINGLETON_TYPE, CLASS, LOCK) ACE_EXPORT_SINGLETON_DECLARE(SINGLETON_TYPE, CLASS, LOCK)
 #  else /* OPENDDS_TMS_BUILD_DLL */
-#    define opendds_tms_Export ACE_Proper_Import_Flag
+#    define OpenDDS_TMS_Export ACE_Proper_Import_Flag
 #    define OPENDDS_TMS_SINGLETON_DECLARATION(T) ACE_IMPORT_SINGLETON_DECLARATION (T)
 #    define OPENDDS_TMS_SINGLETON_DECLARE(SINGLETON_TYPE, CLASS, LOCK) ACE_IMPORT_SINGLETON_DECLARE(SINGLETON_TYPE, CLASS, LOCK)
 #  endif /* OPENDDS_TMS_BUILD_DLL */
 #else /* OPENDDS_TMS_HAS_DLL == 1 */
-#  define opendds_tms_Export
+#  define OpenDDS_TMS_Export
 #  define OPENDDS_TMS_SINGLETON_DECLARATION(T)
 #  define OPENDDS_TMS_SINGLETON_DECLARE(SINGLETON_TYPE, CLASS, LOCK)
 #endif /* OPENDDS_TMS_HAS_DLL == 1 */

@@ -5,6 +5,9 @@ project: opendds_cxx11 {
   after += tms
 
   Source_Files {
+    Handshaking.cpp
+    DeviceInfoDataReaderListenerImpl.cpp
+    HeartbeatDataReaderListenerImpl.cpp
     QosHelper.cpp
   }
 }

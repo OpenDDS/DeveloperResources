@@ -10,7 +10,7 @@
 
 #include <functional>
 
-class opendds_tms_Export Handshaking : public TimerHandler<tms::Heartbeat> {
+class OpenDDS_TMS_Export Handshaking : public TimerHandler<tms::Heartbeat> {
 public:
   explicit Handshaking(const tms::Identity& device_id)
     : device_id_(device_id)

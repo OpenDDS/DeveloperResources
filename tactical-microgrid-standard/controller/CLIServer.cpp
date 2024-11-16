@@ -1,5 +1,5 @@
 #include "CLIServer.h"
-#include "qos/QosHelper.h"
+#include "common/QosHelper.h"
 #include "PowerDevicesRequestDataReaderListenerImpl.h"
 #include "OperatorIntentRequestDataReaderListenerImpl.h"
 #include "ControllerCommandDataReaderListenerImpl.h"

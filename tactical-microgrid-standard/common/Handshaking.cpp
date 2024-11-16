@@ -1,7 +1,7 @@
 #include "Handshaking.h"
 #include "DeviceInfoDataReaderListenerImpl.h"
 #include "HeartbeatDataReaderListenerImpl.h"
-#include "qos/QosHelper.h"
+#include "QosHelper.h"
 
 #include <dds/DCPS/PublisherImpl.h>
 #include <dds/DCPS/SubscriberImpl.h>

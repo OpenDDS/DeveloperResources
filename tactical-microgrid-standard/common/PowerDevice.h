@@ -86,7 +86,7 @@ private:
   std::map<tms::Identity, TimePoint> all_controllers_;
 };
 
-class opendds_tms_Export PowerDevice : public Handshaking {
+class OpenDDS_TMS_Export PowerDevice : public Handshaking {
 public:
   explicit PowerDevice(const tms::Identity& id)
     : Handshaking(id)
