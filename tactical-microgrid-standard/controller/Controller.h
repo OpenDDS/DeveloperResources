@@ -17,7 +17,7 @@ public:
 private:
   void device_info_cb(const tms::DeviceInfo& di, const DDS::SampleInfo& si);
   void heartbeat_cb(const tms::Heartbeat& hb, const DDS::SampleInfo& si);
-  void populate_device_info(tms::DeviceInfo& device_info);
+  tms::DeviceInfo populate_device_info() const;
 
 private:
   mutable std::mutex mut_;

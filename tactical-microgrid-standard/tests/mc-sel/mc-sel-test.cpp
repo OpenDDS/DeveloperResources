@@ -182,12 +182,6 @@ int main(int argc, char* argv[])
     return 1;
   }
 
-  auto di = pd.get_device_info();
-  di.role(tms::DeviceRole::ROLE_SOURCE);
-  if (pd.send_device_info(di) != DDS::RETCODE_OK) {
-    return 1;
-  }
-
   Test test(pd, mc_path.string());
   if (ACE_Reactor::instance()->run_reactor_event_loop() != 0) {
     return 1;

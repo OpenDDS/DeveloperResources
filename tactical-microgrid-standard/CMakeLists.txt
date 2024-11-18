@@ -5,25 +5,23 @@ enable_testing()
 
 find_package(OpenDDS REQUIRED)
 
-set(CommonLibName Common)
-add_library(${CommonLibName}
+add_library(Common
   common/Handshaking.cpp
-  common/Controller.cpp
   common/PowerDevice.cpp
   common/DeviceInfoDataReaderListenerImpl.cpp
   common/HeartbeatDataReaderListenerImpl.cpp
   common/QosHelper.cpp
 )
-target_include_directories(${CommonLibName} PUBLIC ${CMAKE_SOURCE_DIR})
-opendds_target_sources(${CommonLibName}
+target_include_directories(Common PUBLIC ${CMAKE_SOURCE_DIR})
+opendds_target_sources(Common
   PUBLIC
     idl/mil-std-3071_data_model.idl
   INCLUDE_BASE ${CMAKE_SOURCE_DIR}
   OPENDDS_IDL_OPTIONS -Lc++11
   USE_EXPORT "common/opendds_tms_export.h" OpenDDS_TMS_Export
 )
-target_link_libraries(${CommonLibName} PUBLIC OpenDDS::Rtps_Udp)
-target_compile_features(${CommonLibName} PUBLIC cxx_std_17)
+target_link_libraries(Common PUBLIC OpenDDS::Rtps_Udp)
+target_compile_features(Common PUBLIC cxx_std_17)
 
 add_executable(Controller
   controller/ControllerMain.cpp
@@ -41,7 +39,6 @@ opendds_target_sources(Controller
   OPENDDS_IDL_OPTIONS -Lc++11 -I${CMAKE_SOURCE_DIR}
 )
 target_link_libraries(Controller PRIVATE Common)
-target_compile_features(Controller PUBLIC cxx_std_17)
 
 add_executable(CLI
   controller/CLIMain.cpp
@@ -55,6 +52,5 @@ opendds_target_sources(CLI
   OPENDDS_IDL_OPTIONS -Lc++11 -I${CMAKE_SOURCE_DIR}
 )
 target_link_libraries(CLI PRIVATE Common)
-target_compile_features(CLI PUBLIC cxx_std_17)
 
 add_subdirectory(tests)

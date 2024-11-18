@@ -50,6 +50,7 @@ public:
     return device_id_;
   }
 
+protected:
   virtual tms::DeviceInfo get_device_info() const
   {
     tms::DeviceInfo device_info;
@@ -57,7 +58,6 @@ public:
     return device_info;
   }
 
-protected:
   const tms::Identity device_id_;
   DDS::DomainParticipant_var participant_;
 

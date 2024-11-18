@@ -8,12 +8,8 @@ DDS::ReturnCode_t Controller::init(DDS::DomainId_t domain_id, int argc, char* ar
   }
 
   rc = create_subscribers(
-    [&](const tms::DeviceInfo& di, const DDS::SampleInfo& si) {
-      device_info_cb(di, si);
-    },
-    [&](const tms::Heartbeat& hb, const DDS::SampleInfo& si) {
-      heartbeat_cb(hb, si);
-    });
+    [&](const auto& di, const auto& si) { device_info_cb(di, si); },
+    [&](const auto& hb, const auto& si) { heartbeat_cb(hb, si); });
   if (rc != DDS::RETCODE_OK) {
     return rc;
   }
@@ -23,15 +19,9 @@ DDS::ReturnCode_t Controller::init(DDS::DomainId_t domain_id, int argc, char* ar
     return rc;
   }
 
-  tms::DeviceInfo di;
-  populate_device_info(di);
+  auto di = populate_device_info();
 
-  rc = send_device_info(di);
-  if (rc != DDS::RETCODE_OK) {
-    return rc;
-  }
-
-  return DDS::RETCODE_OK;
+  return send_device_info(di);
 }
 
 int Controller::run()
@@ -82,9 +72,9 @@ void Controller::heartbeat_cb(const tms::Heartbeat& hb, const DDS::SampleInfo& s
   }
 }
 
-void Controller::populate_device_info(tms::DeviceInfo& device_info)
+tms::DeviceInfo Controller::populate_device_info() const
 {
-  device_info.deviceId(device_id_);
+  auto device_info = get_device_info();
   device_info.role(tms::DeviceRole::ROLE_MICROGRID_CONTROLLER);
 
   tms::ProductInfo prod_info;
@@ -120,4 +110,5 @@ void Controller::populate_device_info(tms::DeviceInfo& device_info)
   // - controlParameters, metricParameters: optional depending whether we want to
   //   include these parameters information
   // - powerDevice: not applicable
+  return device_info;
 }
