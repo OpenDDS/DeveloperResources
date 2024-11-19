@@ -23,6 +23,14 @@ opendds_target_sources(Common
 target_link_libraries(Common PUBLIC OpenDDS::Rtps_Udp)
 target_compile_features(Common PUBLIC cxx_std_17)
 
+add_library(Commands_Idl)
+opendds_target_sources(Commands_Idl
+  PUBLIC
+    controller/CLICommands.idl
+  OPENDDS_IDL_OPTIONS -Lc++11 -I${CMAKE_SOURCE_DIR}
+)
+target_link_libraries(Commands_Idl PUBLIC Common)
+
 add_executable(Controller
   controller/ControllerMain.cpp
   controller/Controller.cpp
@@ -32,25 +40,13 @@ add_executable(Controller
   controller/ControllerCommandDataReaderListenerImpl.cpp
 )
 target_include_directories(Controller PUBLIC ${CMAKE_SOURCE_DIR})
-opendds_target_sources(Controller
-  PRIVATE
-    controller/CLICommands.idl
-  INCLUDE_BASE ${CMAKE_SOURCE_DIR}
-  OPENDDS_IDL_OPTIONS -Lc++11 -I${CMAKE_SOURCE_DIR}
-)
-target_link_libraries(Controller PRIVATE Common)
+target_link_libraries(Controller PRIVATE Commands_Idl)
 
 add_executable(CLI
   controller/CLIMain.cpp
   controller/CLIClient.cpp
 )
 target_include_directories(CLI PUBLIC ${CMAKE_SOURCE_DIR})
-opendds_target_sources(CLI
-  PRIVATE
-    controller/CLICommands.idl
-  INCLUDE_BASE ${CMAKE_SOURCE_DIR}
-  OPENDDS_IDL_OPTIONS -Lc++11 -I${CMAKE_SOURCE_DIR}
-)
-target_link_libraries(CLI PRIVATE Common)
+target_link_libraries(CLI PRIVATE Commands_Idl)
 
 add_subdirectory(tests)
