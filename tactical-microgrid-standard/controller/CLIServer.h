@@ -2,7 +2,7 @@
 #define CONTROLLER_CLI_SERVER_H
 
 #include "Controller.h"
-#include "CLICommandsTypeSupportImpl.h"
+#include "cli_idl/CLICommandsTypeSupportImpl.h"
 
 class CLIServer {
 public:

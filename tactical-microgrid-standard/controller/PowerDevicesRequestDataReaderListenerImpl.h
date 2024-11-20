@@ -8,7 +8,7 @@ class PowerDevicesRequestDataReaderListenerImpl : public DataReaderListenerBase 
 public:
   explicit PowerDevicesRequestDataReaderListenerImpl(CLIServer& cli_server) : cli_server_(cli_server) {}
 
-  virtual ~PowerDevicesRequestDataReaderListenerImpl() {}
+  virtual ~PowerDevicesRequestDataReaderListenerImpl() = default;
 
   void on_data_available(DDS::DataReader_ptr reader) final;
 

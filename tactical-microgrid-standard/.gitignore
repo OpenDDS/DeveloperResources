@@ -16,9 +16,9 @@ build
 /idl/mil-std-3071_data_modelTypeSupportImpl.*
 
 /controller/controller
-/controller/cli
-/controller/CLICommandsC.*
-/controller/CLICommandsTypeSupport.idl
-/controller/CLICommandsTypeSupportC.*
-/controller/CLICommandsTypeSupportS.*
-/controller/CLICommandsTypeSupportImpl.*
+/cli/cli
+/cli_idl/CLICommandsC.*
+/cli_idl/CLICommandsTypeSupport.idl
+/cli_idl/CLICommandsTypeSupportC.*
+/cli_idl/CLICommandsTypeSupportS.*
+/cli_idl/CLICommandsTypeSupportImpl.*

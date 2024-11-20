@@ -26,13 +26,13 @@ target_compile_features(Common PUBLIC cxx_std_17)
 add_library(Commands_Idl)
 opendds_target_sources(Commands_Idl
   PUBLIC
-    controller/CLICommands.idl
+    cli_idl/CLICommands.idl
   OPENDDS_IDL_OPTIONS -Lc++11 -I${CMAKE_SOURCE_DIR}
 )
 target_link_libraries(Commands_Idl PUBLIC Common)
 
 add_executable(Controller
-  controller/ControllerMain.cpp
+  controller/main.cpp
   controller/Controller.cpp
   controller/CLIServer.cpp
   controller/PowerDevicesRequestDataReaderListenerImpl.cpp
@@ -43,8 +43,8 @@ target_include_directories(Controller PUBLIC ${CMAKE_SOURCE_DIR})
 target_link_libraries(Controller PRIVATE Commands_Idl)
 
 add_executable(CLI
-  controller/CLIMain.cpp
-  controller/CLIClient.cpp
+  cli/main.cpp
+  cli/CLIClient.cpp
 )
 target_include_directories(CLI PUBLIC ${CMAKE_SOURCE_DIR})
 target_link_libraries(CLI PRIVATE Commands_Idl)

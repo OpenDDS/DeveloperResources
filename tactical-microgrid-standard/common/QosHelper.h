@@ -11,7 +11,7 @@
 
 namespace Qos {
 namespace Subscriber {
-DDS::SubscriberQos get_qos();
+  DDS::SubscriberQos get_qos();
 }
 
 namespace DataReader {
@@ -30,7 +30,7 @@ extern const FnMap fn_map;
 }
 
 namespace Publisher {
-DDS::PublisherQos get_qos();
+  DDS::PublisherQos get_qos();
 }
 
 namespace DataWriter {

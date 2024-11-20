@@ -1,8 +1,9 @@
 #ifndef CONTROLLER_CLI_CLIENT_H
 #define CONTROLLER_CLI_CLIENT_H
 
-#include "Controller.h"
-#include "CLICommandsTypeSupportImpl.h"
+#include "common/Handshaking.h"
+#include "controller/Common.h"
+#include "cli_idl/CLICommandsTypeSupportImpl.h"
 
 #include <string>
 #include <utility>
@@ -58,7 +59,9 @@ private:
   // since its last heartbeat, the controller is deemed unavailable.
   // The delay is the sum of the missed controller delay (3s) and the lost controller
   // delay (6s) from the TMS spec.
-  static constexpr Sec unavail_controller_delay = Sec(3 + 6);
+  static constexpr Sec missed_controller_delay = Sec(3);
+  static constexpr Sec lost_controller_delay = Sec(6);
+  static constexpr Sec unavail_controller_delay = missed_controller_delay + lost_controller_delay;
 
   struct ControllerInfo {
     enum class Status {

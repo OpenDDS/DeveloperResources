@@ -8,7 +8,7 @@ class OperatorIntentRequestDataReaderListenerImpl : public DataReaderListenerBas
 public:
   explicit OperatorIntentRequestDataReaderListenerImpl(CLIServer& cli_server) : cli_server_(cli_server) {}
 
-  virtual ~OperatorIntentRequestDataReaderListenerImpl() {}
+  virtual ~OperatorIntentRequestDataReaderListenerImpl() = default;
 
   void on_data_available(DDS::DataReader_ptr reader) final;
 

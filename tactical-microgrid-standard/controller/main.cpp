@@ -24,7 +24,7 @@ int main(int argc, char* argv[])
   }
 
   if (domain_id == OpenDDS::DOMAIN_UNKNOWN || mc_id == nullptr) {
-    ACE_ERROR((LM_ERROR, "Usage: %C -d DDS Domain Id -i Microgrid Controller Id\n", argv[0]));
+    ACE_ERROR((LM_ERROR, "Usage: %C -d DDS_Domain_Id -i Microgrid_Controller_Id\n", argv[0]));
     return 1;
   }
 

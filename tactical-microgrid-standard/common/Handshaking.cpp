@@ -39,7 +39,7 @@ DDS::ReturnCode_t Handshaking::join_domain(DDS::DomainId_t domain_id, int argc, 
 
   participant_ = dpf_->create_participant(domain_id,
                                           PARTICIPANT_QOS_DEFAULT,
-                                          0,
+                                          nullptr,
                                           OpenDDS::DCPS::DEFAULT_STATUS_MASK);
   if (!participant_) {
     ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: Handshaking::join_domain: create_participant failed\n"));
@@ -48,7 +48,7 @@ DDS::ReturnCode_t Handshaking::join_domain(DDS::DomainId_t domain_id, int argc, 
 
   // Create a topic for the DeviceInfo type
   tms::DeviceInfoTypeSupport_var di_ts = new tms::DeviceInfoTypeSupportImpl();
-  DDS::ReturnCode_t rc = di_ts->register_type(participant_.in(), "");
+  DDS::ReturnCode_t rc = di_ts->register_type(participant_, "");
   if (DDS::RETCODE_OK != rc) {
     ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: Handshaking::join_domain: register_type for DeviceInfo failed\n"));
     return rc;
@@ -56,9 +56,9 @@ DDS::ReturnCode_t Handshaking::join_domain(DDS::DomainId_t domain_id, int argc, 
 
   CORBA::String_var di_type_name = di_ts->get_type_name();
   di_topic_ = participant_->create_topic(tms::topic::TOPIC_DEVICE_INFO.c_str(),
-                                         di_type_name.in(),
+                                         di_type_name,
                                          TOPIC_QOS_DEFAULT,
-                                         DDS::TopicListener::_nil(),
+                                         nullptr,
                                          ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
   if (!di_topic_) {
     ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: Handshaking::join_domain: create topic '%C' failed\n",
@@ -68,7 +68,7 @@ DDS::ReturnCode_t Handshaking::join_domain(DDS::DomainId_t domain_id, int argc, 
 
   // and another topic for the Heartbeat type
   tms::HeartbeatTypeSupport_var hb_ts = new tms::HeartbeatTypeSupportImpl();
-  rc = hb_ts->register_type(participant_.in(), "");
+  rc = hb_ts->register_type(participant_, "");
   if (DDS::RETCODE_OK != rc) {
     ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: Handshaking::join_domain: register_type for Heartbeat failed\n"));
     return rc;
@@ -76,9 +76,9 @@ DDS::ReturnCode_t Handshaking::join_domain(DDS::DomainId_t domain_id, int argc, 
 
   CORBA::String_var hb_type_name = hb_ts->get_type_name();
   hb_topic_ = participant_->create_topic(tms::topic::TOPIC_HEARTBEAT.c_str(),
-                                         hb_type_name.in(),
+                                         hb_type_name,
                                          TOPIC_QOS_DEFAULT,
-                                         DDS::TopicListener::_nil(),
+                                         nullptr,
                                          ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
   if (!hb_topic_) {
     ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: Handshaking::join_domain: create topic '%C' failed\n",
@@ -98,7 +98,7 @@ DDS::ReturnCode_t Handshaking::create_publishers()
 
   const DDS::PublisherQos pub_qos = Qos::Publisher::get_qos();
   DDS::Publisher_var pub = participant_->create_publisher(pub_qos,
-                                                          DDS::PublisherListener::_nil(),
+                                                          nullptr,
                                                           ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
   if (!pub) {
     ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: Handshaking::create_publishers: create_publisher failed\n"));
@@ -106,9 +106,9 @@ DDS::ReturnCode_t Handshaking::create_publishers()
   }
 
   const DDS::DataWriterQos& di_qos = Qos::DataWriter::fn_map.at(tms::topic::TOPIC_DEVICE_INFO)(device_id_);
-  DDS::DataWriter_var di_dw_base = pub->create_datawriter(di_topic_.in(),
+  DDS::DataWriter_var di_dw_base = pub->create_datawriter(di_topic_,
                                                           di_qos,
-                                                          DDS::DataWriterListener::_nil(),
+                                                          nullptr,
                                                           ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
   if (!di_dw_base) {
     ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: Handshaking::create_publishers: create_datawriter for topic '%C' failed\n",
@@ -123,9 +123,9 @@ DDS::ReturnCode_t Handshaking::create_publishers()
   }
 
   const DDS::DataWriterQos& hb_qos = Qos::DataWriter::fn_map.at(tms::topic::TOPIC_HEARTBEAT)(device_id_);
-  DDS::DataWriter_var hb_dw_base = pub->create_datawriter(hb_topic_.in(),
+  DDS::DataWriter_var hb_dw_base = pub->create_datawriter(hb_topic_,
                                                           hb_qos,
-                                                          DDS::DataWriterListener::_nil(),
+                                                          nullptr,
                                                           ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
   if (!hb_dw_base) {
     ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: Handshaking::create_publishers: create_datawriter for topic '%C' failed\n",
@@ -196,7 +196,7 @@ DDS::ReturnCode_t Handshaking::create_subscribers(
 
   const DDS::SubscriberQos sub_qos = Qos::Subscriber::get_qos();
   DDS::Subscriber_var sub = participant_->create_subscriber(sub_qos,
-                                                            DDS::SubscriberListener::_nil(),
+                                                            nullptr,
                                                             ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
   if (!sub) {
     ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: Handshaking::create_subscribers: create_subscriber failed\n"));
@@ -205,7 +205,7 @@ DDS::ReturnCode_t Handshaking::create_subscribers(
 
   DDS::DataReaderListener_var di_listener(new DeviceInfoDataReaderListenerImpl(di_cb));
   const DDS::DataReaderQos& di_qos = Qos::DataReader::fn_map.at(tms::topic::TOPIC_DEVICE_INFO)(device_id_);
-  DDS::DataReader_var di_dr = sub->create_datareader(di_topic_.in(),
+  DDS::DataReader_var di_dr = sub->create_datareader(di_topic_,
                                                      di_qos,
                                                      di_listener.in(),
                                                      ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
@@ -217,7 +217,7 @@ DDS::ReturnCode_t Handshaking::create_subscribers(
 
   DDS::DataReaderListener_var hb_listener(new HeartbeatDataReaderListenerImpl(hb_cb));
   const DDS::DataReaderQos& hb_qos = Qos::DataReader::fn_map.at(tms::topic::TOPIC_HEARTBEAT)(device_id_);
-  DDS::DataReader_var hb_dr = sub->create_datareader(hb_topic_.in(),
+  DDS::DataReader_var hb_dr = sub->create_datareader(hb_topic_,
                                                      hb_qos,
                                                      hb_listener.in(),
                                                      ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);

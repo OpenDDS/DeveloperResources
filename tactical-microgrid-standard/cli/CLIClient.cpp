@@ -43,7 +43,7 @@ DDS::ReturnCode_t CLIClient::init(DDS::DomainId_t domain_id, int argc, char* arg
   DDS::Topic_var pdreq_topic = dp->create_topic(cli::TOPIC_POWER_DEVICES_REQUEST.c_str(),
                                                 pdreq_type_name,
                                                 TOPIC_QOS_DEFAULT,
-                                                0,
+                                                nullptr,
                                                 ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
   if (!pdreq_topic) {
     ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIClient::init: create_topic \"%C\" failed\n",
@@ -52,7 +52,7 @@ DDS::ReturnCode_t CLIClient::init(DDS::DomainId_t domain_id, int argc, char* arg
   }
 
   DDS::Publisher_var pub = dp->create_publisher(PUBLISHER_QOS_DEFAULT,
-                                                0,
+                                                nullptr,
                                                 ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
   if (!pub) {
     ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIClient::init: create_publisher failed\n"));
@@ -65,7 +65,7 @@ DDS::ReturnCode_t CLIClient::init(DDS::DomainId_t domain_id, int argc, char* arg
 
   DDS::DataWriter_var pdreq_dw_base = pub->create_datawriter(pdreq_topic,
                                                              dw_qos,
-                                                             0,
+                                                             nullptr,
                                                              ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
   if (!pdreq_dw_base) {
     ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIClient::init: create_datawriter for topic \"%C\" failed\n",
@@ -90,7 +90,7 @@ DDS::ReturnCode_t CLIClient::init(DDS::DomainId_t domain_id, int argc, char* arg
   DDS::Topic_var oir_topic = dp->create_topic(tms::topic::TOPIC_OPERATOR_INTENT_REQUEST.c_str(),
                                               oir_type_name,
                                               TOPIC_QOS_DEFAULT,
-                                              0,
+                                              nullptr,
                                               ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
   if (!oir_topic) {
     ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIClient::init: create_topic \"%C\" failed\n",
@@ -100,7 +100,7 @@ DDS::ReturnCode_t CLIClient::init(DDS::DomainId_t domain_id, int argc, char* arg
 
   const DDS::PublisherQos tms_pub_qos = Qos::Publisher::get_qos();
   DDS::Publisher_var tms_pub = dp->create_publisher(tms_pub_qos,
-                                                    0,
+                                                    nullptr,
                                                     ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
   if (!tms_pub) {
     ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIClient::init: create_publisher with TMS QoS failed\n"));
@@ -111,7 +111,7 @@ DDS::ReturnCode_t CLIClient::init(DDS::DomainId_t domain_id, int argc, char* arg
   const DDS::DataWriterQos& oir_qos = Qos::DataWriter::fn_map.at(tms::topic::TOPIC_OPERATOR_INTENT_REQUEST)(device_id);
   DDS::DataWriter_var oir_dw_base = tms_pub->create_datawriter(oir_topic,
                                                                oir_qos,
-                                                               0,
+                                                               nullptr,
                                                                ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
   if (!oir_dw_base) {
     ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIClient::init: create_datawriter for topic \"%C\" failed\n",
@@ -136,7 +136,7 @@ DDS::ReturnCode_t CLIClient::init(DDS::DomainId_t domain_id, int argc, char* arg
   DDS::Topic_var cc_topic = dp->create_topic(cli::TOPIC_CONTROLLER_COMMAND.c_str(),
                                              cc_type_name,
                                              TOPIC_QOS_DEFAULT,
-                                             0,
+                                             nullptr,
                                              ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
   if (!cc_topic) {
     ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIClient::init: create_topic \"%C\" failed\n",
@@ -146,7 +146,7 @@ DDS::ReturnCode_t CLIClient::init(DDS::DomainId_t domain_id, int argc, char* arg
 
   DDS::DataWriter_var cc_dw_base = pub->create_datawriter(cc_topic,
                                                           dw_qos,
-                                                          0,
+                                                          nullptr,
                                                           ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
   if (!cc_dw_base) {
     ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIClient::init: create_datawriter for topic \"%C\" failed\n",
@@ -171,7 +171,7 @@ DDS::ReturnCode_t CLIClient::init(DDS::DomainId_t domain_id, int argc, char* arg
   DDS::Topic_var pdrep_topic = dp->create_topic(cli::TOPIC_POWER_DEVICES_REPLY.c_str(),
                                                 pdrep_type_name,
                                                 TOPIC_QOS_DEFAULT,
-                                                0,
+                                                nullptr,
                                                 ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
   if (!pdrep_topic) {
     ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIClient::init: create_topic \"%C\" failed\n",
@@ -180,7 +180,7 @@ DDS::ReturnCode_t CLIClient::init(DDS::DomainId_t domain_id, int argc, char* arg
   }
 
   DDS::Subscriber_var sub = dp->create_subscriber(SUBSCRIBER_QOS_DEFAULT,
-                                                  0,
+                                                  nullptr,
                                                   ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
   if (!sub) {
     ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIClient::init: create_subscriber failed\n"));
@@ -193,7 +193,7 @@ DDS::ReturnCode_t CLIClient::init(DDS::DomainId_t domain_id, int argc, char* arg
 
   DDS::DataReader_var pdrep_dr_base = sub->create_datareader(pdrep_topic,
                                                              dr_qos,
-                                                             0,
+                                                             nullptr,
                                                              ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
   if (!pdrep_dr_base) {
     ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIClient::init: create_datareader for topic \"%C\" failed\n",
@@ -291,18 +291,19 @@ OpArgPair CLIClient::parse(const std::string& input) const
 
 void CLIClient::display_commands() const
 {
-  std::cout << "=== Command-Line Interface for Microgrid Controller === " << std::endl;
-  std::cout << "list-mc        : list the connected microgrid controllers." << std::endl;
-  std::cout << "set <mc_id>    : set the current microgrid controller." << std::endl;
-  std::cout << "                 Subsequent commands target this controller" << std::endl;
-  std::cout << "                 until another set command is used." << std::endl;
-  std::cout << "list-pd        : list the power devices connected to the current controller." << std::endl;
-  std::cout << "enable <pd_id> : start a power device with the given Id." << std::endl;
-  std::cout << "disable <pd_id>: stop a power device with the given Id." << std::endl;
-  std::cout << "stop           : stop the current controller's heartbeats." << std::endl;
-  std::cout << "resume         : resume the current controller's heartbeats." << std::endl;
-  std::cout << "term           : terminate the current controller." << std::endl;
-  std::cout << "show           : display the list of CLI commands." << std::endl;
+  const char* msg = R"(=== Command-Line Interface for Microgrid Controller ===
+list-mc        : list the connected microgrid controllers.
+set <mc_id>    : set the current microgrid controller.
+                 Subsequent commands target this controller
+                 until another set command is used.
+list-pd        : list the power devices connected to the current controller.
+enable <pd_id> : start a power device with the given Id.
+disable <pd_id>: stop a power device with the given Id.
+stop           : stop the current controller's heartbeats.
+resume         : resume the current controller's heartbeats.
+term           : terminate the current controller.
+show           : display the list of CLI commands." << std::endl)";
+  std::cout << msg << std::endl;
 }
 
 std::string CLIClient::device_role_to_string(tms::DeviceRole role) const

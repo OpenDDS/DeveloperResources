@@ -253,104 +253,96 @@ namespace DataReader {
 
 const DDS::DataReaderQos& get_PublishLast(const tms::Identity& device_id)
 {
-  static DDS::DataReaderQos qos;
-  static bool ready = false;
-  if (!ready) {
+  static DDS::DataReaderQos qos = []() {
+    DDS::DataReaderQos qos;
     init_endpoint_PublishLast_profile(qos);
     init_datareader_common(qos);
-    ready = true;
-  }
+    return qos;
+  }();
   init_UserDataQosPolicy(qos.user_data, device_id);
   return qos;
 }
 
 const DDS::DataReaderQos& get_Rare(const tms::Identity& device_id)
 {
-  static DDS::DataReaderQos qos;
-  static bool ready = false;
-  if (!ready) {
+  static DDS::DataReaderQos qos = []() {
+    DDS::DataReaderQos qos;
     init_endpoint_Rare_profile(qos);
     init_datareader_common(qos);
-    ready = true;
-  }
+    return qos;
+  }();
   init_UserDataQosPolicy(qos.user_data, device_id);
   return qos;
 }
 
 const DDS::DataReaderQos& get_Slow(const tms::Identity& device_id)
 {
-  static DDS::DataReaderQos qos;
-  static bool ready = false;
-  if (!ready) {
+  static DDS::DataReaderQos qos = []() {
+    DDS::DataReaderQos qos;
     init_endpoint_Slow_profile(qos);
     init_datareader_common(qos);
-    ready = true;
-  }
+    return qos;
+  }();
   init_UserDataQosPolicy(qos.user_data, device_id);
   return qos;
 }
 
 const DDS::DataReaderQos& get_Medium(const tms::Identity& device_id)
 {
-  static DDS::DataReaderQos qos;
-  static bool ready = false;
-  if (!ready) {
+  static DDS::DataReaderQos qos = []() {
+    DDS::DataReaderQos qos;
     init_endpoint_Medium_profile(qos);
     init_datareader_common(qos);
-    ready = true;
-  }
+    return qos;
+  }();
   init_UserDataQosPolicy(qos.user_data, device_id);
   return qos;
 }
 
 const DDS::DataReaderQos& get_Continuous(const tms::Identity& device_id)
 {
-  static DDS::DataReaderQos qos;
-  static bool ready = false;
-  if (!ready) {
+  static DDS::DataReaderQos qos = []() {
+    DDS::DataReaderQos qos;
     init_endpoint_Continuous_profile(qos);
     init_datareader_common(qos);
-    ready = true;
-  }
+    return qos;
+  }();
   init_UserDataQosPolicy(qos.user_data, device_id);
   return qos;
 }
 
 const DDS::DataReaderQos& get_Command(const tms::Identity& device_id)
 {
-  static DDS::DataReaderQos qos;
-  static bool ready = false;
-  if (!ready) {
+  static DDS::DataReaderQos qos = []() {
+    DDS::DataReaderQos qos;
     init_endpoint_Command_profile(qos);
     init_datareader_common(qos);
-    ready = true;
-  }
+    return qos;
+  }();
   init_UserDataQosPolicy(qos.user_data, device_id);
   return qos;
 }
 
 const DDS::DataReaderQos& get_Response(const tms::Identity& device_id)
 {
-  static DDS::DataReaderQos qos;
-  static bool ready = false;
-  if (!ready) {
+  static DDS::DataReaderQos qos = []() {
+    DDS::DataReaderQos qos;
     init_endpoint_Response_profile(qos);
     init_datareader_common(qos);
-    ready = true;
-  }
+    return qos;
+  }();
   init_UserDataQosPolicy(qos.user_data, device_id);
   return qos;
 }
 
 const DDS::DataReaderQos& get_Reply(const tms::Identity& device_id)
 {
-  static DDS::DataReaderQos qos;
-  static bool ready = false;
-  if (!ready) {
+  static DDS::DataReaderQos qos = []() {
+    DDS::DataReaderQos qos;
     init_endpoint_Reply_profile(qos);
     init_datareader_common(qos);
-    ready = true;
-  }
+    return qos;
+  }();
   init_UserDataQosPolicy(qos.user_data, device_id);
   return qos;
 }
@@ -367,104 +359,96 @@ DDS::PublisherQos get_qos()
 namespace DataWriter {
 const DDS::DataWriterQos& get_PublishLast(const tms::Identity& device_id)
 {
-  static DDS::DataWriterQos qos;
-  static bool ready = false;
-  if (!ready) {
+  static DDS::DataWriterQos qos = []() {
+    DDS::DataWriterQos qos;
     init_endpoint_PublishLast_profile(qos);
     init_datawriter_common(qos);
-    ready = true;
-  }
+    return qos;
+  }();
   init_UserDataQosPolicy(qos.user_data, device_id);
   return qos;
 }
 
 const DDS::DataWriterQos& get_Rare(const tms::Identity& device_id)
 {
-  static DDS::DataWriterQos qos;
-  static bool ready = false;
-  if (!ready) {
+  static DDS::DataWriterQos qos = []() {
+    DDS::DataWriterQos qos;
     init_endpoint_Rare_profile(qos);
     init_datawriter_common(qos);
-    ready = true;
-  }
+    return qos;
+  }();
   init_UserDataQosPolicy(qos.user_data, device_id);
   return qos;
 }
 
 const DDS::DataWriterQos& get_Slow(const tms::Identity& device_id)
 {
-  static DDS::DataWriterQos qos;
-  static bool ready = false;
-  if (!ready) {
+  static DDS::DataWriterQos qos = []() {
+    DDS::DataWriterQos qos;
     init_endpoint_Slow_profile(qos);
     init_datawriter_common(qos);
-    ready = true;
-  }
+    return qos;
+  }();
   init_UserDataQosPolicy(qos.user_data, device_id);
   return qos;
 }
 
 const DDS::DataWriterQos& get_Medium(const tms::Identity& device_id)
 {
-  static DDS::DataWriterQos qos;
-  static bool ready = false;
-  if (!ready) {
+  static DDS::DataWriterQos qos = []() {
+    DDS::DataWriterQos qos;
     init_endpoint_Medium_profile(qos);
     init_datawriter_common(qos);
-    ready = true;
-  }
+    return qos;
+  }();
   init_UserDataQosPolicy(qos.user_data, device_id);
   return qos;
 }
 
 const DDS::DataWriterQos& get_Continuous(const tms::Identity& device_id)
 {
-  static DDS::DataWriterQos qos;
-  static bool ready = false;
-  if (!ready) {
+  static DDS::DataWriterQos qos = []() {
+    DDS::DataWriterQos qos;
     init_endpoint_Continuous_profile(qos);
     init_datawriter_common(qos);
-    ready = true;
-  }
+    return qos;
+  }();
   init_UserDataQosPolicy(qos.user_data, device_id);
   return qos;
 }
 
 const DDS::DataWriterQos& get_Command(const tms::Identity& device_id)
 {
-  static DDS::DataWriterQos qos;
-  static bool ready = false;
-  if (!ready) {
+  static DDS::DataWriterQos qos = []() {
+    DDS::DataWriterQos qos;
     init_endpoint_Command_profile(qos);
     init_datawriter_common(qos);
-    ready = true;
-  }
+    return qos;
+  }();
   init_UserDataQosPolicy(qos.user_data, device_id);
   return qos;
 }
 
 const DDS::DataWriterQos& get_Response(const tms::Identity& device_id)
 {
-  static DDS::DataWriterQos qos;
-  static bool ready = false;
-  if (!ready) {
+  static DDS::DataWriterQos qos = []() {
+    DDS::DataWriterQos qos;
     init_endpoint_Response_profile(qos);
     init_datawriter_common(qos);
-    ready = true;
-  }
+    return qos;
+  }();
   init_UserDataQosPolicy(qos.user_data, device_id);
   return qos;
 }
 
 const DDS::DataWriterQos& get_Reply(const tms::Identity& device_id)
 {
-  static DDS::DataWriterQos qos;
-  static bool ready = false;
-  if (!ready) {
+  static DDS::DataWriterQos qos = []() {
+    DDS::DataWriterQos qos;
     init_endpoint_Reply_profile(qos);
     init_datawriter_common(qos);
-    ready = true;
-  }
+    return qos;
+  }();
   init_UserDataQosPolicy(qos.user_data, device_id);
   return qos;
 }

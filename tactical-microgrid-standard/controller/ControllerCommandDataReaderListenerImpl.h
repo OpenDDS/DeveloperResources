@@ -8,7 +8,7 @@ class ControllerCommandDataReaderListenerImpl : public DataReaderListenerBase {
 public:
   explicit ControllerCommandDataReaderListenerImpl(CLIServer& cli_server) : cli_server_(cli_server) {}
 
-  virtual ~ControllerCommandDataReaderListenerImpl() {}
+  virtual ~ControllerCommandDataReaderListenerImpl() = default;
 
   void on_data_available(DDS::DataReader_ptr reader) final;
 

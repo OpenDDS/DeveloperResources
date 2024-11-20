@@ -28,7 +28,7 @@ DDS::ReturnCode_t CLIServer::init()
   DDS::Topic_var pdreq_topic = dp->create_topic(cli::TOPIC_POWER_DEVICES_REQUEST.c_str(),
                                                 pdreq_type_name,
                                                 TOPIC_QOS_DEFAULT,
-                                                0,
+                                                nullptr,
                                                 ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
   if (!pdreq_topic) {
     ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIServer::init: create_topic \"%C\" failed\n",
@@ -37,7 +37,7 @@ DDS::ReturnCode_t CLIServer::init()
   }
 
   DDS::Subscriber_var sub = dp->create_subscriber(SUBSCRIBER_QOS_DEFAULT,
-                                                  0,
+                                                  nullptr,
                                                   ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
   if (!sub) {
     ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIServer::init: create_subscriber failed\n"));
@@ -76,7 +76,7 @@ DDS::ReturnCode_t CLIServer::init()
   DDS::Topic_var oir_topic = dp->create_topic(tms::topic::TOPIC_OPERATOR_INTENT_REQUEST.c_str(),
                                               oir_type_name,
                                               TOPIC_QOS_DEFAULT,
-                                              0,
+                                              nullptr,
                                               ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
   if (!oir_topic) {
     ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIServer::init: create_topic \"%C\" failed\n",
@@ -86,7 +86,7 @@ DDS::ReturnCode_t CLIServer::init()
 
   const DDS::SubscriberQos tms_sub_qos = Qos::Subscriber::get_qos();
   DDS::Subscriber_var tms_sub = dp->create_subscriber(tms_sub_qos,
-                                                      0,
+                                                      nullptr,
                                                       ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
   if (!tms_sub) {
     ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIServer::init: create_subscriber with TMS QoS failed\n"));
@@ -123,7 +123,7 @@ DDS::ReturnCode_t CLIServer::init()
   DDS::Topic_var cc_topic = dp->create_topic(cli::TOPIC_CONTROLLER_COMMAND.c_str(),
                                              cc_type_name,
                                              TOPIC_QOS_DEFAULT,
-                                             0,
+                                             nullptr,
                                              ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
   if (!cc_topic) {
     ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIServer::init: create_topic \"%C\" failed\n",
@@ -159,7 +159,7 @@ DDS::ReturnCode_t CLIServer::init()
   DDS::Topic_var pdrep_topic = dp->create_topic(cli::TOPIC_POWER_DEVICES_REPLY.c_str(),
                                                 pdrep_type_name,
                                                 TOPIC_QOS_DEFAULT,
-                                                0,
+                                                nullptr,
                                                 ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
   if (!pdrep_topic) {
     ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIServer::init: create_topic \"%C\" failed\n",
@@ -168,7 +168,7 @@ DDS::ReturnCode_t CLIServer::init()
   }
 
   DDS::Publisher_var pub = dp->create_publisher(PUBLISHER_QOS_DEFAULT,
-                                                0,
+                                                nullptr,
                                                 ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
   if (!pub) {
     ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIServer::init: create_publisher failed\n"));
@@ -181,7 +181,7 @@ DDS::ReturnCode_t CLIServer::init()
 
   DDS::DataWriter_var pdrep_dw_base = pub->create_datawriter(pdrep_topic,
                                                              dw_qos,
-                                                             0,
+                                                             nullptr,
                                                              ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
   if (!pdrep_dw_base) {
     ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIServer::init: create_datawriter for topic \"%C\" failed\n",

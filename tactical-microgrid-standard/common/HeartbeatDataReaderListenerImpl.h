@@ -11,7 +11,7 @@ public:
     : callback_(cb)
   {}
 
-  virtual ~HeartbeatDataReaderListenerImpl() {}
+  virtual ~HeartbeatDataReaderListenerImpl() = default;
 
   void on_data_available(DDS::DataReader_ptr reader) final;
 

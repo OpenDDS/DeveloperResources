@@ -23,7 +23,7 @@ int main(int argc, char* argv[])
   }
 
   if (domain_id == OpenDDS::DOMAIN_UNKNOWN) {
-    ACE_ERROR((LM_ERROR, "Usage: %C -d DDS Domain Id [-i CLI Client Id]\n", argv[0]));
+    ACE_ERROR((LM_ERROR, "Usage: %C -d DDS_Domain_Id [-i CLI_Client_Id]\n", argv[0]));
     return 1;
   }
 

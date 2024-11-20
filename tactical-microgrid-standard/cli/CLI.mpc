@@ -1,6 +1,6 @@
 project: dcpsexe {
   after += Commands_Idl
-  exename = controller
+  exename = cli
   includes += ..
   libpaths += ../idl ../common ../cli_idl
   libs += tms Commands_Idl Common
@@ -12,11 +12,7 @@ project: dcpsexe {
   }
 
   Source_Files {
-    Controller.cpp
-    CLIServer.cpp
-    PowerDevicesRequestDataReaderListenerImpl.cpp
-    OperatorIntentRequestDataReaderListenerImpl.cpp
-    ControllerCommandDataReaderListenerImpl.cpp
     main.cpp
+    CLIClient.cpp
   }
 }
