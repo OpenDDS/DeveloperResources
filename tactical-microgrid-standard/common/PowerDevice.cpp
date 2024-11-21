@@ -107,7 +107,10 @@ DDS::ReturnCode_t PowerDevice::init(DDS::DomainId_t domain, int argc, char* argv
     return rc;
   }
 
-  return DDS::RETCODE_OK;
+  auto di = get_device_info();
+  di.role(tms::DeviceRole::ROLE_SOURCE);
+
+  return send_device_info(di);
 }
 
 void PowerDevice::got_heartbeat(const tms::Heartbeat& hb, const DDS::SampleInfo& si)

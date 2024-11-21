@@ -1,4 +1,4 @@
-#include <common/Controller.h>
+#include <controller/Controller.h>
 
 struct Timeout {};
 class Test : public TimerHandler<Timeout> {
@@ -38,15 +38,6 @@ int main(int argc, char* argv[])
     return 1;
   }
 
-  auto di = mc.get_device_info();
-  if (mc.send_device_info(di) != DDS::RETCODE_OK) {
-    return 1;
-  }
-
   Test test;
-  if (ACE_Reactor::instance()->run_reactor_event_loop() != 0) {
-    return 1;
-  }
-
-  return 0;
+  return mc.run();
 }
