@@ -302,7 +302,7 @@ disable <pd_id>: stop a power device with the given Id.
 stop           : stop the current controller's heartbeats.
 resume         : resume the current controller's heartbeats.
 term           : terminate the current controller.
-show           : display the list of CLI commands." << std::endl)";
+show           : display the list of CLI commands.)";
   std::cout << msg << std::endl;
 }
 

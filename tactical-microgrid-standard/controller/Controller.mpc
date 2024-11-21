@@ -1,22 +1,7 @@
-project: dcpsexe {
+project: dcps_rtps_udp, opendds_uses_cxx17 {
   after += Commands_Idl
   exename = controller
   includes += ..
   libpaths += ../idl ../common ../cli_idl
   libs += tms Commands_Idl Common
-
-  IDL_Files {
-  }
-
-  Typesupport_Files {
-  }
-
-  Source_Files {
-    Controller.cpp
-    CLIServer.cpp
-    PowerDevicesRequestDataReaderListenerImpl.cpp
-    OperatorIntentRequestDataReaderListenerImpl.cpp
-    ControllerCommandDataReaderListenerImpl.cpp
-    main.cpp
-  }
 }

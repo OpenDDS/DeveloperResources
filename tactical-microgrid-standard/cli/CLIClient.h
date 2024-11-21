@@ -59,8 +59,8 @@ private:
   // since its last heartbeat, the controller is deemed unavailable.
   // The delay is the sum of the missed controller delay (3s) and the lost controller
   // delay (6s) from the TMS spec.
-  static constexpr Sec missed_controller_delay = Sec(3);
-  static constexpr Sec lost_controller_delay = Sec(6);
+  static constexpr Sec missed_controller_delay{3};
+  static constexpr Sec lost_controller_delay{6};
   static constexpr Sec unavail_controller_delay = missed_controller_delay + lost_controller_delay;
 
   struct ControllerInfo {
