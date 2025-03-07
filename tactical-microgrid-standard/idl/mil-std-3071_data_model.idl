@@ -10,6 +10,8 @@
 module tms {
 
 
+   const string TMS_VERSION = "2.0.2";
+
    /** TMS Topic Names */
    module topic {
 
@@ -19,7 +21,7 @@ module tms {
        * Section: DISCOVERY
        * QoS Profile: Medium
        * Data Trigger: Periodic 1 s
-       * Data Type: tms.Heartbeat
+       * Data Type: tms::Heartbeat
        */
       const string TOPIC_HEARTBEAT = "Heartbeat";
 
@@ -29,7 +31,7 @@ module tms {
        * Section: DISCOVERY
        * QoS Profile: PublishLast
        * Data Trigger: At Start
-       * Data Type: tms.DeviceInfo
+       * Data Type: tms::DeviceInfo
        */
       const string TOPIC_DEVICE_INFO = "DeviceInfo";
 
@@ -39,7 +41,7 @@ module tms {
        * Section: DISCOVERY
        * QoS Profile: PublishLast
        * Data Trigger: At Start
-       * Data Type: tms.DeviceIcon
+       * Data Type: tms::DeviceIcon
        */
       const string TOPIC_DEVICE_ICON = "DeviceIcon";
 
@@ -49,7 +51,7 @@ module tms {
        * Section: DISCOVERY
        * QoS Profile: PublishLast
        * Data Trigger: At Start, On Change
-       * Data Type: tms.IdentityNicknameState
+       * Data Type: tms::IdentityNicknameState
        */
       const string TOPIC_IDENTITY_NICKNAME_STATE = "IdentityNicknameState";
 
@@ -59,7 +61,7 @@ module tms {
        * Section: DISCOVERY
        * QoS Profile: Command
        * Data Trigger: As Needed
-       * Data Type: tms.IdentityNicknameRequest
+       * Data Type: tms::IdentityNicknameRequest
        * Reply Topic: Reply
        * Reply Topic: IdentityNicknameState
        */
@@ -71,7 +73,7 @@ module tms {
        * Section: TOPOLOGY
        * QoS Profile: PublishLast
        * Data Trigger: At Start, On Change
-       * Data Type: tms.PowerConnectionState
+       * Data Type: tms::PowerConnectionState
        */
       const string TOPIC_OPERATOR_POWER_CONNECTION_STATE = "OperatorPowerConnectionState";
 
@@ -81,7 +83,7 @@ module tms {
        * Section: TOPOLOGY
        * QoS Profile: PublishLast
        * Data Trigger: At Start, On Change
-       * Data Type: tms.PowerConnectionState
+       * Data Type: tms::PowerConnectionState
        */
       const string TOPIC_DISCOVERED_POWER_CONNECTION_STATE = "DiscoveredPowerConnectionState";
 
@@ -91,7 +93,7 @@ module tms {
        * Section: TOPOLOGY
        * QoS Profile: PublishLast
        * Data Trigger: At Start, On Change
-       * Data Type: tms.PowerConnectionState
+       * Data Type: tms::PowerConnectionState
        */
       const string TOPIC_MICROGRID_POWER_CONNECTION_STATE = "MicrogridPowerConnectionState";
 
@@ -101,7 +103,7 @@ module tms {
        * Section: DIAGNOSTIC
        * QoS Profile: PublishLast
        * Data Trigger: At Start, On Change
-       * Data Type: tms.ActiveDiagnosticState
+       * Data Type: tms::ActiveDiagnosticState
        */
       const string TOPIC_ACTIVE_DIAGNOSTIC_STATE = "ActiveDiagnosticState";
 
@@ -111,7 +113,7 @@ module tms {
        * Section: STATUS
        * QoS Profile: PublishLast
        * Data Trigger: At Start, On Change
-       * Data Type: tms.ClockState
+       * Data Type: tms::ClockState
        */
       const string TOPIC_CLOCK_STATE = "ClockState";
 
@@ -121,7 +123,7 @@ module tms {
        * Section: STATUS
        * QoS Profile: PublishLast
        * Data Trigger: At Start, On Change
-       * Data Type: tms.ActiveMicrogridControllerState
+       * Data Type: tms::ActiveMicrogridControllerState
        */
       const string TOPIC_ACTIVE_MICROGRID_CONTROLLER_STATE = "ActiveMicrogridControllerState";
 
@@ -131,7 +133,7 @@ module tms {
        * Section: POWER_DEVICE
        * QoS Profile: Medium
        * Data Trigger: Periodic 1 s
-       * Data Type: tms.ac.MeasurementUpdate
+       * Data Type: tms::ac::MeasurementUpdate
        */
       const string TOPIC_AC_MEASUREMENT_UPDATE = "AcMeasurementUpdate";
 
@@ -141,7 +143,7 @@ module tms {
        * Section: POWER_DEVICE
        * QoS Profile: PublishLast
        * Data Trigger: At Start, On Change
-       * Data Type: tms.PowerPortState
+       * Data Type: tms::PowerPortState
        */
       const string TOPIC_POWER_PORT_STATE = "PowerPortState";
 
@@ -151,7 +153,7 @@ module tms {
        * Section: DIST_DEVICE
        * QoS Profile: Command
        * Data Trigger: As Needed
-       * Data Type: tms.PowerSwitchRequest
+       * Data Type: tms::PowerSwitchRequest
        * Reply Topic: Reply
        * Reply Topic: PowerPortState
        */
@@ -163,7 +165,7 @@ module tms {
        * Section: SOURCE_DEVICE
        * QoS Profile: PublishLast
        * Data Trigger: At Start, On Change
-       * Data Type: tms.EnergyStartStopState
+       * Data Type: tms::EnergyStartStopState
        */
       const string TOPIC_ENERGY_START_STOP_STATE = "EnergyStartStopState";
 
@@ -173,7 +175,7 @@ module tms {
        * Section: SOURCE_DEVICE
        * QoS Profile: Command
        * Data Trigger: As Needed
-       * Data Type: tms.EnergyStartStopRequest
+       * Data Type: tms::EnergyStartStopRequest
        * Reply Topic: Reply
        * Reply Topic: EnergyStartStopState
        */
@@ -185,7 +187,7 @@ module tms {
        * Section: SOURCE_DEVICE
        * QoS Profile: PublishLast
        * Data Trigger: At Start, On Change
-       * Data Type: tms.ac.LoadSharingState
+       * Data Type: tms::ac::LoadSharingState
        */
       const string TOPIC_AC_LOAD_SHARING_STATE = "AcLoadSharingState";
 
@@ -195,7 +197,7 @@ module tms {
        * Section: SOURCE_DEVICE
        * QoS Profile: Command
        * Data Trigger: As Needed
-       * Data Type: tms.ac.LoadSharingRequest
+       * Data Type: tms::ac::LoadSharingRequest
        * Reply Topic: Reply
        * Reply Topic: AcLoadSharingState
        */
@@ -207,7 +209,7 @@ module tms {
        * Section: SOURCE_DEVICE
        * QoS Profile: Slow
        * Data Trigger: Periodic 10 s
-       * Data Type: tms.ControlHardwareUpdate
+       * Data Type: tms::ControlHardwareUpdate
        */
       const string TOPIC_CONTROL_HARDWARE_UPDATE = "ControlHardwareUpdate";
 
@@ -217,7 +219,7 @@ module tms {
        * Section: SOURCE_DEVICE
        * QoS Profile: Slow
        * Data Trigger: Periodic 10 s
-       * Data Type: tms.PowerHardwareUpdate
+       * Data Type: tms::PowerHardwareUpdate
        */
       const string TOPIC_POWER_HARDWARE_UPDATE = "PowerHardwareUpdate";
 
@@ -227,7 +229,7 @@ module tms {
        * Section: STORAGE_DEVICE
        * QoS Profile: Slow
        * Data Trigger: Periodic 10 s
-       * Data Type: tms.StorageUpdate
+       * Data Type: tms::StorageUpdate
        */
       const string TOPIC_STORAGE_UPDATE = "StorageUpdate";
 
@@ -237,7 +239,7 @@ module tms {
        * Section: RESPONSE
        * QoS Profile: Reply
        * Data Trigger: Within 0.1 s
-       * Data Type: tms.Reply
+       * Data Type: tms::Reply
        */
       const string TOPIC_REPLY = "Reply";
 
@@ -247,7 +249,7 @@ module tms {
        * Section: DEVICE_PARAMETERS
        * QoS Profile: PublishLast
        * Data Trigger: At Start, On Change
-       * Data Type: tms.ControlParameterState
+       * Data Type: tms::ControlParameterState
        */
       const string TOPIC_CONTROL_PARAMETER_STATE = "ControlParameterState";
 
@@ -257,7 +259,7 @@ module tms {
        * Section: DEVICE_PARAMETERS
        * QoS Profile: Command
        * Data Trigger: As Needed
-       * Data Type: tms.ControlParameterRequest
+       * Data Type: tms::ControlParameterRequest
        * Reply Topic: Reply
        * Reply Topic: ControlParameterState
        */
@@ -269,7 +271,7 @@ module tms {
        * Section: DEVICE_PARAMETERS
        * QoS Profile: PublishLast
        * Data Trigger: At Start, On Change
-       * Data Type: tms.MetricParameterState
+       * Data Type: tms::MetricParameterState
        */
       const string TOPIC_METRIC_PARAMETER_STATE = "MetricParameterState";
 
@@ -279,7 +281,7 @@ module tms {
        * Section: BLACK_START
        * QoS Profile: Response
        * Data Trigger: As Needed
-       * Data Type: tms.AuthorizationToEnergizeReply
+       * Data Type: tms::AuthorizationToEnergizeReply
        */
       const string TOPIC_AUTHORIZATION_TO_ENERGIZE_REPLY = "AuthorizationToEnergizeReply";
 
@@ -289,7 +291,7 @@ module tms {
        * Section: BLACK_START
        * QoS Profile: Command
        * Data Trigger: As Needed
-       * Data Type: tms.AuthorizationToEnergizeRequest
+       * Data Type: tms::AuthorizationToEnergizeRequest
        * Reply Topic: Reply
        * Reply Topic: AuthorizationToEnergizeReply
        */
@@ -301,7 +303,7 @@ module tms {
        * Section: BLACK_START
        * QoS Profile: Response
        * Data Trigger: Within 0.1 s
-       * Data Type: tms.AuthorizationToEnergizeResult
+       * Data Type: tms::AuthorizationToEnergizeResult
        */
       const string TOPIC_AUTHORIZATION_TO_ENERGIZE_RESULT = "AuthorizationToEnergizeResult";
 
@@ -311,7 +313,7 @@ module tms {
        * Section: OPERATOR_INTENT
        * QoS Profile: PublishLast
        * Data Trigger: At Start, On Change
-       * Data Type: tms.OperatorIntentState
+       * Data Type: tms::OperatorIntentState
        */
       const string TOPIC_OPERATOR_INTENT_STATE = "OperatorIntentState";
 
@@ -321,7 +323,7 @@ module tms {
        * Section: OPERATOR_INTENT
        * QoS Profile: Command
        * Data Trigger: As Needed
-       * Data Type: tms.OperatorIntentRequest
+       * Data Type: tms::OperatorIntentRequest
        * Reply Topic: OperatorIntentState
        */
       const string TOPIC_OPERATOR_INTENT_REQUEST = "OperatorIntentRequest";
@@ -332,7 +334,7 @@ module tms {
        * Section: GROUNDING_CIRCUIT
        * QoS Profile: PublishLast
        * Data Trigger: At Start, On Change
-       * Data Type: tms.GroundingCircuitState
+       * Data Type: tms::GroundingCircuitState
        */
       const string TOPIC_DEVICE_GROUNDING_STATE = "GroundingCircuitState";
 
@@ -342,7 +344,7 @@ module tms {
        * Section: GROUNDING_CIRCUIT
        * QoS Profile: Command
        * Data Trigger: As Needed
-       * Data Type: tms.GroundingCircuitRequest
+       * Data Type: tms::GroundingCircuitRequest
        * Reply Topic: Reply
        * Reply Topic: GroundingCircuitState
        */
@@ -354,7 +356,7 @@ module tms {
        * Section: DC_POWER_DEVICE
        * QoS Profile: Medium
        * Data Trigger: Periodic 1 s
-       * Data Type: tms.dc.MeasurementUpdate
+       * Data Type: tms::dc::MeasurementUpdate
        */
       const string TOPIC_DC_MEASUREMENT_UPDATE = "DcMeasurementUpdate";
 
@@ -364,7 +366,7 @@ module tms {
        * Section: DC_POWER_DEVICE
        * QoS Profile: Command
        * Data Trigger: As Needed
-       * Data Type: tms.dc.LoadSharingRequest
+       * Data Type: tms::dc::LoadSharingRequest
        * Reply Topic: Reply
        * Reply Topic: DcLoadSharingState
        */
@@ -376,7 +378,7 @@ module tms {
        * Section: SOURCE_DEVICE
        * QoS Profile: Continuous
        * Data Trigger: Periodic 0.1 s
-       * Data Type: tms.ac.MeasurementUpdate
+       * Data Type: tms::ac::MeasurementUpdate
        */
       const string TOPIC_AC_SUMMARY_MEASUREMENT_UPDATE = "AcSummaryMeasurementUpdate";
 
@@ -386,7 +388,7 @@ module tms {
        * Section: DC_POWER_DEVICE
        * QoS Profile: PublishLast
        * Data Trigger: At Start, On Change
-       * Data Type: tms.dc.LoadSharingState
+       * Data Type: tms::dc::LoadSharingState
        */
       const string TOPIC_DC_LOAD_SHARING_STATE = "DcLoadSharingState";
 
@@ -396,12 +398,10 @@ module tms {
        * Section: SOURCE_DEVICE
        * QoS Profile: Continuous
        * Data Trigger: Periodic 0.1 s
-       * Data Type: tms.dc.MeasurementUpdate
+       * Data Type: tms::dc::MeasurementUpdate
        */
       const string TOPIC_DC_SUMMARY_MEASUREMENT_UPDATE = "DcSummaryMeasurementUpdate";
    };  //end module topic
-
-   const string TMS_VERSION = "2.0.1";
 
 
 
@@ -731,8 +731,8 @@ module tms {
        PSF_MANUAL_CLOSE, // The operator may close the switch using an on-device interface.
        PSF_AUTO_OPEN, // The power device may automatically open the switch.  For example, load shed logic.
        PSF_AUTO_CLOSE, // The power device may automatically close the switch.  For example, automatic backup power logic.
-       PSF_REQUEST_OPEN, // A request such as PowerSwitchRequest may open the switch.  For example, the switch may have a shunt trip.
-       PSF_REQUEST_CLOSE, // A request such as PowerSwitchRequest may close the switch.  For example, the switch may have a contractor or motorized switch.
+       PSF_REQUEST_OPEN, // A request such as PowerSwitchRequest or EnergyStartStopRequest may open the switch.  For example, the switch may be a contactor, relay, motorized switch, or a circuit breaker with a shunt trip.
+       PSF_REQUEST_CLOSE, // A request such as PowerSwitchRequest or EnergyStartStopRequest may close the switch.  For example, the switch may be a contactor, relay, or motorized switch.
        PSF_LOCK, // The operator may lock the switch to prevent AUTO or REQUEST operation.  This lock may be per-device or per-port.  For example, IEEE C37.2 device function 1, 5, 69, or 86.
        PSF_RECLOSER, // Automatic recloser.  For example, IEEE C37.2 device function 79.  Depends on PSF_AUTO_CLOSE.
        PSF_BREAKER, // Automatic over current / thermal protection.  For example, IEEE C37.2 device function 50 or 51.  Depends on PSF_AUTO_OPEN.
@@ -889,7 +889,7 @@ module tms {
        FMI_LOW_MODERATELY_SEVERE, // 18, Data valid but below normal operational range, moderately severe level.
        FMI_RECEIVED_DATA_ERROR, // 19, Received network data in error (multiplexed data).
        FMI_DATA_DRIFTED_HIGH, // 20, Data drifted high (rationality high).
-       FMI_DATA_DRIFTED_LOW, // 21, Data drifted high (rationality high).
+       FMI_DATA_DRIFTED_LOW, // 21, Data drifted low (rationality low).
        FMI_CONDITION_EXISTS // 31, Condition exists.
    }; // enum FailureModeIndicator
 
@@ -1382,7 +1382,7 @@ module tms {
        float directAxisSubtransientShortCircuitTimeConstant;
 
        /**
-        * TdO'', direct-axis transient open-circuit time constant
+        * TdO', direct-axis transient open-circuit time constant
         * units: second (s)
         */
        @unit("s")
@@ -2758,17 +2758,23 @@ module tms {
 
        /**
         * minimum rated operating frequency, not present for DC, required for AC
-        * units: volt (V)
+        * units: hertz (Hz)
+        * Change History:
+        *  1) Version: 2.0.2, Change: modify, Interoperability: Yes
+        *     Corrected the units from volt to hertz.
         */
-       @unit("V")
+       @unit("Hz")
        @optional
        float minFrequency;
 
        /**
         * maximum rated operating frequency, not present for DC, required for AC.
-        * units: volt (V)
+        * units: hertz (Hz)
+        * Change History:
+        *  1) Version: 2.0.2, Change: modify, Interoperability: Yes
+        *     Corrected the units from volt to hertz.
         */
-       @unit("V")
+       @unit("Hz")
        @optional
        float maxFrequency;
 
