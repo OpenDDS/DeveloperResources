@@ -5,6 +5,10 @@ enable_testing()
 
 find_package(OpenDDS REQUIRED)
 
+if(MSVC)
+  add_compile_options(/bigobj)
+endif()
+
 add_library(Common
   common/Handshaking.cpp
   common/PowerDevice.cpp
