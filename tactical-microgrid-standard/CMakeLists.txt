@@ -26,6 +26,7 @@ opendds_target_sources(Common
 )
 target_link_libraries(Common PUBLIC OpenDDS::Rtps_Udp)
 target_compile_features(Common PUBLIC cxx_std_17)
+target_compile_options(Common PRIVATE -DOPENDDS_TMS_BUILD_DLL)
 
 add_library(Commands_Idl)
 opendds_target_sources(Commands_Idl
