@@ -26,7 +26,12 @@ opendds_target_sources(Common
 )
 target_link_libraries(Common PUBLIC OpenDDS::Rtps_Udp)
 target_compile_features(Common PUBLIC cxx_std_17)
-target_compile_options(Common PRIVATE -DOPENDDS_TMS_BUILD_DLL)
+get_target_property(lib_type Common TYPE)
+if(lib_type STREQUAL "SHARED_LIBRARY")
+  target_compile_definitions(Common PRIVATE OPENDDS_TMS_BUILD_DLL)
+elseif(lib_type STREQUAL "STATIC_LIBRARY")
+  target_compile_definitions(Common PUBLIC OPENDDS_TMS_HAS_DLL=0)
+endif()
 
 add_library(Commands_Idl)
 opendds_target_sources(Commands_Idl

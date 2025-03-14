@@ -2,6 +2,7 @@
 #define QOS_HELPER_H
 
 #include "idl/mil-std-3071_data_modelTypeSupportImpl.h"
+#include "common/opendds_tms_export.h"
 
 #include <dds/DdsDcpsCoreC.h>
 
