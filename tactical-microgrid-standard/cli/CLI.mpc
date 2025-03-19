@@ -1,7 +1,0 @@
-project: dcps_rtps_udp, opendds_uses_cxx17 {
-  after += Commands_Idl
-  exename = cli
-  includes += ..
-  libpaths += ../idl ../common ../cli_idl
-  libs += tms Commands_Idl Common
-}
