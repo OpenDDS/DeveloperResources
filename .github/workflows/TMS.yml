@@ -2,15 +2,12 @@ name: "TMS Builds"
 
 on:
   push:
-    paths:
-      - '**'
-      - '!**/.gitignore'
+    branches:
+      - main
   pull_request:
     paths:
       - '**'
       - '!**/.gitignore'
-    branches:
-      - main
   workflow_dispatch:
 
 concurrency:

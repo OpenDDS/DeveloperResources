@@ -1,4 +1,4 @@
-#include "idl/mil-std-3071_data_model.idl"
+#include "common/mil-std-3071_data_model.idl"
 
 module cli {
 
