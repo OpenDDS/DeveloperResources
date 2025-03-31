@@ -16,7 +16,7 @@ target_include_directories(OpenDDS_TMS PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 opendds_export_header(OpenDDS_TMS DIR common)
 opendds_target_sources(OpenDDS_TMS
   PUBLIC
-    idl/mil-std-3071_data_model.idl
+    common/mil-std-3071_data_model.idl
   INCLUDE_BASE ${CMAKE_CURRENT_SOURCE_DIR}
   OPENDDS_IDL_OPTIONS -Lc++11
 )

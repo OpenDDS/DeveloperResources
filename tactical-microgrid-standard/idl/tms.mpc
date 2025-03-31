@@ -1,7 +1,0 @@
-project: opendds_cxx11, msvc_bigobj {
-
-  Typesupport_Files {
-    mil-std-3071_data_model.idl
-  }
-
-}
