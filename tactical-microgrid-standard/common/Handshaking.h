@@ -3,8 +3,8 @@
 
 #include "TimerHandler.h"
 
-#include <idl/OpenDDS_TMS_export.h>
 #include <idl/mil-std-3071_data_modelTypeSupportImpl.h>
+#include <common/OpenDDS_TMS_export.h>
 
 #include <dds/DCPS/Service_Participant.h>
 

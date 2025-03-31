@@ -13,7 +13,7 @@ add_library(OpenDDS_TMS
   common/QosHelper.cpp
 )
 target_include_directories(OpenDDS_TMS PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-opendds_export_header(OpenDDS_TMS DIR idl)
+opendds_export_header(OpenDDS_TMS DIR common)
 opendds_target_sources(OpenDDS_TMS
   PUBLIC
     idl/mil-std-3071_data_model.idl
@@ -22,6 +22,7 @@ opendds_target_sources(OpenDDS_TMS
 )
 target_link_libraries(OpenDDS_TMS PUBLIC OpenDDS::Rtps_Udp)
 target_compile_features(OpenDDS_TMS PUBLIC cxx_std_17)
+opendds_bigobj(OpenDDS_TMS)
 
 add_library(Commands_Idl)
 opendds_target_sources(Commands_Idl
