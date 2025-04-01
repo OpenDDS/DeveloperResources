@@ -2,8 +2,9 @@
 #define HANDSHAKING_H
 
 #include "TimerHandler.h"
-#include "common/mil-std-3071_data_modelTypeSupportImpl.h"
-#include "opendds_tms_export.h"
+
+#include <common/mil-std-3071_data_modelTypeSupportImpl.h>
+#include <common/OpenDDS_TMS_export.h>
 
 #include <dds/DCPS/Service_Participant.h>
 
