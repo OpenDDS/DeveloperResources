@@ -5,10 +5,6 @@ enable_testing()
 
 find_package(OpenDDS REQUIRED)
 
-if(MSVC)
-  add_compile_options(/bigobj)
-endif()
-
 add_library(Common
   common/Handshaking.cpp
   common/PowerDevice.cpp
@@ -26,12 +22,7 @@ opendds_target_sources(Common
 )
 target_link_libraries(Common PUBLIC OpenDDS::Rtps_Udp)
 target_compile_features(Common PUBLIC cxx_std_17)
-get_target_property(lib_type Common TYPE)
-if(lib_type STREQUAL "SHARED_LIBRARY")
-  target_compile_definitions(Common PRIVATE OPENDDS_TMS_BUILD_DLL)
-elseif(lib_type STREQUAL "STATIC_LIBRARY")
-  target_compile_definitions(Common PUBLIC OPENDDS_TMS_HAS_DLL=0)
-endif()
+opendds_bigobj(Common)
 
 add_library(Commands_Idl)
 opendds_target_sources(Commands_Idl
