@@ -19,7 +19,7 @@ add_library(Common
 target_include_directories(Common PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 opendds_target_sources(Common
   PUBLIC
-    idl/mil-std-3071_data_model.idl
+    common/mil-std-3071_data_model.idl
   INCLUDE_BASE ${CMAKE_CURRENT_SOURCE_DIR}
   OPENDDS_IDL_OPTIONS -Lc++11
   USE_EXPORT "common/opendds_tms_export.h" OpenDDS_TMS_Export
