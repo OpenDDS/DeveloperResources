@@ -41,7 +41,7 @@ class PowerDevice;
  * A: If heartbeat is from selected
  * S: If there's a selectable controller with a recent heartbeat
  */
-class ControllerSelector :
+class OpenDDS_TMS_Export ControllerSelector :
   public TimerHandler<NewController, MissedController, LostController, NoControllers> {
 public:
   explicit ControllerSelector(PowerDevice& pd)
