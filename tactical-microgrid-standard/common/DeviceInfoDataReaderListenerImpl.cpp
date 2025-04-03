@@ -1,4 +1,4 @@
-#include "common/mil-std-3071_data_modelTypeSupportImpl.h"
+#include <common/mil-std-3071_data_modelTypeSupportImpl.h>
 #include "DeviceInfoDataReaderListenerImpl.h"
 
 void DeviceInfoDataReaderListenerImpl::on_data_available(DDS::DataReader_ptr reader)

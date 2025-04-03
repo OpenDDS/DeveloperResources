@@ -1,7 +1,8 @@
 #ifndef QOS_HELPER_H
 #define QOS_HELPER_H
 
-#include "common/mil-std-3071_data_modelTypeSupportImpl.h"
+#include <common/mil-std-3071_data_modelTypeSupportImpl.h>
+#include <common/OpenDDS_TMS_export.h>
 
 #include <dds/DdsDcpsCoreC.h>
 
@@ -11,7 +12,7 @@
 
 namespace Qos {
 namespace Subscriber {
-  DDS::SubscriberQos get_qos();
+  OpenDDS_TMS_Export DDS::SubscriberQos get_qos();
 }
 
 namespace DataReader {
@@ -26,11 +27,11 @@ const DDS::DataReaderQos& get_Reply(const tms::Identity& device_id);
 
 using Fn = std::function<DDS::DataReaderQos(const tms::Identity&)>;
 using FnMap = std::unordered_map<std::string, Fn>;
-extern const FnMap fn_map;
+OpenDDS_TMS_Export extern const FnMap fn_map;
 }
 
 namespace Publisher {
-  DDS::PublisherQos get_qos();
+  OpenDDS_TMS_Export DDS::PublisherQos get_qos();
 }
 
 namespace DataWriter {
@@ -45,7 +46,7 @@ const DDS::DataWriterQos& get_Reply(const tms::Identity& device_id);
 
 using Fn = std::function<DDS::DataWriterQos(const tms::Identity&)>;
 using FnMap = std::unordered_map<std::string, Fn>;
-extern const FnMap fn_map;
+OpenDDS_TMS_Export extern const FnMap fn_map;
 }
 }
 
