@@ -5,24 +5,24 @@ enable_testing()
 
 find_package(OpenDDS REQUIRED)
 
-add_library(OpenDDS_TMS
+add_library(TMS_Common
   common/Handshaking.cpp
   common/PowerDevice.cpp
   common/DeviceInfoDataReaderListenerImpl.cpp
   common/HeartbeatDataReaderListenerImpl.cpp
   common/QosHelper.cpp
 )
-target_include_directories(OpenDDS_TMS PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-opendds_export_header(OpenDDS_TMS DIR common)
-opendds_target_sources(OpenDDS_TMS
+target_include_directories(TMS_Common PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+opendds_export_header(TMS_Common INCLUDE "common/OpenDDS_TMS_export.h" MACRO_PREFIX OpenDDS_TMS)
+opendds_target_sources(TMS_Common
   PUBLIC
     common/mil-std-3071_data_model.idl
   INCLUDE_BASE ${CMAKE_CURRENT_SOURCE_DIR}
   OPENDDS_IDL_OPTIONS -Lc++11
 )
-target_link_libraries(OpenDDS_TMS PUBLIC OpenDDS::Rtps_Udp)
-target_compile_features(OpenDDS_TMS PUBLIC cxx_std_17)
-opendds_bigobj(OpenDDS_TMS)
+target_link_libraries(TMS_Common PUBLIC OpenDDS::Rtps_Udp)
+target_compile_features(TMS_Common PUBLIC cxx_std_17)
+opendds_bigobj(TMS_Common)
 
 add_library(Commands_Idl)
 opendds_target_sources(Commands_Idl
@@ -31,7 +31,7 @@ opendds_target_sources(Commands_Idl
   OPENDDS_IDL_OPTIONS -Lc++11 -I${CMAKE_CURRENT_SOURCE_DIR}
   INCLUDE_BASE ${CMAKE_CURRENT_SOURCE_DIR}
 )
-target_link_libraries(Commands_Idl PUBLIC OpenDDS_TMS)
+target_link_libraries(Commands_Idl PUBLIC TMS_Common)
 
 add_executable(Controller
   controller/main.cpp

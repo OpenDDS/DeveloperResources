@@ -1,7 +1,7 @@
 #ifndef CONTROLLER_COMMON_H
 #define CONTROLLER_COMMON_H
 
-#include "common/mil-std-3071_data_modelTypeSupportImpl.h"
+#include <common/mil-std-3071_data_modelTypeSupportImpl.h>
 
 #include <dds/DCPS/optional.h>
 
