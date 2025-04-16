@@ -10,6 +10,10 @@
 #include <dds/DCPS/transport/framework/TransportRegistry.h>
 #include <dds/DCPS/transport/framework/TransportConfig.h>
 #include <dds/DCPS/transport/framework/TransportInst.h>
+#if defined (ACE_AS_STATIC_LIBS)
+# include <dds/DCPS/RTPS/RtpsDiscovery.h>
+# include <dds/DCPS/transport/rtps_udp/RtpsUdp.h>
+#endif
 
 Handshaking::~Handshaking()
 {
