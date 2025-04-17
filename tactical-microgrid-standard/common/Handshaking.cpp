@@ -10,6 +10,7 @@
 #include <dds/DCPS/transport/framework/TransportRegistry.h>
 #include <dds/DCPS/transport/framework/TransportConfig.h>
 #include <dds/DCPS/transport/framework/TransportInst.h>
+#include <dds/DCPS/StaticIncludes.h>
 
 Handshaking::~Handshaking()
 {
