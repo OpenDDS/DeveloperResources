@@ -40,6 +40,7 @@ add_executable(Controller
   controller/PowerDevicesRequestDataReaderListenerImpl.cpp
   controller/OperatorIntentRequestDataReaderListenerImpl.cpp
   controller/ControllerCommandDataReaderListenerImpl.cpp
+  controller/ReplyDataReaderListenerImpl.cpp
 )
 target_include_directories(Controller PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(Controller PRIVATE Commands_Idl)
@@ -50,5 +51,11 @@ add_executable(CLI
 )
 target_include_directories(CLI PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(CLI PRIVATE Commands_Idl)
+
+add_executable(Source
+  power_devices/Source.cpp
+)
+target_include_directories(Source PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_link_libraries(Source PRIVATE TMS_Common)
 
 add_subdirectory(tests)

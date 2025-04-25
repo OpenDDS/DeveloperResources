@@ -330,6 +330,28 @@ std::string CLIClient::device_role_to_string(tms::DeviceRole role) const
   }
 }
 
+std::string CLIClient::energy_level_to_string(tms::EnergyStartStopLevel essl) const
+{
+  switch (essl) {
+  case tms::EnergyStartStopLevel::ESSL_OPERATIONAL:
+    return "Operational";
+  case tms::EnergyStartStopLevel::ESSL_READY_SYNCED:
+    return "Ready Synced";
+  case tms::EnergyStartStopLevel::ESSL_READY:
+    return "Ready";
+  case tms::EnergyStartStopLevel::ESSL_IDLE:
+    return "Idle";
+  case tms::EnergyStartStopLevel::ESSL_WARM:
+    return "Warm";
+  case tms::EnergyStartStopLevel::ESSL_OFF:
+    return "Off";
+  case tms::EnergyStartStopLevel::ESSL_ANY:
+    return "Any";
+  default:
+    return "Unknown";
+  }
+}
+
 void CLIClient::list_power_devices()
 {
   std::lock_guard<std::mutex> guard(data_m_);
@@ -350,7 +372,8 @@ void CLIClient::display_power_devices() const
   size_t i = 1;
   for (auto it = power_devices_.begin(); it != power_devices_.end(); ++it) {
     std::cout << i << ". Device Id: " << it->first <<
-      ". Type: " << device_role_to_string(it->second.role()) << std::endl;
+      ". Type: " << device_role_to_string(it->second.device_info().role()) <<
+      ". Energy Level: " << energy_level_to_string(it->second.essl()) << std::endl;
   }
 }
 
@@ -434,7 +457,7 @@ bool CLIClient::send_power_devices_request()
   }
 
   bool received = false;
-  for (CORBA::ULong i = 0; i < data.length(); ++i) {
+  for (CORBA::ULong i = 0; !received && i < data.length(); ++i) {
     if (data[i].mc_id() != curr_controller_) {
       ACE_ERROR((LM_WARNING, "(%P|%t) WARNING: CLIClient::send_power_devices_request: "
                  "reply expected from controller \"%C\". Received from \"%C\"\n",
@@ -443,22 +466,19 @@ bool CLIClient::send_power_devices_request()
     }
 
     if (info_seq[i].valid_data) {
-      const cli::DeviceInfoSeq& power_devices = data[i].devices();
-      for (auto it = power_devices.begin(); it != power_devices.end(); ++it) {
-        power_devices_.insert(std::make_pair(it->deviceId(), *it));
+      const cli::PowerDeviceInfoSeq& pdi_seq = data[i].devices();
+      for (auto it = pdi_seq.begin(); it != pdi_seq.end(); ++it) {
+        power_devices_.insert(std::make_pair(it->device_info().deviceId(), *it));
       }
-      received = true;
-      break;
     } else if (info_seq[i].instance_state == DDS::NOT_ALIVE_DISPOSED_INSTANCE_STATE) {
       power_devices_.clear();
-      received = true;
-      break;
     }
+    received = true;
   }
 
   if (!received) {
     ACE_DEBUG((LM_DEBUG, "(%P|%t) DEBUG: CLIClient::send_power_devices_request: "
-               "Failed to receive data from current controller\n"));
+               "Failed to receive data from current controller (%C)\n", curr_controller_.c_str()));
   }
   return true;
 }

@@ -53,7 +53,8 @@ void Controller::device_info_cb(const tms::DeviceInfo& di, const DDS::SampleInfo
   }
 
   ACE_DEBUG((LM_DEBUG, "(%P|%t) DEBUG: Controller::device_info_cb: device: \"%C\"\n", di.deviceId().c_str()));
-  power_devices_.insert(std::make_pair(di.deviceId(), di));
+  power_devices_.insert(std::make_pair(di.deviceId(),
+                        cli::PowerDeviceInfo(di, tms::EnergyStartStopLevel::ESSL_OPERATIONAL)));
 }
 
 void Controller::heartbeat_cb(const tms::Heartbeat& hb, const DDS::SampleInfo& si)

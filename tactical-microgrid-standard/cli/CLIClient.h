@@ -31,6 +31,7 @@ private:
 
   void display_commands() const;
   std::string device_role_to_string(tms::DeviceRole role) const;
+  std::string energy_level_to_string(tms::EnergyStartStopLevel essl) const;
   void display_controllers() const;
   void set_controller(const OpArgPair& op_arg);
   void list_power_devices();

@@ -88,9 +88,10 @@ private:
 
 class OpenDDS_TMS_Export PowerDevice : public Handshaking {
 public:
-  explicit PowerDevice(const tms::Identity& id)
+  explicit PowerDevice(const tms::Identity& id, tms::DeviceRole role = tms::DeviceRole::ROLE_SOURCE)
     : Handshaking(id)
     , controller_selector_(*this)
+    , role_(role)
   {
   }
 
@@ -106,6 +107,7 @@ private:
   void got_device_info(const tms::DeviceInfo& di, const DDS::SampleInfo& si);
 
   ControllerSelector controller_selector_;
+  tms::DeviceRole role_;
 };
 
 #endif

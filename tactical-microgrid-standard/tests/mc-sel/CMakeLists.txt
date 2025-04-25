@@ -10,6 +10,6 @@ add_executable(mc-sel-test mc-sel-test.cpp)
 target_link_libraries(mc-sel-test PRIVATE TMS_Common)
 
 add_executable(basic-mc ${CMAKE_SOURCE_DIR}/controller/Controller.cpp basic-mc.cpp)
-target_link_libraries(basic-mc PRIVATE TMS_Common)
+target_link_libraries(basic-mc PRIVATE Commands_Idl)
 
 opendds_add_test(COMMAND ./mc-sel-test)

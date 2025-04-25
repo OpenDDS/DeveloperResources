@@ -108,7 +108,7 @@ DDS::ReturnCode_t PowerDevice::init(DDS::DomainId_t domain, int argc, char* argv
   }
 
   auto di = get_device_info();
-  di.role(tms::DeviceRole::ROLE_SOURCE);
+  di.role(role_);
 
   return send_device_info(di);
 }
