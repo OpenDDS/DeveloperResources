@@ -58,4 +58,10 @@ add_executable(Source
 target_include_directories(Source PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(Source PRIVATE TMS_Common)
 
+add_executable(Load
+  power_devices/Load.cpp
+)
+target_include_directories(Load PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_link_libraries(Load PRIVATE TMS_Common)
+
 add_subdirectory(tests)

@@ -86,19 +86,72 @@ public:
       ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: SourceDevice::init: EnergyStartStopRequestDataReader narrow failed\n"));
       return DDS::RETCODE_ERROR;
     }
+
+    // Publish to tms::Reply topic
+    tms::ReplyTypeSupport_var reply_ts = new tms::ReplyTypeSupportImpl;
+    if (DDS::RETCODE_OK != reply_ts->register_type(dp, "")) {
+      ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: SourceDevice::init: register_type tms::Reply failed\n"));
+      return DDS::RETCODE_ERROR;
+    }
+
+    CORBA::String_var reply_type_name = reply_ts->get_type_name();
+    DDS::Topic_var reply_topic = dp->create_topic(tms::topic::TOPIC_REPLY.c_str(),
+                                                  reply_type_name,
+                                                  TOPIC_QOS_DEFAULT,
+                                                  nullptr,
+                                                  ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
+    if (!reply_topic) {
+      ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: SourceDevice::init: create_topic \"%C\" failed\n",
+                 tms::topic::TOPIC_REPLY.c_str()));
+      return DDS::RETCODE_ERROR;
+    }
+
+    const DDS::PublisherQos tms_pub_qos = Qos::Publisher::get_qos();
+    DDS::Publisher_var tms_pub = dp->create_publisher(tms_pub_qos,
+                                                      nullptr,
+                                                      ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
+    if (!tms_pub) {
+      ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: SourceDevice::init: create_publisher with TMS QoS failed\n"));
+      return DDS::RETCODE_ERROR;
+    }
+
+    const DDS::DataWriterQos& reply_dw_qos = Qos::DataWriter::fn_map.at(tms::topic::TOPIC_REPLY)(device_id_);
+    DDS::DataWriter_var reply_dw_base = tms_pub->create_datawriter(reply_topic,
+                                                                   reply_dw_qos,
+                                                                   nullptr,
+                                                                   ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
+    if (!reply_dw_base) {
+      ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: SourceDevice::init: create_datawriter for topic \"%C\" failed\n",
+                 tms::topic::TOPIC_REPLY.c_str()));
+      return DDS::RETCODE_ERROR;
+    }
+
+    reply_dw_ = tms::ReplyDataWriter::_narrow(reply_dw_base);
+    if (!reply_dw_) {
+      ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: SourceDevice::init: ReplyDataWriter narrow failed\n"));
+      return DDS::RETCODE_ERROR;
+    }
+
     return DDS::RETCODE_OK;
   }
 
   int run()
   {
-    // TODO(sonndinh): Factor out the run function from Controller
+    // TODO(sonndinh): All devices including the controller may share this function
     return reactor_->run_reactor_event_loop() == 0 ? 0 : 1;
+  }
+
+  tms::ReplyDataWriter_var reply_dw() const
+  {
+    return reply_dw_;
   }
 
 private:
   bool running_ = true;
   tms::EnergyStartStopLevel essl_ = tms::EnergyStartStopLevel::ESSL_OPERATIONAL;
+
   tms::EnergyStartStopRequestDataReader_var essr_dr_;
+  tms::ReplyDataWriter_var reply_dw_;
 };
 
 void EnergyStartStopRequestDataReaderListenerImpl::on_data_available(DDS::DataReader_ptr reader)
@@ -117,12 +170,31 @@ void EnergyStartStopRequestDataReaderListenerImpl::on_data_available(DDS::DataRe
   for (CORBA::ULong i = 0; i < data.length(); ++i) {
     if (info_seq[i].valid_data) {
       const tms::EnergyStartStopRequest& essr = data[i];
-      // TODO(sonndinh): Check that the controller is the same as the master for this device.
+      const tms::Identity& sending_mc_id = essr.requestId().requestingDeviceId();
+      if (sending_mc_id != src_dev_.selected()) {
+        // Ignore request from non-selected controller
+        continue;
+      }
+
       const tms::Identity& target_id = essr.requestId().targetDeviceId();
       if (target_id == src_dev_.get_device_id()) {
+        // Always set to the requested level and send an OK reply
         const tms::EnergyStartStopLevel essl = essr.toLevel();
         src_dev_.energy_level(essl);
-        // TODO(sonndinh): send a reply to the controller
+
+        tms::Reply reply;
+        reply.requestingDeviceId() = sending_mc_id;
+        reply.targetDeviceId() = src_dev_.get_device_id();
+        reply.config() = essr.requestId().config();
+        reply.portNumber() = tms::INVALID_PORT_NUMBER;
+        reply.requestSequenceId() = essr.sequenceId();
+        reply.status().code() = tms::ReplyCode::REPLY_OK;
+        reply.status().reason() = "OK";
+        const DDS::ReturnCode_t rc = src_dev_.reply_dw()->write(reply, DDS::HANDLE_NIL);
+        if (rc != DDS::RETCODE_OK) {
+          ACE_ERROR((LM_WARNING, "(%P|%t) WARNING: EnergyStartStopRequestDataReaderListenerImpl::on_data_available: "
+                     "write reply failed: %C\n", OpenDDS::DCPS::retcode_to_string(rc)));
+        }
         break;
       }
     }
