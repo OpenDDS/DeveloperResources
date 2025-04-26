@@ -1,0 +1,14 @@
+#include "common/mil-std-3071_data_model.idl"
+
+module powersim {
+
+  const string TOPIC_ELECTRIC_CURRENT = "Simulated Electric Current";
+
+  @topic
+  @extensibility(FINAL)
+  struct ElectricCurrent {
+    @key tms::Identity from;
+    @key tms::Identity to;
+    float amperage;
+  };
+};

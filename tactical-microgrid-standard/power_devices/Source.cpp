@@ -1,10 +1,15 @@
 #include "common/PowerDevice.h"
 #include "common/DataReaderListenerBase.h"
 #include "common/QosHelper.h"
+#include "PowerSimTypeSupportImpl.h"
 
 #include <dds/DCPS/Marked_Default_Qos.h>
 
 #include <ace/Get_Opt.h>
+
+#include <thread>
+#include <mutex>
+#include <chrono>
 
 class SourceDevice;
 
@@ -27,8 +32,15 @@ public:
   {
   }
 
+  tms::EnergyStartStopLevel energy_level() const
+  {
+    std::lock_guard<std::mutex> guard(essl_m_);
+    return essl_;
+  }
+
   void energy_level(tms::EnergyStartStopLevel essl)
   {
+    std::lock_guard<std::mutex> guard(essl_m_);
     essl_ = essl;
   }
 
@@ -132,13 +144,94 @@ public:
       return DDS::RETCODE_ERROR;
     }
 
+    // Publish to powersim::ElectricCurrent topic
+    powersim::ElectricCurrentTypeSupport_var ec_ts = new powersim::ElectricCurrentTypeSupportImpl;
+    if (DDS::RETCODE_OK != ec_ts->register_type(dp, "")) {
+      ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: SourceDevice::init: register_type ElectricCurrent failed\n"));
+      return DDS::RETCODE_ERROR;
+    }
+
+    CORBA::String_var ec_type_name = ec_ts->get_type_name();
+    DDS::Topic_var ec_topic = dp->create_topic(powersim::TOPIC_ELECTRIC_CURRENT.c_str(),
+                                               ec_type_name,
+                                               TOPIC_QOS_DEFAULT,
+                                               nullptr,
+                                               ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
+    if (!ec_topic) {
+      ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: SourceDevice::init: create_topic \"%C\" failed\n",
+                 powersim::TOPIC_ELECTRIC_CURRENT.c_str()));
+      return DDS::RETCODE_ERROR;
+    }
+
+    DDS::Publisher_var sim_pub = dp->create_publisher(PUBLISHER_QOS_DEFAULT,
+                                                      nullptr,
+                                                      ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
+    if (!sim_pub) {
+      ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: SourceDevice::init: create_publisher failed\n"));
+      return DDS::RETCODE_ERROR;
+    }
+
+    DDS::DataWriter_var ec_dw_base = sim_pub->create_datawriter(ec_topic,
+                                                                DATAWRITER_QOS_DEFAULT,
+                                                                nullptr,
+                                                                ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
+    if (!ec_dw_base) {
+      ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: SourceDevice::init: create_datawriter for topic \"%C\" failed\n",
+                 powersim::TOPIC_ELECTRIC_CURRENT.c_str()));
+      return DDS::RETCODE_ERROR;
+    }
+
+    powersim::ElectricCurrentDataWriter_var ec_dw_ = powersim::ElectricCurrentDataWriter::_narrow(ec_dw_base);
+    if (!ec_dw_) {
+      ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: SourceDevice::init: ElectricCurrentDataWriter narrow failed\n"));
+      return DDS::RETCODE_ERROR;
+    }
+
     return DDS::RETCODE_OK;
+  }
+
+  bool shutdown() const
+  {
+    std::lock_guard<std::mutex> guard(shutdown_m_);
+    return shutdown_;
+  }
+
+  // TODO(sonndinh): add event handler for a terminate signal that set shutdown to true
+  void shutdown(bool shutdown)
+  {
+    std::lock_guard<std::mutex> guard(shutdown_m_);
+    shutdown_ = shutdown;
+  }
+
+  void simulate_power_flow()
+  {
+    while (!shutdown()) {
+      // TODO(sonndinh): Use condition variable to wait for operational energy level
+      while (energy_level() == tms::EnergyStartStopLevel::ESSL_OPERATIONAL) {
+        powersim::ElectricCurrent ec;
+        ec.from() = get_device_id();
+        ec.to() = connected_dev_id_;
+        ec.amperage() = 1.0f;
+        DDS::ReturnCode_t rc = ec_dw_->write(ec, DDS::HANDLE_NIL);
+        if (rc != DDS::RETCODE_OK) {
+          ACE_ERROR((LM_WARNING, "(%P|%t) WARNING: SourceDevice::simulate_power_flow: "
+                     "write ElectricCurrent failed: %C\n", OpenDDS::DCPS::retcode_to_string(rc)));
+        }
+
+        // Frequency of messages can be proportional to the power measure
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+      }
+    }
   }
 
   int run()
   {
-    // TODO(sonndinh): All devices including the controller may share this function
-    return reactor_->run_reactor_event_loop() == 0 ? 0 : 1;
+    std::thread thr(&SourceDevice::simulate_power_flow, this);
+    if (reactor_->run_reactor_event_loop() != 0) {
+      return 1;
+    }
+    thr.join();
+    return 0;
   }
 
   tms::ReplyDataWriter_var reply_dw() const
@@ -147,11 +240,21 @@ public:
   }
 
 private:
-  bool running_ = true;
+  // For graceful shutdown of the device
+  mutable std::mutex shutdown_m_;
+  bool shutdown_ = false;
+
+  // For changing energy level while the device is running
+  mutable std::mutex essl_m_;
   tms::EnergyStartStopLevel essl_ = tms::EnergyStartStopLevel::ESSL_OPERATIONAL;
 
   tms::EnergyStartStopRequestDataReader_var essr_dr_;
   tms::ReplyDataWriter_var reply_dw_;
+  powersim::ElectricCurrentDataWriter_var ec_dw_;
+
+  // Id of the device that is power-connected to this source device
+  // TODO(sonndinh): This is for a simple test. To be improved later.
+  tms::Identity connected_dev_id_ = "Load-1";
 };
 
 void EnergyStartStopRequestDataReaderListenerImpl::on_data_available(DDS::DataReader_ptr reader)
@@ -226,7 +329,8 @@ int main(int argc, char *argv[])
     return 1;
   }
 
-  SourceDevice src_dev(src_id);
+  //SourceDevice src_dev(src_id);
+  SourceDevice src_dev("Source-1");
   src_dev.init(domain_id, argc, argv);
   return src_dev.run();
 }

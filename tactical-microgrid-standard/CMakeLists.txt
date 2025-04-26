@@ -52,11 +52,20 @@ add_executable(CLI
 target_include_directories(CLI PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(CLI PRIVATE Commands_Idl)
 
+add_library(PowerSim_Idl)
+opendds_target_sources(PowerSim_Idl
+  PUBLIC
+    power_devices/PowerSim.idl
+  OPENDDS_IDL_OPTIONS -Lc++11 -I${CMAKE_CURRENT_SOURCE_DIR}
+  INCLUDE_BASE ${CMAKE_CURRENT_SOURCE_DIR}
+)
+target_link_libraries(PowerSim_Idl PUBLIC TMS_Common)
+
 add_executable(Source
   power_devices/Source.cpp
 )
 target_include_directories(Source PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-target_link_libraries(Source PRIVATE TMS_Common)
+target_link_libraries(Source PRIVATE PowerSim_Idl)
 
 add_executable(Load
   power_devices/Load.cpp

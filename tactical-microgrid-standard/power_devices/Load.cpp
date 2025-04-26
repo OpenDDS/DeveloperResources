@@ -13,6 +13,11 @@ public:
   {
     return reactor_->run_reactor_event_loop() == 0 ? 0 : 1;
   }
+
+private:
+  // Id of the device that is power-connected to this load device
+  // TODO(sonndinh): For a simple test, hardcode it to the Id of a source device.
+  tms::Identity connected_dev_id_ = "Source-1";
 };
 
 int main(int argc, char* argv[])
@@ -40,7 +45,8 @@ int main(int argc, char* argv[])
     return 1;
   }
 
-  LoadDevice load_dev(load_id);
+  //LoadDevice load_dev(load_id);
+  LoadDevice load_dev("Load-1");
   load_dev.init(domain_id, argc, argv);
   return load_dev.run();
 }
