@@ -71,6 +71,6 @@ add_executable(Load
   power_devices/Load.cpp
 )
 target_include_directories(Load PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-target_link_libraries(Load PRIVATE TMS_Common)
+target_link_libraries(Load PRIVATE PowerSim_Idl)
 
 add_subdirectory(tests)
