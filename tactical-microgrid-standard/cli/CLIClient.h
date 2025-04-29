@@ -5,10 +5,12 @@
 #include "controller/Common.h"
 
 #include <cli_idl/CLICommandsTypeSupportImpl.h>
+#include <power_devices/PowerSimTypeSupportImpl.h>
 
 #include <string>
 #include <utility>
 #include <mutex>
+#include <unordered_set>
 
 struct UnavailableController {
   tms::Identity id;
@@ -35,6 +37,8 @@ private:
   void display_controllers() const;
   void set_controller(const OpArgPair& op_arg);
   void list_power_devices();
+  bool can_connect(tms::DeviceRole role1, tms::DeviceRole role2) const;
+  void connect_power_devices();
   bool send_power_devices_request();
   void display_power_devices() const;
   void send_start_device_cmd(const OpArgPair& op_arg) const;
@@ -56,6 +60,7 @@ private:
   tms::OperatorIntentRequestDataWriter_var oir_dw_;
   cli::PowerDevicesReplyDataReader_var pdrep_dr_;
   cli::ControllerCommandDataWriter_var cc_dw_;
+  powersim::PowerTopologyDataWriter_var pt_dw_;
 
   // If a heartbeat hasn't been received from a controller in this amount of time
   // since its last heartbeat, the controller is deemed unavailable.
@@ -86,6 +91,10 @@ private:
 
   // The power devices that are connected to the current controller
   PowerDevices power_devices_;
+
+  // Store the simulated power connections between power devices
+  using PowerConnection = std::unordered_map<tms::Identity, std::unordered_set<tms::Identity>>;
+  PowerConnection power_connections_;
 
   // The current microgrid controller with which the CLI client is interacting
   tms::Identity curr_controller_;

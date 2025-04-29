@@ -1,4 +1,4 @@
-#include "common/PowerDevice.h"
+#include "power_devices/PowerDevice.h"
 
 #include <ace/Process_Manager.h>
 

@@ -32,7 +32,7 @@ DDS::ReturnCode_t CLIClient::init(DDS::DomainId_t domain_id, int argc, char* arg
 
   DDS::DomainParticipant_var dp = handshaking_.get_domain_participant();
 
-  // Publish to the PowerDevicesRequest topic
+  // Publish to the cli::PowerDevicesRequest topic
   cli::PowerDevicesRequestTypeSupport_var pdreq_ts = new cli::PowerDevicesRequestTypeSupportImpl;
   if (DDS::RETCODE_OK != pdreq_ts->register_type(dp, "")) {
     ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIClient::init: register_type PowerDevicesRequest failed\n"));
@@ -79,7 +79,7 @@ DDS::ReturnCode_t CLIClient::init(DDS::DomainId_t domain_id, int argc, char* arg
     return DDS::RETCODE_ERROR;
   }
 
-  // Publish to the TMS OperatorIntentRequest topic
+  // Publish to the tms::OperatorIntentRequest topic
   tms::OperatorIntentRequestTypeSupport_var oir_ts = new tms::OperatorIntentRequestTypeSupportImpl;
   if (DDS::RETCODE_OK != oir_ts->register_type(dp, "")) {
     ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIClient::init: register_type OperatorIntentRequest failed\n"));
@@ -125,7 +125,7 @@ DDS::ReturnCode_t CLIClient::init(DDS::DomainId_t domain_id, int argc, char* arg
     return DDS::RETCODE_ERROR;
   }
 
-  // Publish to the ControllerCommand topic
+  // Publish to the cli::ControllerCommand topic
   cli::ControllerCommandTypeSupport_var cc_ts = new cli::ControllerCommandTypeSupportImpl;
   if (DDS::RETCODE_OK != cc_ts->register_type(dp, "")) {
     ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIClient::init: register_type ControllerCommand failed\n"));
@@ -160,7 +160,7 @@ DDS::ReturnCode_t CLIClient::init(DDS::DomainId_t domain_id, int argc, char* arg
     return DDS::RETCODE_ERROR;
   }
 
-  // Subscribe to the PowerDevicesReply topic
+  // Subscribe to the cli::PowerDevicesReply topic
   cli::PowerDevicesReplyTypeSupport_var pdrep_ts = new cli::PowerDevicesReplyTypeSupportImpl;
   if (DDS::RETCODE_OK != pdrep_ts->register_type(dp, "")) {
     ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIClient::init: register_type PowerDevicesReply failed\n"));
@@ -207,6 +207,41 @@ DDS::ReturnCode_t CLIClient::init(DDS::DomainId_t domain_id, int argc, char* arg
     return DDS::RETCODE_ERROR;
   }
 
+  // Publish to the powersim::PowerTopology topic
+  powersim::PowerTopologyTypeSupport_var pt_ts = new powersim::PowerTopologyTypeSupportImpl;
+  if (DDS::RETCODE_OK != pt_ts->register_type(dp, "")) {
+    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIClient::init: register_type PowerTopology failed\n"));
+    return DDS::RETCODE_ERROR;
+  }
+
+  CORBA::String_var pt_type_name = pt_ts->get_type_name();
+  DDS::Topic_var pt_topic = dp->create_topic(powersim::TOPIC_POWER_TOPOLOGY.c_str(),
+                                             pt_type_name,
+                                             TOPIC_QOS_DEFAULT,
+                                             nullptr,
+                                             ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
+  if (!pt_topic) {
+    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIClient::init: create_topic \"%C\" failed\n",
+               powersim::TOPIC_POWER_TOPOLOGY.c_str()));
+    return DDS::RETCODE_ERROR;
+  }
+
+  DDS::DataWriter_var pt_dw_base = pub->create_datawriter(pt_topic,
+                                                          dw_qos,
+                                                          nullptr,
+                                                          ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
+  if (!pt_dw_base) {
+    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIClient::init: create_datawriter for topic \"%C\" failed\n",
+               powersim::TOPIC_POWER_TOPOLOGY.c_str()));
+    return DDS::RETCODE_ERROR;
+  }
+
+  pt_dw_ = powersim::PowerTopologyDataWriter::_narrow(pt_dw_base);
+  if (!pt_dw_) {
+    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIClient::init: PowerTopologyDataWriter narrow failed\n"));
+    return DDS::RETCODE_ERROR;
+  }
+
   return DDS::RETCODE_OK;
 }
 
@@ -233,6 +268,8 @@ void CLIClient::run_cli()
       display_controllers();
     } else if (op == "list-pd") {
       list_power_devices();
+    } else if (op == "connect-pd") {
+      connect_power_devices();
     } else if (op == "set") {
       set_controller(op_pair);
     } else if (op == "enable") {
@@ -297,6 +334,7 @@ set <mc_id>    : set the current microgrid controller.
                  Subsequent commands target this controller
                  until another set command is used.
 list-pd        : list the power devices connected to the current controller.
+connect-pd     : connect power devices to simulate a power topology.
 enable <pd_id> : start a power device with the given Id.
 disable <pd_id>: stop a power device with the given Id.
 stop           : stop the current controller's heartbeats.
@@ -374,6 +412,88 @@ void CLIClient::display_power_devices() const
     std::cout << i << ". Device Id: " << it->first <<
       ". Type: " << device_role_to_string(it->second.device_info().role()) <<
       ". Energy Level: " << energy_level_to_string(it->second.essl()) << std::endl;
+  }
+}
+
+bool CLIClient::can_connect(tms::DeviceRole role1, tms::DeviceRole role2) const
+{
+  switch (role1) {
+  case tms::DeviceRole::ROLE_SOURCE:
+    return role2 != tms::DeviceRole::ROLE_SOURCE;
+  case tms::DeviceRole::ROLE_LOAD:
+    return role2 != tms::DeviceRole::ROLE_LOAD;
+  case tms::DeviceRole::ROLE_STORAGE:
+    return role2 != tms::DeviceRole::ROLE_STORAGE;
+  case tms::DeviceRole::ROLE_DISTRIBUTION:
+  case tms::DeviceRole::ROLE_CONVERSION:
+    return true;
+  default:
+    return false;
+  }
+}
+
+void CLIClient::connect_power_devices()
+{
+  if (power_devices_.empty()) {
+    send_power_devices_request();
+  }
+
+  for (auto it1 = power_devices_.begin(); it1 != power_devices_.end(); ++it1) {
+    const tms::Identity& id1 = it1->first;
+    const tms::DeviceRole role1 = it1->second.device_info().role();
+    auto it2 = it1;
+    ++it2;
+    std::cout << "Select devices to connect to device Id: " << id1 << std::endl;
+    for (; it2 != power_devices_.end(); ++it2) {
+      const tms::Identity& id2 = it2->first;
+      const tms::DeviceRole role2 = it2->second.device_info().role();
+      if (!can_connect(role1, role2)) {
+        continue;
+      }
+
+      std::cout << "Connect to device Id: " << id2 << " (Y/n)";
+      while (true) {
+        std::string line;
+        std::getline(std::cin, line);
+        if (line.empty() || line == "y" || line == "Y") {
+          // TODO(sonndinh): check that the connection is consistent with previous connections.
+          // For example, if a source device is already connected to another device, it shouldn't
+          // be connected to another device since it has only 1 power port (output).
+          // Similarly, a load device can only be connected to another device since it has 1 port.
+          power_connections_[id1].insert(id2);
+          power_connections_[id2].insert(id1);
+          break;
+        } else if (line == "n" || line == "N") {
+          break;
+        } else {
+          std::cerr << "Invalid input! Please try again." << std::endl;
+          std::cout << "Connect to device Id: " << id2 << " (Y/n)";
+        }
+      }
+    }
+  }
+
+  // Send the power topology to the current controller which then
+  // distributes the power connections to its managed power devices.
+  powersim::PowerTopology pt;
+  pt.mc_id() = curr_controller_;
+  pt.connections().reserve(power_connections_.size());
+  CORBA::ULong i = 0;
+  for (auto it = power_connections_.begin(); it != power_connections_.end(); ++it, ++i) {
+    powersim::PowerConnection pc;
+    pc.pd_id() = it->first;
+    pc.connected_devices().reserve(it->second.size());
+    CORBA::ULong j = 0;
+    for (auto it2 = it->second.begin(); it2 != it->second.end(); ++it2, ++j) {
+      pc.connected_devices()[j] = *it2;
+    }
+    pt.connections()[i] = pc;
+  }
+
+  DDS::ReturnCode_t rc = pt_dw_->write(pt, DDS::HANDLE_NIL);
+  if (rc != DDS::RETCODE_OK) {
+    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIClient::connect_power_devices: "
+               "write power topology to controller \"%C\" failed\n", curr_controller_.c_str()));
   }
 }
 

@@ -7,7 +7,6 @@ find_package(OpenDDS REQUIRED)
 
 add_library(TMS_Common
   common/Handshaking.cpp
-  common/PowerDevice.cpp
   common/DeviceInfoDataReaderListenerImpl.cpp
   common/HeartbeatDataReaderListenerImpl.cpp
   common/QosHelper.cpp
@@ -33,6 +32,18 @@ opendds_target_sources(Commands_Idl
 )
 target_link_libraries(Commands_Idl PUBLIC TMS_Common)
 
+add_library(PowerSim_Idl
+  power_devices/PowerDevice.cpp
+  power_devices/PowerConnectionDataReaderListenerImpl.cpp
+)
+opendds_target_sources(PowerSim_Idl
+  PUBLIC
+    power_devices/PowerSim.idl
+  OPENDDS_IDL_OPTIONS -Lc++11 -I${CMAKE_CURRENT_SOURCE_DIR}
+  INCLUDE_BASE ${CMAKE_CURRENT_SOURCE_DIR}
+)
+target_link_libraries(PowerSim_Idl PUBLIC TMS_Common)
+
 add_executable(Controller
   controller/main.cpp
   controller/Controller.cpp
@@ -41,25 +52,17 @@ add_executable(Controller
   controller/OperatorIntentRequestDataReaderListenerImpl.cpp
   controller/ControllerCommandDataReaderListenerImpl.cpp
   controller/ReplyDataReaderListenerImpl.cpp
+  controller/PowerTopologyDataReaderListenerImpl.cpp
 )
 target_include_directories(Controller PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-target_link_libraries(Controller PRIVATE Commands_Idl)
+target_link_libraries(Controller PRIVATE Commands_Idl PowerSim_Idl)
 
 add_executable(CLI
   cli/main.cpp
   cli/CLIClient.cpp
 )
 target_include_directories(CLI PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-target_link_libraries(CLI PRIVATE Commands_Idl)
-
-add_library(PowerSim_Idl)
-opendds_target_sources(PowerSim_Idl
-  PUBLIC
-    power_devices/PowerSim.idl
-  OPENDDS_IDL_OPTIONS -Lc++11 -I${CMAKE_CURRENT_SOURCE_DIR}
-  INCLUDE_BASE ${CMAKE_CURRENT_SOURCE_DIR}
-)
-target_link_libraries(PowerSim_Idl PUBLIC TMS_Common)
+target_link_libraries(CLI PRIVATE Commands_Idl PowerSim_Idl)
 
 add_executable(Source
   power_devices/Source.cpp

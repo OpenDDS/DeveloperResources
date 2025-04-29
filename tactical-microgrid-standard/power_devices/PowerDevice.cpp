@@ -1,4 +1,5 @@
 #include "PowerDevice.h"
+#include "PowerConnectionDataReaderListenerImpl.h"
 
 void ControllerSelector::got_heartbeat(const tms::Heartbeat& hb)
 {
@@ -107,6 +108,51 @@ DDS::ReturnCode_t PowerDevice::init(DDS::DomainId_t domain, int argc, char* argv
     return rc;
   }
 
+  // Subscribe to the PowerConnection topic
+  DDS::DomainParticipant_var dp = get_domain_participant();
+
+  powersim::PowerConnectionTypeSupport_var pc_ts = new powersim::PowerConnectionTypeSupportImpl;
+  if (DDS::RETCODE_OK != pc_ts->register_type(dp, "")) {
+    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: PowerDevice::init: register_type PowerConnection failed\n"));
+    return DDS::RETCODE_ERROR;
+  }
+
+  CORBA::String_var pc_type_name = pc_ts->get_type_name();
+  DDS::Topic_var pc_topic = dp->create_topic(powersim::TOPIC_POWER_CONNECTION.c_str(),
+                                             pc_type_name,
+                                             TOPIC_QOS_DEFAULT,
+                                             nullptr,
+                                             ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
+  if (!pc_topic) {
+    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: PowerDevice::init: create_topic \"%C\" failed\n",
+               powersim::TOPIC_POWER_CONNECTION.c_str()));
+    return DDS::RETCODE_ERROR;
+  }
+
+  DDS::Subscriber_var sim_sub = dp->create_subscriber(SUBSCRIBER_QOS_DEFAULT,
+                                                      nullptr,
+                                                      ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
+  if (!sim_sub) {
+    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: PowerDevice::init: create_subscriber for simulating power connection failed\n"));
+    return DDS::RETCODE_ERROR;
+  }
+
+  DDS::DataReaderQos dr_qos;
+  sim_sub->get_default_datareader_qos(dr_qos);
+  dr_qos.reliability.kind = DDS::RELIABLE_RELIABILITY_QOS;
+
+  DDS::DataReaderListener_var pc_listener(new PowerConnectionDataReaderListenerImpl(*this));
+  DDS::DataReader_var pc_dr_base = sim_sub->create_datareader(pc_topic,
+                                                              dr_qos,
+                                                              pc_listener,
+                                                              ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
+  if (!pc_dr_base) {
+    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: PowerDevice::init: create_datareader for topic \"%C\" failed\n",
+               powersim::TOPIC_POWER_CONNECTION.c_str()));
+    return DDS::RETCODE_ERROR;
+  }
+
+  // Advertise its device information and start heartbeats
   auto di = get_device_info();
   di.role(role_);
 

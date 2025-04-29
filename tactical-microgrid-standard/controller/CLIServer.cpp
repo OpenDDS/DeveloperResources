@@ -4,6 +4,7 @@
 #include "OperatorIntentRequestDataReaderListenerImpl.h"
 #include "ControllerCommandDataReaderListenerImpl.h"
 #include "ReplyDataReaderListenerImpl.h"
+#include "PowerTopologyDataReaderListenerImpl.h"
 
 #include <dds/DCPS/Marked_Default_Qos.h>
 
@@ -262,10 +263,10 @@ DDS::ReturnCode_t CLIServer::init()
 
   const DDS::DataReaderQos& reply_qos = Qos::DataReader::fn_map.at(tms::topic::TOPIC_REPLY)(controller_.get_device_id());
   DDS::DataReaderListener_var reply_listener(new ReplyDataReaderListenerImpl(*this));
-  DDS::DataReader_var reply_dr_base = sub->create_datareader(reply_topic,
-                                                              reply_qos,
-                                                              reply_listener,
-                                                              ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
+  DDS::DataReader_var reply_dr_base = tms_sub->create_datareader(reply_topic,
+                                                                 reply_qos,
+                                                                 reply_listener,
+                                                                 ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
   if (!reply_dr_base) {
     ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIServer::init: create_datareader for topic \"%C\" failed\n",
                tms::topic::TOPIC_REPLY.c_str()));
@@ -275,6 +276,77 @@ DDS::ReturnCode_t CLIServer::init()
   reply_dr_ = tms::ReplyDataReader::_narrow(reply_dr_base);
   if (!reply_dr_) {
     ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIServer::init: ReplyDataReader narrow failed\n"));
+    return DDS::RETCODE_ERROR;
+  }
+
+  // Subscibe to the powersim::PowerTopology topic
+  powersim::PowerTopologyTypeSupport_var pt_ts = new powersim::PowerTopologyTypeSupportImpl;
+  if (DDS::RETCODE_OK != pt_ts->register_type(dp, "")) {
+    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIServer::init: register_type PowerTopology failed\n"));
+    return DDS::RETCODE_ERROR;
+  }
+
+  CORBA::String_var pt_type_name = pt_ts->get_type_name();
+  DDS::Topic_var pt_topic = dp->create_topic(powersim::TOPIC_POWER_TOPOLOGY.c_str(),
+                                             pt_type_name,
+                                             TOPIC_QOS_DEFAULT,
+                                             nullptr,
+                                             ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
+  if (!pt_topic) {
+    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIServer::init: create_topic \"%C\" failed\n",
+               powersim::TOPIC_POWER_TOPOLOGY.c_str()));
+    return DDS::RETCODE_ERROR;
+  }
+
+  DDS::DataReaderListener_var pt_listener(new PowerTopologyDataReaderListenerImpl(*this));
+  DDS::DataReader_var pt_dr_base = sub->create_datareader(pt_topic,
+                                                          dr_qos,
+                                                          pt_listener,
+                                                          ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
+  if (!pt_dr_base) {
+    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIServer::init: create_datareader for topic \"%C\" failed\n",
+               powersim::TOPIC_POWER_TOPOLOGY.c_str()));
+    return DDS::RETCODE_ERROR;
+  }
+
+  pt_dr_ = powersim::PowerTopologyDataReader::_narrow(pt_dr_base);
+  if (!pt_dr_) {
+    ACE_ERROR((LM_WARNING, "(%P|%t) WARNING: CLIServer::init: PowerTopologyDataReader narrow failed\n"));
+    return DDS::RETCODE_ERROR;
+  }
+
+  // Publish to the powersim::PowerConnection topic
+  powersim::PowerConnectionTypeSupport_var pc_ts = new powersim::PowerConnectionTypeSupportImpl;
+  if (DDS::RETCODE_OK != pc_ts->register_type(dp, "")) {
+    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIServer::init: register_type PowerConnection failed\n"));
+    return DDS::RETCODE_ERROR;
+  }
+
+  CORBA::String_var pc_type_name = pc_ts->get_type_name();
+  DDS::Topic_var pc_topic = dp->create_topic(powersim::TOPIC_POWER_CONNECTION.c_str(),
+                                             pc_type_name,
+                                             TOPIC_QOS_DEFAULT,
+                                             nullptr,
+                                             ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
+  if (!pc_topic) {
+    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIServer::init: create_topic \"%C\" failed\n",
+               powersim::TOPIC_POWER_CONNECTION.c_str()));
+    return DDS::RETCODE_ERROR;
+  }
+
+  DDS::DataWriter_var pc_dw_base = pub->create_datawriter(pc_topic,
+                                                          dw_qos,
+                                                          nullptr,
+                                                          ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
+  if (!pc_dw_base) {
+    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIServer::init: create_datawriter for topic \"%C\" failed\n",
+               powersim::TOPIC_POWER_CONNECTION.c_str()));
+    return DDS::RETCODE_ERROR;
+  }
+
+  pc_dw_ = powersim::PowerConnectionDataWriter::_narrow(pc_dw_base);
+  if (!pc_dw_) {
+    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIServer::init: PowerConnectionDataWriter narrow failed\n"));
     return DDS::RETCODE_ERROR;
   }
 

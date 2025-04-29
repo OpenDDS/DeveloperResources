@@ -4,6 +4,7 @@
 #include "Controller.h"
 
 #include <cli_idl/CLICommandsTypeSupportImpl.h>
+#include <power_devices/PowerSimTypeSupportImpl.h>
 
 class CLIServer {
 public:
@@ -18,6 +19,11 @@ public:
   cli::PowerDevicesReplyDataWriter_var get_PowerDevicesReply_writer() const
   {
     return pdrep_dw_;
+  }
+
+  powersim::PowerConnectionDataWriter_var get_PowerConnection_writer() const
+  {
+    return pc_dw_;
   }
 
   void start_stop_device(const tms::Identity& pd_id, tms::OperatorPriorityType opt);
@@ -42,6 +48,8 @@ private:
   cli::ControllerCommandDataReader_var cc_dr_;
   tms::EnergyStartStopRequestDataWriter_var essr_dw_;
   tms::ReplyDataReader_var reply_dr_;
+  powersim::PowerTopologyDataReader_var pt_dr_;
+  powersim::PowerConnectionDataWriter_var pc_dw_;
 };
 
 #endif

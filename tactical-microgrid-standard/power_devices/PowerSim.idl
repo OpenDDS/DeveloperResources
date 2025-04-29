@@ -3,6 +3,8 @@
 module powersim {
 
   const string TOPIC_ELECTRIC_CURRENT = "Simulated Electric Current";
+  const string TOPIC_POWER_CONNECTION = "Simulated Power Connection";
+  const string TOPIC_POWER_TOPOLOGY = "Simulated Power Topology";
 
   @topic
   @extensibility(FINAL)
@@ -10,5 +12,21 @@ module powersim {
     @key tms::Identity from;
     @key tms::Identity to;
     float amperage;
+  };
+
+  typedef sequence<tms::Identity> IdentitySeq;
+
+  @topic
+  @extensibility(FINAL)
+  struct PowerConnection {
+    @key tms::Identity pd_id;
+    IdentitySeq connected_devices;
+  };
+
+  @topic
+  @extensibility(FINAL)
+  struct PowerTopology {
+    @key tms::Identity mc_id;
+    sequence<PowerConnection> connections;
   };
 };

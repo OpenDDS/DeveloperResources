@@ -1,7 +1,10 @@
 #ifndef TMS_POWER_DEVICE_H
 #define TMS_POWER_DEVICE_H
 
-#include "Handshaking.h"
+#include "common/Handshaking.h"
+#include "PowerSimTypeSupportImpl.h"
+
+#include <dds/DCPS/Marked_Default_Qos.h>
 
 #include <map>
 
@@ -101,6 +104,14 @@ public:
   {
     return controller_selector_.selected();
   }
+
+  void connected_devices(const powersim::IdentitySeq& devices)
+  {
+    connected_devices_ = devices;
+  }
+
+protected:
+  powersim::IdentitySeq connected_devices_;
 
 private:
   void got_heartbeat(const tms::Heartbeat& hb, const DDS::SampleInfo& si);
