@@ -415,21 +415,32 @@ void CLIClient::display_power_devices() const
   }
 }
 
-bool CLIClient::can_connect(tms::DeviceRole role1, tms::DeviceRole role2) const
+bool CLIClient::is_single_port_device(tms::DeviceRole role) const
 {
-  switch (role1) {
+  switch (role) {
   case tms::DeviceRole::ROLE_SOURCE:
-    return role2 != tms::DeviceRole::ROLE_SOURCE;
   case tms::DeviceRole::ROLE_LOAD:
-    return role2 != tms::DeviceRole::ROLE_LOAD;
   case tms::DeviceRole::ROLE_STORAGE:
-    return role2 != tms::DeviceRole::ROLE_STORAGE;
-  case tms::DeviceRole::ROLE_DISTRIBUTION:
-  case tms::DeviceRole::ROLE_CONVERSION:
     return true;
   default:
     return false;
   }
+}
+
+bool CLIClient::can_connect(const tms::Identity& id1, tms::DeviceRole role1,
+                            const tms::Identity& id2, tms::DeviceRole role2) const
+{
+  if (id1 == id2) {
+    return false;
+  }
+
+  if (power_connections_.at(id1).empty() || !is_single_port_device(role1)) {
+    if (power_connections_.at(id2).empty()) {
+      return true;
+    }
+    return !is_single_port_device(role2);
+  }
+  return false;
 }
 
 void CLIClient::connect_power_devices()
@@ -447,7 +458,7 @@ void CLIClient::connect_power_devices()
     for (; it2 != power_devices_.end(); ++it2) {
       const tms::Identity& id2 = it2->first;
       const tms::DeviceRole role2 = it2->second.device_info().role();
-      if (!can_connect(role1, role2)) {
+      if (!can_connect(id1, role1, id2, role2)) {
         continue;
       }
 
@@ -456,10 +467,6 @@ void CLIClient::connect_power_devices()
         std::string line;
         std::getline(std::cin, line);
         if (line.empty() || line == "y" || line == "Y") {
-          // TODO(sonndinh): check that the connection is consistent with previous connections.
-          // For example, if a source device is already connected to another device, it shouldn't
-          // be connected to another device since it has only 1 power port (output).
-          // Similarly, a load device can only be connected to another device since it has 1 port.
           power_connections_[id1].insert(id2);
           power_connections_[id2].insert(id1);
           break;

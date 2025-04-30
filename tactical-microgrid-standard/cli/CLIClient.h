@@ -37,7 +37,9 @@ private:
   void display_controllers() const;
   void set_controller(const OpArgPair& op_arg);
   void list_power_devices();
-  bool can_connect(tms::DeviceRole role1, tms::DeviceRole role2) const;
+  bool is_single_port_device(tms::DeviceRole role) const;
+  bool can_connect(const tms::Identity& id1, tms::DeviceRole role1,
+    const tms::Identity& id2, tms::DeviceRole role2) const;
   void connect_power_devices();
   bool send_power_devices_request();
   void display_power_devices() const;

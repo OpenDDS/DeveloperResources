@@ -93,12 +93,6 @@ public:
       return DDS::RETCODE_ERROR;
     }
 
-    essr_dr_ = tms::EnergyStartStopRequestDataReader::_narrow(essr_dr_base);
-    if (!essr_dr_) {
-      ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: SourceDevice::init: EnergyStartStopRequestDataReader narrow failed\n"));
-      return DDS::RETCODE_ERROR;
-    }
-
     // Publish to tms::Reply topic
     tms::ReplyTypeSupport_var reply_ts = new tms::ReplyTypeSupportImpl;
     if (DDS::RETCODE_OK != reply_ts->register_type(dp, "")) {
@@ -207,10 +201,11 @@ public:
   {
     while (!shutdown()) {
       // TODO(sonndinh): Use condition variable to wait for operational energy level
-      while (energy_level() == tms::EnergyStartStopLevel::ESSL_OPERATIONAL) {
+      while (energy_level() == tms::EnergyStartStopLevel::ESSL_OPERATIONAL &&
+             !connected_devices_.empty()) {
         powersim::ElectricCurrent ec;
         ec.from() = get_device_id();
-        ec.to() = connected_dev_id_;
+        ec.to() = connected_devices_[0];
         ec.amperage() = 1.0f;
         DDS::ReturnCode_t rc = ec_dw_->write(ec, DDS::HANDLE_NIL);
         if (rc != DDS::RETCODE_OK) {
@@ -248,13 +243,8 @@ private:
   mutable std::mutex essl_m_;
   tms::EnergyStartStopLevel essl_ = tms::EnergyStartStopLevel::ESSL_OPERATIONAL;
 
-  tms::EnergyStartStopRequestDataReader_var essr_dr_;
   tms::ReplyDataWriter_var reply_dw_;
   powersim::ElectricCurrentDataWriter_var ec_dw_;
-
-  // Id of the device that is power-connected to this source device
-  // TODO(sonndinh): This is for a simple test. To be improved later.
-  tms::Identity connected_dev_id_ = "Load-1";
 };
 
 void EnergyStartStopRequestDataReaderListenerImpl::on_data_available(DDS::DataReader_ptr reader)
@@ -329,8 +319,7 @@ int main(int argc, char *argv[])
     return 1;
   }
 
-  //SourceDevice src_dev(src_id);
-  SourceDevice src_dev("Source-1");
+  SourceDevice src_dev(src_id);
   src_dev.init(domain_id, argc, argv);
   return src_dev.run();
 }

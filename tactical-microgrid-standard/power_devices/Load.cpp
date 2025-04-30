@@ -39,7 +39,7 @@ public:
 
     DDS::DomainParticipant_var dp = get_domain_participant();
 
-    // Subscribe to tms::ElectricCurrent topic
+    // Subscribe to powersim::ElectricCurrent topic
     powersim::ElectricCurrentTypeSupport_var ec_ts = new powersim::ElectricCurrentTypeSupportImpl;
     if (DDS::RETCODE_OK != ec_ts->register_type(dp, "")) {
       ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: LoadDevice::init: register_type ElectricCurrent failed\n"));
@@ -76,13 +76,6 @@ public:
                  powersim::TOPIC_ELECTRIC_CURRENT.c_str()));
       return DDS::RETCODE_ERROR;
     }
-
-    ec_dr_ = powersim::ElectricCurrentDataReader::_narrow(ec_dr_base);
-    if (!ec_dr_) {
-      ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: LoadDevice::init: ElectricCurrentDataReader narrow failed\n"));
-      return DDS::RETCODE_ERROR;
-    }
-
     return DDS::RETCODE_OK;
   }
 
@@ -93,15 +86,11 @@ public:
 
   tms::Identity connected_dev_id() const
   {
-    return connected_dev_id_;
+    if (connected_devices_.empty()) {
+      return tms::Identity();
+    }
+    return connected_devices_[0];
   }
-
-private:
-  // Id of the device that is power-connected to this load device
-  // TODO(sonndinh): For a simple test, hardcode it to the Id of a source device.
-  tms::Identity connected_dev_id_ = "Source-1";
-
-  powersim::ElectricCurrentDataReader_var ec_dr_;
 };
 
 void ElectricCurrentDataReaderListenerImpl::on_data_available(DDS::DataReader_ptr reader)
@@ -154,8 +143,7 @@ int main(int argc, char* argv[])
     return 1;
   }
 
-  //LoadDevice load_dev(load_id);
-  LoadDevice load_dev("Load-1");
+  LoadDevice load_dev(load_id);
   load_dev.init(domain_id, argc, argv);
   return load_dev.run();
 }

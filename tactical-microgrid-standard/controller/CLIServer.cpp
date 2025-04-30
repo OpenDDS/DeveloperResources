@@ -61,12 +61,6 @@ DDS::ReturnCode_t CLIServer::init()
     return DDS::RETCODE_ERROR;
   }
 
-  pdreq_dr_ = cli::PowerDevicesRequestDataReader::_narrow(pdreq_dr_base);
-  if (!pdreq_dr_) {
-    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIServer::init: PowerDevicesRequestDataReader narrow failed\n"));
-    return DDS::RETCODE_ERROR;
-  }
-
   // Subscribe to the tms::OperatorIntentRequest topic
   tms::OperatorIntentRequestTypeSupport_var oir_ts = new tms::OperatorIntentRequestTypeSupportImpl;
   if (DDS::RETCODE_OK != oir_ts->register_type(dp, "")) {
@@ -108,12 +102,6 @@ DDS::ReturnCode_t CLIServer::init()
     return DDS::RETCODE_ERROR;
   }
 
-  oir_dr_ = tms::OperatorIntentRequestDataReader::_narrow(oir_dr_base);
-  if (!oir_dr_) {
-    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIServer::init: OperatorIntentRequestDataReader narrow failed\n"));
-    return DDS::RETCODE_ERROR;
-  }
-
   // Subscribe to the cli::ControllerCommand topic
   cli::ControllerCommandTypeSupport_var cc_ts = new cli::ControllerCommandTypeSupportImpl;
   if (DDS::RETCODE_OK != cc_ts->register_type(dp, "")) {
@@ -141,12 +129,6 @@ DDS::ReturnCode_t CLIServer::init()
   if (!cc_dr_base) {
     ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIServer::init: create_datareader for topic \"%C\" failed\n",
                cli::TOPIC_CONTROLLER_COMMAND.c_str()));
-    return DDS::RETCODE_ERROR;
-  }
-
-  cc_dr_ = cli::ControllerCommandDataReader::_narrow(cc_dr_base);
-  if (!cc_dr_) {
-    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIServer::init: ControllerCommandDataReader narrow failed\n"));
     return DDS::RETCODE_ERROR;
   }
 
@@ -273,12 +255,6 @@ DDS::ReturnCode_t CLIServer::init()
     return DDS::RETCODE_ERROR;
   }
 
-  reply_dr_ = tms::ReplyDataReader::_narrow(reply_dr_base);
-  if (!reply_dr_) {
-    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIServer::init: ReplyDataReader narrow failed\n"));
-    return DDS::RETCODE_ERROR;
-  }
-
   // Subscibe to the powersim::PowerTopology topic
   powersim::PowerTopologyTypeSupport_var pt_ts = new powersim::PowerTopologyTypeSupportImpl;
   if (DDS::RETCODE_OK != pt_ts->register_type(dp, "")) {
@@ -306,12 +282,6 @@ DDS::ReturnCode_t CLIServer::init()
   if (!pt_dr_base) {
     ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIServer::init: create_datareader for topic \"%C\" failed\n",
                powersim::TOPIC_POWER_TOPOLOGY.c_str()));
-    return DDS::RETCODE_ERROR;
-  }
-
-  pt_dr_ = powersim::PowerTopologyDataReader::_narrow(pt_dr_base);
-  if (!pt_dr_) {
-    ACE_ERROR((LM_WARNING, "(%P|%t) WARNING: CLIServer::init: PowerTopologyDataReader narrow failed\n"));
     return DDS::RETCODE_ERROR;
   }
 

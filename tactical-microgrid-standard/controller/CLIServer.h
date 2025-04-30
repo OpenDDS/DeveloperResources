@@ -42,13 +42,13 @@ private:
   std::unordered_map<tms::RequestSequence, tms::Identity> pending_essr_;
 
   Controller& controller_;
-  cli::PowerDevicesRequestDataReader_var pdreq_dr_;
-  tms::OperatorIntentRequestDataReader_var oir_dr_;
+  //cli::PowerDevicesRequestDataReader_var pdreq_dr_;
+  //tms::OperatorIntentRequestDataReader_var oir_dr_;
   cli::PowerDevicesReplyDataWriter_var pdrep_dw_;
-  cli::ControllerCommandDataReader_var cc_dr_;
+  //cli::ControllerCommandDataReader_var cc_dr_;
   tms::EnergyStartStopRequestDataWriter_var essr_dw_;
-  tms::ReplyDataReader_var reply_dr_;
-  powersim::PowerTopologyDataReader_var pt_dr_;
+  //tms::ReplyDataReader_var reply_dr_;
+  //powersim::PowerTopologyDataReader_var pt_dr_;
   powersim::PowerConnectionDataWriter_var pc_dw_;
 };
 

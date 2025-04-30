@@ -111,6 +111,7 @@ public:
   }
 
 protected:
+  // Should contain at most one connected device since it has only one port
   powersim::IdentitySeq connected_devices_;
 
 private:
