@@ -7,6 +7,7 @@
 #include <dds/DCPS/Marked_Default_Qos.h>
 
 #include <map>
+#include <condition_variable>
 
 struct NewController {
   tms::Identity id;
@@ -105,13 +106,28 @@ public:
     return controller_selector_.selected();
   }
 
+  powersim::IdentitySeq connected_devices() const
+  {
+    std::lock_guard<std::mutex> guard(connected_devices_m_);
+    return connected_devices_;
+  }
+
+  void wait_for_connection()
+  {
+    std::unique_lock<std::mutex> lock(connected_devices_m_);
+    connected_devices_cv_.wait(lock, [this] { return !connected_devices_.empty(); });
+  }
+
   void connected_devices(const powersim::IdentitySeq& devices)
   {
+    std::lock_guard<std::mutex> guard(connected_devices_m_);
     connected_devices_ = devices;
+    connected_devices_cv_.notify_one();
   }
 
 protected:
-  // Should contain at most one connected device since it has only one port
+  std::condition_variable connected_devices_cv_;
+  mutable std::mutex connected_devices_m_;
   powersim::IdentitySeq connected_devices_;
 
 private:

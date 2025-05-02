@@ -6,7 +6,9 @@
 
 class PowerConnectionDataReaderListenerImpl : public DataReaderListenerBase {
 public:
-  explicit PowerConnectionDataReaderListenerImpl(PowerDevice& pd) : pd_(pd) {}
+  explicit PowerConnectionDataReaderListenerImpl(PowerDevice& pd)
+    : DataReaderListenerBase("powersim::PowerConnection - DataReaderListenerImpl")
+    , pd_(pd) {}
 
   virtual ~PowerConnectionDataReaderListenerImpl() = default;
 

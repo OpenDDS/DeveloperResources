@@ -15,7 +15,9 @@ class SourceDevice;
 
 class EnergyStartStopRequestDataReaderListenerImpl : public DataReaderListenerBase {
 public:
-  explicit EnergyStartStopRequestDataReaderListenerImpl(SourceDevice& src_dev) : src_dev_(src_dev) {}
+  explicit EnergyStartStopRequestDataReaderListenerImpl(SourceDevice& src_dev)
+    : DataReaderListenerBase("tms::EnergyStartStopRequest - DataReaderListenerImpl")
+    , src_dev_(src_dev) {}
 
   virtual ~EnergyStartStopRequestDataReaderListenerImpl() = default;
 
@@ -175,7 +177,7 @@ public:
       return DDS::RETCODE_ERROR;
     }
 
-    powersim::ElectricCurrentDataWriter_var ec_dw_ = powersim::ElectricCurrentDataWriter::_narrow(ec_dw_base);
+    ec_dw_ = powersim::ElectricCurrentDataWriter::_narrow(ec_dw_base);
     if (!ec_dw_) {
       ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: SourceDevice::init: ElectricCurrentDataWriter narrow failed\n"));
       return DDS::RETCODE_ERROR;
@@ -199,19 +201,29 @@ public:
 
   void simulate_power_flow()
   {
+    wait_for_connection();
+    const powersim::IdentitySeq connected_devs = connected_devices();
+    //std::cout << "=== List of connected devices: ";
+    //for (const auto& id : connected_devs) {
+    //  std::cout << id << " ";
+    //}
+    //std::cout << std::endl;
+
     while (!shutdown()) {
       // TODO(sonndinh): Use condition variable to wait for operational energy level
-      while (energy_level() == tms::EnergyStartStopLevel::ESSL_OPERATIONAL &&
-             !connected_devices_.empty()) {
+      while (energy_level() == tms::EnergyStartStopLevel::ESSL_OPERATIONAL) {
         powersim::ElectricCurrent ec;
         ec.from() = get_device_id();
-        ec.to() = connected_devices_[0];
+        ec.to() = connected_devs[0];
         ec.amperage() = 1.0f;
-        DDS::ReturnCode_t rc = ec_dw_->write(ec, DDS::HANDLE_NIL);
+        const DDS::ReturnCode_t rc = ec_dw_->write(ec, DDS::HANDLE_NIL);
         if (rc != DDS::RETCODE_OK) {
           ACE_ERROR((LM_WARNING, "(%P|%t) WARNING: SourceDevice::simulate_power_flow: "
                      "write ElectricCurrent failed: %C\n", OpenDDS::DCPS::retcode_to_string(rc)));
         }
+
+        // For debug:
+        std::cout << "=== Sent ElectricCurrent sample to device \"" << connected_devices_[0] << "\"..." << std::endl;
 
         // Frequency of messages can be proportional to the power measure
         std::this_thread::sleep_for(std::chrono::seconds(1));
@@ -320,6 +332,8 @@ int main(int argc, char *argv[])
   }
 
   SourceDevice src_dev(src_id);
-  src_dev.init(domain_id, argc, argv);
+  if (src_dev.init(domain_id, argc, argv) != DDS::RETCODE_OK) {
+    return 1;
+  }
   return src_dev.run();
 }

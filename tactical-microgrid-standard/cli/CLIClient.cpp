@@ -434,8 +434,11 @@ bool CLIClient::can_connect(const tms::Identity& id1, tms::DeviceRole role1,
     return false;
   }
 
-  if (power_connections_.at(id1).empty() || !is_single_port_device(role1)) {
-    if (power_connections_.at(id2).empty()) {
+  const bool dev1_is_not_connected = power_connections_.count(id1) == 0 || power_connections_.at(id1).empty();
+  const bool dev2_is_not_connected = power_connections_.count(id2) == 0 || power_connections_.at(id2).empty();
+
+  if (dev1_is_not_connected || !is_single_port_device(role1)) {
+    if (dev2_is_not_connected) {
       return true;
     }
     return !is_single_port_device(role2);
@@ -490,11 +493,10 @@ void CLIClient::connect_power_devices()
     powersim::PowerConnection pc;
     pc.pd_id() = it->first;
     pc.connected_devices().reserve(it->second.size());
-    CORBA::ULong j = 0;
-    for (auto it2 = it->second.begin(); it2 != it->second.end(); ++it2, ++j) {
-      pc.connected_devices()[j] = *it2;
+    for (auto it2 = it->second.begin(); it2 != it->second.end(); ++it2) {
+      pc.connected_devices().push_back(*it2);
     }
-    pt.connections()[i] = pc;
+    pt.connections().push_back(pc);
   }
 
   DDS::ReturnCode_t rc = pt_dw_->write(pt, DDS::HANDLE_NIL);

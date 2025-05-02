@@ -6,7 +6,9 @@
 
 class PowerTopologyDataReaderListenerImpl : public DataReaderListenerBase {
 public:
-  explicit PowerTopologyDataReaderListenerImpl(CLIServer& cli_server) : cli_server_(cli_server) {}
+  explicit PowerTopologyDataReaderListenerImpl(CLIServer& cli_server)
+    : DataReaderListenerBase("powersim::PowerTopology - DataReaderListenerImpl")
+    , cli_server_(cli_server) {}
 
   virtual ~PowerTopologyDataReaderListenerImpl() = default;
 

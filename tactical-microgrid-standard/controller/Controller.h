@@ -12,6 +12,7 @@ public:
   int run();
   tms::Identity id() const;
   PowerDevices power_devices() const;
+  void update_essl(const tms::Identity& pd_id, tms::EnergyStartStopLevel to_level);
   void terminate();
 
 private:

@@ -11,7 +11,8 @@ class LoadDevice;
 class ElectricCurrentDataReaderListenerImpl : public DataReaderListenerBase {
 public:
   explicit ElectricCurrentDataReaderListenerImpl(LoadDevice& load_dev)
-    : load_dev_(load_dev)
+    : DataReaderListenerBase("powersim::ElectricCurrent - DataReaderListenerImpl")
+    , load_dev_(load_dev)
   {
   }
 
@@ -144,6 +145,8 @@ int main(int argc, char* argv[])
   }
 
   LoadDevice load_dev(load_id);
-  load_dev.init(domain_id, argc, argv);
+  if (load_dev.init(domain_id, argc, argv) != DDS::RETCODE_OK) {
+    return 1;
+  }
   return load_dev.run();
 }

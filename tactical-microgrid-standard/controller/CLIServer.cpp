@@ -16,7 +16,7 @@ CLIServer::CLIServer(Controller& mc)
 
 DDS::ReturnCode_t CLIServer::init()
 {
-  // Optional writer for OperatorIntentState topic
+  // TODO(sonndinh): Optional writer for OperatorIntentState topic?
   DDS::DomainParticipant_var dp = controller_.get_domain_participant();
 
   // Subscribe to the cli::PowerDevicesRequest topic
@@ -352,7 +352,7 @@ void CLIServer::start_stop_device(const tms::Identity& pd_id, tms::OperatorPrior
 
   const tms::EnergyStartStopLevel curr_essl = it->second.essl();
   if (curr_essl == to_essl) {
-    ACE_DEBUG((LM_DEBUG, "(%P|%t) DEBUG: CLIServer::start_stop_device: device \"%C\" already in requested state\n", pd_id.c_str()));
+    ACE_DEBUG((LM_DEBUG, "(%P|%t) INFO: CLIServer::start_stop_device: device \"%C\" already in requested state\n", pd_id.c_str()));
     return;
   }
 
@@ -371,6 +371,7 @@ void CLIServer::start_stop_device(const tms::Identity& pd_id, tms::OperatorPrior
     return;
   }
 
+  controller_.update_essl(pd_id, to_essl);
   pending_essr_.insert(std::make_pair(essr.sequenceId(), pd_id));
 }
 

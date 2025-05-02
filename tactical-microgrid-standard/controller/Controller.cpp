@@ -46,13 +46,22 @@ PowerDevices Controller::power_devices() const
   return power_devices_;
 }
 
+void Controller::update_essl(const tms::Identity& pd_id, tms::EnergyStartStopLevel to_level)
+{
+  std::lock_guard<std::mutex> guard(mut_);
+  auto it = power_devices_.find(pd_id);
+  if (it != power_devices_.end()) {
+    it->second.essl() = to_level;
+  }
+}
+
 void Controller::device_info_cb(const tms::DeviceInfo& di, const DDS::SampleInfo& si)
 {
   if (!si.valid_data || di.deviceId() == device_id_) {
     return;
   }
 
-  ACE_DEBUG((LM_DEBUG, "(%P|%t) DEBUG: Controller::device_info_cb: device: \"%C\"\n", di.deviceId().c_str()));
+  ACE_DEBUG((LM_INFO, "(%P|%t) INFO: Controller::device_info_cb: device: \"%C\"\n", di.deviceId().c_str()));
   power_devices_.insert(std::make_pair(di.deviceId(),
                         cli::PowerDeviceInfo(di, tms::EnergyStartStopLevel::ESSL_OPERATIONAL)));
 }
@@ -66,10 +75,13 @@ void Controller::heartbeat_cb(const tms::Heartbeat& hb, const DDS::SampleInfo& s
   const tms::Identity& id = hb.deviceId();
   const uint32_t seqnum = hb.sequenceNumber();
 
-  if (power_devices_.count(id) > 0) {
-    ACE_DEBUG((LM_DEBUG, "(%P|%t) DEBUG: Controller::heartbeat_cb: known device: \"%C\", seqnum: %u\n", id.c_str(), seqnum));
-  } else {
-    ACE_DEBUG((LM_DEBUG, "(%P|%t) DEBUG: Controller::heartbeat_cb: new device: \"%C\", seqnum: %u\n", id.c_str(), seqnum));
+  if (OpenDDS::DCPS::DCPS_debug_level >= 8) {
+    if (power_devices_.count(id) > 0) {
+      ACE_DEBUG((LM_INFO, "(%P|%t) INFO: Controller::heartbeat_cb: known device: \"%C\", seqnum: %u\n", id.c_str(), seqnum));
+    }
+    else {
+      ACE_DEBUG((LM_INFO, "(%P|%t) INFO: Controller::heartbeat_cb: new device: \"%C\", seqnum: %u\n", id.c_str(), seqnum));
+    }
   }
 }
 

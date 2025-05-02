@@ -8,7 +8,8 @@
 class HeartbeatDataReaderListenerImpl : public DataReaderListenerBase {
 public:
   explicit HeartbeatDataReaderListenerImpl(std::function<void(const tms::Heartbeat&, const DDS::SampleInfo&)> cb = nullptr)
-    : callback_(cb)
+    : DataReaderListenerBase("tms::Heartbeat - DataReaderListenerImpl")
+    , callback_(cb)
   {}
 
   virtual ~HeartbeatDataReaderListenerImpl() = default;

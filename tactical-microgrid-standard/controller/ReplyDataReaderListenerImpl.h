@@ -6,7 +6,9 @@
 
 class ReplyDataReaderListenerImpl : public DataReaderListenerBase {
 public:
-  explicit ReplyDataReaderListenerImpl(CLIServer& cli_server) : cli_server_(cli_server) {}
+  explicit ReplyDataReaderListenerImpl(CLIServer& cli_server)
+    : DataReaderListenerBase("tms::Reply - DataReaderListenerImpl")
+    , cli_server_(cli_server) {}
 
   virtual ~ReplyDataReaderListenerImpl() = default;
 
