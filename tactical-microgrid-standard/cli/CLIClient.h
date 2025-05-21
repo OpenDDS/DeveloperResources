@@ -32,14 +32,21 @@ private:
   OpArgPair parse(const std::string& input) const;
 
   void display_commands() const;
-  std::string device_role_to_string(tms::DeviceRole role) const;
+  static std::string device_role_to_string(tms::DeviceRole role) const;
   std::string energy_level_to_string(tms::EnergyStartStopLevel essl) const;
   void display_controllers() const;
   void set_controller(const OpArgPair& op_arg);
   void list_power_devices();
   bool is_single_port_device(tms::DeviceRole role) const;
+
+  // Check that two power devices can have a power connection
   bool can_connect(const tms::Identity& id1, tms::DeviceRole role1,
     const tms::Identity& id2, tms::DeviceRole role2) const;
+
+  // Create a power connection between two devices
+  void connect(const tms::Identity& id1, tms::DeviceRole role1,
+    const tms::Identity& id2, tms::DeviceRole role2);
+
   void connect_power_devices();
   bool send_power_devices_request();
   void display_power_devices() const;
@@ -94,8 +101,18 @@ private:
   // The power devices that are connected to the current controller
   PowerDevices power_devices_;
 
+  struct ConnectedDeviceHash {
+    size_t operator()(const powersim::ConnectedDevice& cd) const {
+      return std::hash<tms::Identity>{}(cd.id());
+    }
+  };
+
+  bool operator==(const powersim::ConnectedDevice& cd1, const powersim::ConnectedDevice& cd2) const {
+    return cd1.id() == cd2.id() && cd1.role() == cd2.role();
+  }
+
   // Store the simulated power connections between power devices
-  using PowerConnection = std::unordered_map<tms::Identity, std::unordered_set<tms::Identity>>;
+  using PowerConnection = std::unordered_map<tms::Identity, std::unordered_set<powersim::ConnectedDevice, ConnectedDeviceHash>>;
   PowerConnection power_connections_;
 
   // The current microgrid controller with which the CLI client is interacting

@@ -6,21 +6,33 @@ module powersim {
   const string TOPIC_POWER_CONNECTION = "Simulated Power Connection";
   const string TOPIC_POWER_TOPOLOGY = "Simulated Power Topology";
 
+  typedef sequence<tms::Identity> IdentitySeq;
+
   @topic
   @extensibility(FINAL)
   struct ElectricCurrent {
-    @key tms::Identity from;
-    @key tms::Identity to;
+    // Path of the simulated electric current.
+    // The first element is the original source device.
+    // Each subsequent element is an intermediate power device along the path.
+    // Each receiver of the message appends the next expected receiver to the path,
+    // unless it is the final receiver, i.e. a load device.
+    @key IdentitySeq power_path;
     float amperage;
   };
 
-  typedef sequence<tms::Identity> IdentitySeq;
+  @nested
+  struct ConnectedDevice {
+    tms::Identity id;
+    tms::DeviceRole role;
+  };
+
+  typedef sequence<ConnectedDevice> ConnectedDeviceSeq;
 
   @topic
   @extensibility(FINAL)
   struct PowerConnection {
     @key tms::Identity pd_id;
-    IdentitySeq connected_devices;
+    ConnectedDeviceSeq connected_devices;
   };
 
   @topic

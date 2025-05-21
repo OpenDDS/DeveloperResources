@@ -110,7 +110,17 @@ void ElectricCurrentDataReaderListenerImpl::on_data_available(DDS::DataReader_pt
   for (CORBA::ULong i = 0; i < data.length(); ++i) {
     if (info_seq[i].valid_data) {
       const powersim::ElectricCurrent& ec = data[i];
-      if (ec.from() == load_dev_.connected_dev_id() && ec.to() == load_dev_.get_device_id()) {
+      const auto& power_path = ec.power_path();
+      const int path_length = power_path.size();
+      if (path_length < 2) {
+        ACE_ERROR((LM_WARNING, "(%P|%t) WARNING: ElectricCurrentDataReaderListenerImpl::on_data_available: invalid power path\n"));
+        continue;
+      }
+
+      const tms::Identity& from = power_path[path_length - 2];
+      const tms::Identity& to = power_path[path_length - 1];
+
+      if (from == load_dev_.connected_dev_id() && to == load_dev_.get_device_id()) {
         ACE_DEBUG((LM_INFO, "Receiving power from \"%C\" -- %f Amps ...\n",
                    ec.from().c_str(), ec.amperage()));
         break;

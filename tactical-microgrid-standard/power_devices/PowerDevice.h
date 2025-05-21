@@ -106,29 +106,33 @@ public:
     return controller_selector_.selected();
   }
 
-  powersim::IdentitySeq connected_devices() const
+  powersim::ConnectedDeviceSeq connected_devices_in() const
   {
     std::lock_guard<std::mutex> guard(connected_devices_m_);
-    return connected_devices_;
+    return connected_devices_in_;
   }
 
-  void wait_for_connection()
-  {
-    std::unique_lock<std::mutex> lock(connected_devices_m_);
-    connected_devices_cv_.wait(lock, [this] { return !connected_devices_.empty(); });
-  }
-
-  void connected_devices(const powersim::IdentitySeq& devices)
+  powersim::ConnectedDeviceSeq connected_devices_out() const
   {
     std::lock_guard<std::mutex> guard(connected_devices_m_);
-    connected_devices_ = devices;
-    connected_devices_cv_.notify_one();
+    return connected_devices_out_;
   }
+
+  // Wait for power connections to be established
+  void wait_for_connections();
+
+  // Set the devices connected to this device
+  void connected_devices(const powersim::ConnectedDeviceSeq& devices);
 
 protected:
   std::condition_variable connected_devices_cv_;
   mutable std::mutex connected_devices_m_;
-  powersim::IdentitySeq connected_devices_;
+
+  // List of devices that can send power to this device
+  powersim::ConnectedDeviceSeq connected_devices_in_;
+
+  // List of devices that this device can send power to
+  powersim::ConnectedDeviceSeq connected_devices_out_;
 
 private:
   void got_heartbeat(const tms::Heartbeat& hb, const DDS::SampleInfo& si);

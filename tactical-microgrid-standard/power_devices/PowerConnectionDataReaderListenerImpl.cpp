@@ -19,6 +19,7 @@ void PowerConnectionDataReaderListenerImpl::on_data_available(DDS::DataReader_pt
       if (pc.pd_id() != pd_.get_device_id()) {
         continue;
       }
+
       pd_.connected_devices(pc.connected_devices());
       break;
     }

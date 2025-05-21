@@ -179,3 +179,59 @@ void PowerDevice::got_device_info(const tms::DeviceInfo& di, const DDS::SampleIn
   ACE_DEBUG((LM_INFO, "(%P|%t) INFO: Handshaking::power_device_got_device_info: from %C\n", di.deviceId().c_str()));
   controller_selector_.got_device_info(di);
 }
+
+void PowerDevice::wait_for_connections()
+{
+  std::unique_lock<std::mutex> lock(connected_devices_m_);
+  connected_devices_cv_.wait(lock, [this] { return !connected_devices_in_.empty() || !connected_devices_out_.empty(); });
+}
+
+void PowerDevice::connected_devices(const powersim::ConnectedDeviceSeq& devices)
+{
+  std::lock_guard<std::mutex> guard(connected_devices_m_);
+
+  for (size_t i = 0; i < devices.size(); ++i) {
+    switch (role_) {
+    case tms::DeviceRole::ROLE_SOURCE:
+      // Source device has a single out port
+      if (!connected_devices_out_.empty()) {
+        ACE_ERROR((LM_NOTICE, "(%P|%t) NOTICE: PowerDevice::connected_devices: Source \"%C\" already connects to \"%C\". Replace with \"%C\"\n",
+                   get_device_id().c_str(), connected_devices_out_[0].id().c_str(), devices[i].id().c_str()));
+      }
+      connected_devices_out_[0] = devices[i];
+      break;
+    case tms::DeviceRole::ROLE_LOAD:
+      // Load device has a single in port.
+      if (!connected_devices_in_.empty()) {
+        ACE_ERROR((LM_NOTICE, "(%P|%t) NOTICE: PowerDevice::connected_devices: Load \"%C\" already connects to \"%C\". Replace with \"%C\"\n",
+                   get_device_id().c_str(), connected_devices_in_[0].id().c_str(), devices[i].id().c_str()));
+      }
+      connected_devices_in_[0] = devices[i];
+      break;
+    case tms::DeviceRole::ROLE_DISTRIBUTION:
+      const tms::DeviceRole other_role = devices[i].role();
+      if (other_role == tms::DeviceRole::ROLE_SOURCE) {
+        // Can only receive power from the other device
+        connected_devices_in_.push_back(devices[i]);
+      } else if (other_role == tms::DeviceRole::ROLE_LOAD) {
+        // Can only send power to the other device
+        connected_devices_out_.push_back(devices[i]);
+      } else if (other_role == tms::DeviceRole::ROLE_DISTRIBUTION) {
+        // Can both send to and receive power from the other distribution device
+        connected_devices_in_.push_back(devices[i]);
+        connected_devices_out_.push_back(devices[i]);
+      } else {
+        // Should never happen, but just ignore this other device
+        ACE_ERROR((LM_WARNING, "(%P|%t) WARNING: PowerDevice::connected_devices: Unsupported device role (\"%C\") of other device!\n",
+                   CLIClient::device_role_to_string(other_role).c_str()));
+      }
+      break;
+    default:
+      // Should never happen
+      ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: PowerDevice::connected_devices: Unsupported device role (\"%C\") of mine!\n",
+                 CLIClient::device_role_to_string(role_).c_str()));
+      return;
+    }
+  }
+  connected_devices_cv_.notify_one();
+}

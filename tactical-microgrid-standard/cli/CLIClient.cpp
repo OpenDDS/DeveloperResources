@@ -446,6 +446,13 @@ bool CLIClient::can_connect(const tms::Identity& id1, tms::DeviceRole role1,
   return false;
 }
 
+void CLIClient::connect(const tms::Identity& id1, tms::DeviceRole role1,
+                        const tms::Identity& id2, tms::DeviceRole role2)
+{
+  power_connections_[id1].insert(powersim::ConnectedDevice(id2, role2));
+  power_connections_[id2].insert(powersim::ConnectedDevice(id1, role1));
+}
+
 void CLIClient::connect_power_devices()
 {
   if (power_devices_.empty()) {
@@ -470,8 +477,7 @@ void CLIClient::connect_power_devices()
         std::string line;
         std::getline(std::cin, line);
         if (line.empty() || line == "y" || line == "Y") {
-          power_connections_[id1].insert(id2);
-          power_connections_[id2].insert(id1);
+          connect(id1, role1, id2, role2);
           break;
         } else if (line == "n" || line == "N") {
           break;

@@ -8,7 +8,6 @@
 #include <ace/Get_Opt.h>
 
 #include <thread>
-#include <mutex>
 #include <chrono>
 
 class SourceDevice;
@@ -32,18 +31,6 @@ public:
   explicit SourceDevice(const tms::Identity& id)
     : PowerDevice(id, tms::DeviceRole::ROLE_SOURCE)
   {
-  }
-
-  tms::EnergyStartStopLevel energy_level() const
-  {
-    std::lock_guard<std::mutex> guard(essl_m_);
-    return essl_;
-  }
-
-  void energy_level(tms::EnergyStartStopLevel essl)
-  {
-    std::lock_guard<std::mutex> guard(essl_m_);
-    essl_ = essl;
   }
 
   DDS::ReturnCode_t init(DDS::DomainId_t domain_id, int argc = 0, char* argv[] = nullptr)
@@ -199,33 +186,49 @@ public:
     shutdown_ = shutdown;
   }
 
+  tms::EnergyStartStopLevel energy_level() const
+  {
+    std::lock_guard<std::mutex> guard(essl_m_);
+    return essl_;
+  }
+
+  void energy_level(tms::EnergyStartStopLevel essl)
+  {
+    std::lock_guard<std::mutex> guard(essl_m_);
+    essl_ = essl;
+    essl_cv_.notify_one();
+  }
+
+  void wait_for_operational_energy_level()
+  {
+    std::unique_lock<std::mutex> lock(essl_m_);
+    essl_cv_.wait(lock, [this] { return essl_ == tms::EnergyStartStopLevel::ESSL_OPERATIONAL; });
+  }
+
   void simulate_power_flow()
   {
-    wait_for_connection();
-    const powersim::IdentitySeq connected_devs = connected_devices();
-    //std::cout << "=== List of connected devices: ";
-    //for (const auto& id : connected_devs) {
-    //  std::cout << id << " ";
-    //}
-    //std::cout << std::endl;
+    wait_for_connections();
+    const powersim::ConnectedDeviceSeq& connected_devs = connected_devices_out();
 
     while (!shutdown()) {
-      // TODO(sonndinh): Use condition variable to wait for operational energy level
-      while (energy_level() == tms::EnergyStartStopLevel::ESSL_OPERATIONAL) {
+      wait_for_operational_energy_level();
+
+      while (!shutdown() && energy_level() == tms::EnergyStartStopLevel::ESSL_OPERATIONAL) {
         powersim::ElectricCurrent ec;
-        ec.from() = get_device_id();
-        ec.to() = connected_devs[0];
+        ec.power_path().length(2);
+        ec.power_path()[0] = get_device_id();
+        ec.power_path()[1] = connected_devs[0].id();
         ec.amperage() = 1.0f;
         const DDS::ReturnCode_t rc = ec_dw_->write(ec, DDS::HANDLE_NIL);
         if (rc != DDS::RETCODE_OK) {
           ACE_ERROR((LM_WARNING, "(%P|%t) WARNING: SourceDevice::simulate_power_flow: "
-                     "write ElectricCurrent failed: %C\n", OpenDDS::DCPS::retcode_to_string(rc)));
+                    "write ElectricCurrent failed: %C\n", OpenDDS::DCPS::retcode_to_string(rc)));
         }
 
-        // For debug:
+        // For debug
         std::cout << "=== Sent ElectricCurrent sample to device \"" << connected_devices_[0] << "\"..." << std::endl;
 
-        // Frequency of messages can be proportional to the power measure
+        // Frequency of messages can be proportional to the power measure?
         std::this_thread::sleep_for(std::chrono::seconds(1));
       }
     }
@@ -252,6 +255,7 @@ private:
   bool shutdown_ = false;
 
   // For changing energy level while the device is running
+  std::condition_variable essl_cv_;
   mutable std::mutex essl_m_;
   tms::EnergyStartStopLevel essl_ = tms::EnergyStartStopLevel::ESSL_OPERATIONAL;
 
