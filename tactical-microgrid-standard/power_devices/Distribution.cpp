@@ -1,4 +1,6 @@
 #include "PowerDevice.h"
+#include "PowerSimTypeSupportImpl.h"
+#include "common/DataReaderListenerBase.h"
 
 #include <dds/DCPS/Marked_Default_Qos.h>
 

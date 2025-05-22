@@ -16,6 +16,26 @@ struct UnavailableController {
   tms::Identity id;
 };
 
+// Using this non-member operator== has a compile error.
+// bool operator==(const powersim::ConnectedDevice& cd1, const powersim::ConnectedDevice& cd2)
+// {
+//   return cd1.id() == cd2.id() && cd1.role() == cd2.role();
+// }
+
+struct ConnectedDeviceEqual {
+  bool operator()(const powersim::ConnectedDevice& cd1, const powersim::ConnectedDevice& cd2) const
+  {
+    return cd1.id() == cd2.id() && cd1.role() == cd2.role();
+  }
+};
+
+struct ConnectedDeviceHash {
+  size_t operator()(const powersim::ConnectedDevice& cd) const
+  {
+    return std::hash<tms::Identity>{}(cd.id());
+  }
+};
+
 class CLIClient : public TimerHandler<UnavailableController> {
 public:
   explicit CLIClient(const tms::Identity& id);
@@ -32,7 +52,6 @@ private:
   OpArgPair parse(const std::string& input) const;
 
   void display_commands() const;
-  static std::string device_role_to_string(tms::DeviceRole role) const;
   std::string energy_level_to_string(tms::EnergyStartStopLevel essl) const;
   void display_controllers() const;
   void set_controller(const OpArgPair& op_arg);
@@ -101,18 +120,8 @@ private:
   // The power devices that are connected to the current controller
   PowerDevices power_devices_;
 
-  struct ConnectedDeviceHash {
-    size_t operator()(const powersim::ConnectedDevice& cd) const {
-      return std::hash<tms::Identity>{}(cd.id());
-    }
-  };
-
-  bool operator==(const powersim::ConnectedDevice& cd1, const powersim::ConnectedDevice& cd2) const {
-    return cd1.id() == cd2.id() && cd1.role() == cd2.role();
-  }
-
   // Store the simulated power connections between power devices
-  using PowerConnection = std::unordered_map<tms::Identity, std::unordered_set<powersim::ConnectedDevice, ConnectedDeviceHash>>;
+  using PowerConnection = std::unordered_map<tms::Identity, std::unordered_set<powersim::ConnectedDevice, ConnectedDeviceHash, ConnectedDeviceEqual>>;
   PowerConnection power_connections_;
 
   // The current microgrid controller with which the CLI client is interacting

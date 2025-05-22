@@ -1,5 +1,6 @@
 #include "PowerDevice.h"
 #include "PowerConnectionDataReaderListenerImpl.h"
+#include "common/Utils.h"
 
 void ControllerSelector::got_heartbeat(const tms::Heartbeat& hb)
 {
@@ -209,27 +210,29 @@ void PowerDevice::connected_devices(const powersim::ConnectedDeviceSeq& devices)
       connected_devices_in_[0] = devices[i];
       break;
     case tms::DeviceRole::ROLE_DISTRIBUTION:
-      const tms::DeviceRole other_role = devices[i].role();
-      if (other_role == tms::DeviceRole::ROLE_SOURCE) {
-        // Can only receive power from the other device
-        connected_devices_in_.push_back(devices[i]);
-      } else if (other_role == tms::DeviceRole::ROLE_LOAD) {
-        // Can only send power to the other device
-        connected_devices_out_.push_back(devices[i]);
-      } else if (other_role == tms::DeviceRole::ROLE_DISTRIBUTION) {
-        // Can both send to and receive power from the other distribution device
-        connected_devices_in_.push_back(devices[i]);
-        connected_devices_out_.push_back(devices[i]);
-      } else {
-        // Should never happen, but just ignore this other device
-        ACE_ERROR((LM_WARNING, "(%P|%t) WARNING: PowerDevice::connected_devices: Unsupported device role (\"%C\") of other device!\n",
-                   CLIClient::device_role_to_string(other_role).c_str()));
+      {
+        const tms::DeviceRole other_role = devices[i].role();
+        if (other_role == tms::DeviceRole::ROLE_SOURCE) {
+          // Can only receive power from the other device
+          connected_devices_in_.push_back(devices[i]);
+        } else if (other_role == tms::DeviceRole::ROLE_LOAD) {
+          // Can only send power to the other device
+          connected_devices_out_.push_back(devices[i]);
+        } else if (other_role == tms::DeviceRole::ROLE_DISTRIBUTION) {
+          // Can both send to and receive power from the other distribution device
+          connected_devices_in_.push_back(devices[i]);
+          connected_devices_out_.push_back(devices[i]);
+        } else {
+          // Should never happen, but just ignore this other device
+          ACE_ERROR((LM_WARNING, "(%P|%t) WARNING: PowerDevice::connected_devices: Unsupported device role (\"%C\") of other device!\n",
+                     Utils::device_role_to_string(other_role).c_str()));
+        }
       }
       break;
     default:
       // Should never happen
       ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: PowerDevice::connected_devices: Unsupported device role (\"%C\") of mine!\n",
-                 CLIClient::device_role_to_string(role_).c_str()));
+                 Utils::device_role_to_string(role_).c_str()));
       return;
     }
   }

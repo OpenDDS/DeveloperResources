@@ -1,5 +1,6 @@
 #include "CLIClient.h"
 #include "common/QosHelper.h"
+#include "common/Utils.h"
 
 #include <dds/DCPS/PublisherImpl.h>
 #include <dds/DCPS/SubscriberImpl.h>
@@ -344,30 +345,6 @@ show           : display the list of CLI commands.)";
   std::cout << msg << std::endl;
 }
 
-std::string CLIClient::device_role_to_string(tms::DeviceRole role) const
-{
-  switch (role) {
-  case tms::DeviceRole::ROLE_MICROGRID_CONTROLLER:
-    return "Microgrid Controller";
-  case tms::DeviceRole::ROLE_SOURCE:
-    return "Source";
-  case tms::DeviceRole::ROLE_LOAD:
-    return "Load";
-  case tms::DeviceRole::ROLE_STORAGE:
-    return "Storage";
-  case tms::DeviceRole::ROLE_DISTRIBUTION:
-    return "Distribution";
-  case tms::DeviceRole::ROLE_MICROGRID_DASHBOARD:
-    return "Microgrid Dashboard";
-  case tms::DeviceRole::ROLE_CONVERSION:
-    return "Conversion";
-  case tms::DeviceRole::ROLE_MONITOR:
-    return "Monitor";
-  default:
-    return "Unknown";
-  }
-}
-
 std::string CLIClient::energy_level_to_string(tms::EnergyStartStopLevel essl) const
 {
   switch (essl) {
@@ -410,7 +387,7 @@ void CLIClient::display_power_devices() const
   size_t i = 1;
   for (auto it = power_devices_.begin(); it != power_devices_.end(); ++it) {
     std::cout << i << ". Device Id: " << it->first <<
-      ". Type: " << device_role_to_string(it->second.device_info().role()) <<
+      ". Type: " << Utils::device_role_to_string(it->second.device_info().role()) <<
       ". Energy Level: " << energy_level_to_string(it->second.essl()) << std::endl;
   }
 }
@@ -449,8 +426,8 @@ bool CLIClient::can_connect(const tms::Identity& id1, tms::DeviceRole role1,
 void CLIClient::connect(const tms::Identity& id1, tms::DeviceRole role1,
                         const tms::Identity& id2, tms::DeviceRole role2)
 {
-  power_connections_[id1].insert(powersim::ConnectedDevice(id2, role2));
-  power_connections_[id2].insert(powersim::ConnectedDevice(id1, role1));
+  power_connections_[id1].insert(powersim::ConnectedDevice{id2, role2});
+  power_connections_[id2].insert(powersim::ConnectedDevice{id1, role1});
 }
 
 void CLIClient::connect_power_devices()

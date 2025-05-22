@@ -215,9 +215,8 @@ public:
 
       while (!shutdown() && energy_level() == tms::EnergyStartStopLevel::ESSL_OPERATIONAL) {
         powersim::ElectricCurrent ec;
-        ec.power_path().length(2);
-        ec.power_path()[0] = get_device_id();
-        ec.power_path()[1] = connected_devs[0].id();
+        ec.power_path().push_back(get_device_id());
+        ec.power_path().push_back(connected_devs[0].id());
         ec.amperage() = 1.0f;
         const DDS::ReturnCode_t rc = ec_dw_->write(ec, DDS::HANDLE_NIL);
         if (rc != DDS::RETCODE_OK) {
@@ -226,7 +225,7 @@ public:
         }
 
         // For debug
-        std::cout << "=== Sent ElectricCurrent sample to device \"" << connected_devices_[0] << "\"..." << std::endl;
+        std::cout << "=== Sent ElectricCurrent sample to device \"" << connected_devs[0].id() << "\"..." << std::endl;
 
         // Frequency of messages can be proportional to the power measure?
         std::this_thread::sleep_for(std::chrono::seconds(1));
@@ -234,7 +233,7 @@ public:
     }
   }
 
-  int run()
+  int run() override
   {
     std::thread thr(&SourceDevice::simulate_power_flow, this);
     if (reactor_->run_reactor_event_loop() != 0) {

@@ -1,5 +1,5 @@
-#ifndef HANDSHAKING_H
-#define HANDSHAKING_H
+#ifndef TMS_COMMON_HANDSHAKING_H
+#define TMS_COMMON_HANDSHAKING_H
 
 #include "TimerHandler.h"
 

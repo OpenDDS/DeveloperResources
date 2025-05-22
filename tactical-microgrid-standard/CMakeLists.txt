@@ -76,4 +76,10 @@ add_executable(Load
 target_include_directories(Load PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(Load PRIVATE PowerSim_Idl)
 
+add_executable(Distribution
+  power_devices/Distribution.cpp
+)
+target_include_directories(Distribution PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_link_libraries(Distribution PRIVATE PowerSim_Idl)
+
 add_subdirectory(tests)

@@ -106,6 +106,11 @@ public:
     return controller_selector_.selected();
   }
 
+  virtual int run()
+  {
+    return reactor_->run_reactor_event_loop() == 0 ? 0 : 1;
+  }
+
   powersim::ConnectedDeviceSeq connected_devices_in() const
   {
     std::lock_guard<std::mutex> guard(connected_devices_m_);
@@ -128,10 +133,12 @@ protected:
   std::condition_variable connected_devices_cv_;
   mutable std::mutex connected_devices_m_;
 
-  // List of devices that can send power to this device
+  // List of devices that can send power to this device.
+  // Load device has at most one connected device in this list.
   powersim::ConnectedDeviceSeq connected_devices_in_;
 
-  // List of devices that this device can send power to
+  // List of devices that this device can send power to.
+  // Source device has at most one connected device in this list.
   powersim::ConnectedDeviceSeq connected_devices_out_;
 
 private:

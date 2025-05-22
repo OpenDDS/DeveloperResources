@@ -1,5 +1,5 @@
-#ifndef DATA_READER_LISTENER_BASE_H
-#define DATA_READER_LISTENER_BASE_H
+#ifndef TMS_COMMON_DATA_READER_LISTENER_BASE_H
+#define TMS_COMMON_DATA_READER_LISTENER_BASE_H
 
 #include <dds/DCPS/LocalObject.h>
 #include <dds/DCPS/debug.h>

@@ -16,7 +16,7 @@ module powersim {
     // Each subsequent element is an intermediate power device along the path.
     // Each receiver of the message appends the next expected receiver to the path,
     // unless it is the final receiver, i.e. a load device.
-    @key IdentitySeq power_path;
+    IdentitySeq power_path;
     float amperage;
   };
 

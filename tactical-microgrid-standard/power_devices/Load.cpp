@@ -80,17 +80,13 @@ public:
     return DDS::RETCODE_OK;
   }
 
-  int run()
-  {
-    return reactor_->run_reactor_event_loop() == 0 ? 0 : 1;
-  }
-
   tms::Identity connected_dev_id() const
   {
-    if (connected_devices_.empty()) {
+    const powersim::ConnectedDeviceSeq connected_devs = connected_devices_in();
+    if (connected_devs.empty()) {
       return tms::Identity();
     }
-    return connected_devices_[0];
+    return connected_devs[0].id();
   }
 };
 
@@ -121,8 +117,7 @@ void ElectricCurrentDataReaderListenerImpl::on_data_available(DDS::DataReader_pt
       const tms::Identity& to = power_path[path_length - 1];
 
       if (from == load_dev_.connected_dev_id() && to == load_dev_.get_device_id()) {
-        ACE_DEBUG((LM_INFO, "Receiving power from \"%C\" -- %f Amps ...\n",
-                   ec.from().c_str(), ec.amperage()));
+        ACE_DEBUG((LM_INFO, "Receiving power from \"%C\" -- %f Amps ...\n", from.c_str(), ec.amperage()));
         break;
       }
     }
