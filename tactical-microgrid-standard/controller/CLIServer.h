@@ -31,6 +31,9 @@ public:
 
 private:
   DDS::ReturnCode_t init();
+  DDS::ReturnCode_t init_tms();
+  DDS::ReturnCode_t init_sim();
+
   tms::EnergyStartStopLevel ESSL_from_OPT(tms::OperatorPriorityType opt);
   std::string replycode_to_string(tms::ReplyCode code);
 
@@ -45,6 +48,7 @@ private:
   cli::PowerDevicesReplyDataWriter_var pdrep_dw_;
   tms::EnergyStartStopRequestDataWriter_var essr_dw_;
   powersim::PowerConnectionDataWriter_var pc_dw_;
+  DDS::DomainParticipant_var sim_participant_;
 };
 
 #endif

@@ -15,7 +15,18 @@ CLIClient::CLIClient(const tms::Identity& id)
   , stop_cli_(false)
 {}
 
-DDS::ReturnCode_t CLIClient::init(DDS::DomainId_t domain_id, int argc, char* argv[])
+DDS::ReturnCode_t CLIClient::init(DDS::DomainId_t tms_domain_id, int argc, char* argv[])
+{
+  const DDS::ReturnCode_t rc = init_tms(tms_domain_id, argc, argv);
+  if (rc != DDS::RETCODE_OK) {
+    return rc;
+  }
+
+  const DDS::DomainId_t sim_domain_id = Utils::get_sim_domain_id(tms_domain_id);
+  return init_sim(sim_domain_id);
+}
+
+DDS::ReturnCode_t CLIClient::init_tms(DDS::DomainId_t domain_id, int argc, char* argv[])
 {
   DDS::ReturnCode_t rc = handshaking_.join_domain(domain_id, argc, argv);
   if (rc != DDS::RETCODE_OK) {
@@ -32,53 +43,6 @@ DDS::ReturnCode_t CLIClient::init(DDS::DomainId_t domain_id, int argc, char* arg
   }
 
   DDS::DomainParticipant_var dp = handshaking_.get_domain_participant();
-
-  // Publish to the cli::PowerDevicesRequest topic
-  cli::PowerDevicesRequestTypeSupport_var pdreq_ts = new cli::PowerDevicesRequestTypeSupportImpl;
-  if (DDS::RETCODE_OK != pdreq_ts->register_type(dp, "")) {
-    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIClient::init: register_type PowerDevicesRequest failed\n"));
-    return DDS::RETCODE_ERROR;
-  }
-
-  CORBA::String_var pdreq_type_name = pdreq_ts->get_type_name();
-  DDS::Topic_var pdreq_topic = dp->create_topic(cli::TOPIC_POWER_DEVICES_REQUEST.c_str(),
-                                                pdreq_type_name,
-                                                TOPIC_QOS_DEFAULT,
-                                                nullptr,
-                                                ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
-  if (!pdreq_topic) {
-    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIClient::init: create_topic \"%C\" failed\n",
-               cli::TOPIC_POWER_DEVICES_REQUEST.c_str()));
-    return DDS::RETCODE_ERROR;
-  }
-
-  DDS::Publisher_var pub = dp->create_publisher(PUBLISHER_QOS_DEFAULT,
-                                                nullptr,
-                                                ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
-  if (!pub) {
-    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIClient::init: create_publisher failed\n"));
-    return DDS::RETCODE_ERROR;
-  }
-
-  DDS::DataWriterQos dw_qos;
-  pub->get_default_datawriter_qos(dw_qos);
-  dw_qos.reliability.kind = DDS::ReliabilityQosPolicyKind::RELIABLE_RELIABILITY_QOS;
-
-  DDS::DataWriter_var pdreq_dw_base = pub->create_datawriter(pdreq_topic,
-                                                             dw_qos,
-                                                             nullptr,
-                                                             ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
-  if (!pdreq_dw_base) {
-    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIClient::init: create_datawriter for topic \"%C\" failed\n",
-               cli::TOPIC_POWER_DEVICES_REQUEST.c_str()));
-    return DDS::RETCODE_ERROR;
-  }
-
-  pdreq_dw_ = cli::PowerDevicesRequestDataWriter::_narrow(pdreq_dw_base);
-  if (!pdreq_dw_) {
-    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIClient::init: PowerDevicesRequestDataWriter narrow failed\n"));
-    return DDS::RETCODE_ERROR;
-  }
 
   // Publish to the tms::OperatorIntentRequest topic
   tms::OperatorIntentRequestTypeSupport_var oir_ts = new tms::OperatorIntentRequestTypeSupportImpl;
@@ -126,19 +90,81 @@ DDS::ReturnCode_t CLIClient::init(DDS::DomainId_t domain_id, int argc, char* arg
     return DDS::RETCODE_ERROR;
   }
 
+  return DDS::RETCODE_OK;
+}
+
+DDS::ReturnCode_t CLIClient::init_sim(DDS::DomainId_t sim_domain_id)
+{
+  DDS::DomainParticipantFactory_var dpf = handshaking_.get_participant_factory();
+  sim_participant_ = dpf->create_participant(sim_domain_id,
+                                             PARTICIPANT_QOS_DEFAULT,
+                                             nullptr,
+                                             ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
+  if (!sim_participant_) {
+    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIClient::init: create simulation participant failed\n"));
+    return DDS::RETCODE_ERROR;
+  }
+
+  // Publish to the cli::PowerDevicesRequest topic
+  cli::PowerDevicesRequestTypeSupport_var pdreq_ts = new cli::PowerDevicesRequestTypeSupportImpl;
+  if (DDS::RETCODE_OK != pdreq_ts->register_type(sim_participant_, "")) {
+    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIClient::init: register_type PowerDevicesRequest failed\n"));
+    return DDS::RETCODE_ERROR;
+  }
+
+  CORBA::String_var pdreq_type_name = pdreq_ts->get_type_name();
+  DDS::Topic_var pdreq_topic = sim_participant_->create_topic(cli::TOPIC_POWER_DEVICES_REQUEST.c_str(),
+                                                              pdreq_type_name,
+                                                              TOPIC_QOS_DEFAULT,
+                                                              nullptr,
+                                                              ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
+  if (!pdreq_topic) {
+    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIClient::init: create_topic \"%C\" failed\n",
+               cli::TOPIC_POWER_DEVICES_REQUEST.c_str()));
+    return DDS::RETCODE_ERROR;
+  }
+
+  DDS::Publisher_var pub = sim_participant_->create_publisher(PUBLISHER_QOS_DEFAULT,
+                                                              nullptr,
+                                                              ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
+  if (!pub) {
+    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIClient::init: create_publisher failed\n"));
+    return DDS::RETCODE_ERROR;
+  }
+
+  DDS::DataWriterQos dw_qos;
+  pub->get_default_datawriter_qos(dw_qos);
+  dw_qos.reliability.kind = DDS::ReliabilityQosPolicyKind::RELIABLE_RELIABILITY_QOS;
+
+  DDS::DataWriter_var pdreq_dw_base = pub->create_datawriter(pdreq_topic,
+                                                             dw_qos,
+                                                             nullptr,
+                                                             ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
+  if (!pdreq_dw_base) {
+    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIClient::init: create_datawriter for topic \"%C\" failed\n",
+               cli::TOPIC_POWER_DEVICES_REQUEST.c_str()));
+    return DDS::RETCODE_ERROR;
+  }
+
+  pdreq_dw_ = cli::PowerDevicesRequestDataWriter::_narrow(pdreq_dw_base);
+  if (!pdreq_dw_) {
+    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIClient::init: PowerDevicesRequestDataWriter narrow failed\n"));
+    return DDS::RETCODE_ERROR;
+  }
+
   // Publish to the cli::ControllerCommand topic
   cli::ControllerCommandTypeSupport_var cc_ts = new cli::ControllerCommandTypeSupportImpl;
-  if (DDS::RETCODE_OK != cc_ts->register_type(dp, "")) {
+  if (DDS::RETCODE_OK != cc_ts->register_type(sim_participant_, "")) {
     ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIClient::init: register_type ControllerCommand failed\n"));
     return DDS::RETCODE_ERROR;
   }
 
   CORBA::String_var cc_type_name = cc_ts->get_type_name();
-  DDS::Topic_var cc_topic = dp->create_topic(cli::TOPIC_CONTROLLER_COMMAND.c_str(),
-                                             cc_type_name,
-                                             TOPIC_QOS_DEFAULT,
-                                             nullptr,
-                                             ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
+  DDS::Topic_var cc_topic = sim_participant_->create_topic(cli::TOPIC_CONTROLLER_COMMAND.c_str(),
+                                                           cc_type_name,
+                                                           TOPIC_QOS_DEFAULT,
+                                                           nullptr,
+                                                           ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
   if (!cc_topic) {
     ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIClient::init: create_topic \"%C\" failed\n",
                cli::TOPIC_CONTROLLER_COMMAND.c_str()));
@@ -163,26 +189,26 @@ DDS::ReturnCode_t CLIClient::init(DDS::DomainId_t domain_id, int argc, char* arg
 
   // Subscribe to the cli::PowerDevicesReply topic
   cli::PowerDevicesReplyTypeSupport_var pdrep_ts = new cli::PowerDevicesReplyTypeSupportImpl;
-  if (DDS::RETCODE_OK != pdrep_ts->register_type(dp, "")) {
+  if (DDS::RETCODE_OK != pdrep_ts->register_type(sim_participant_, "")) {
     ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIClient::init: register_type PowerDevicesReply failed\n"));
     return DDS::RETCODE_ERROR;
   }
 
   CORBA::String_var pdrep_type_name = pdrep_ts->get_type_name();
-  DDS::Topic_var pdrep_topic = dp->create_topic(cli::TOPIC_POWER_DEVICES_REPLY.c_str(),
-                                                pdrep_type_name,
-                                                TOPIC_QOS_DEFAULT,
-                                                nullptr,
-                                                ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
+  DDS::Topic_var pdrep_topic = sim_participant_->create_topic(cli::TOPIC_POWER_DEVICES_REPLY.c_str(),
+                                                              pdrep_type_name,
+                                                              TOPIC_QOS_DEFAULT,
+                                                              nullptr,
+                                                              ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
   if (!pdrep_topic) {
     ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIClient::init: create_topic \"%C\" failed\n",
                cli::TOPIC_POWER_DEVICES_REPLY.c_str()));
     return DDS::RETCODE_ERROR;
   }
 
-  DDS::Subscriber_var sub = dp->create_subscriber(SUBSCRIBER_QOS_DEFAULT,
-                                                  nullptr,
-                                                  ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
+  DDS::Subscriber_var sub = sim_participant_->create_subscriber(SUBSCRIBER_QOS_DEFAULT,
+                                                                nullptr,
+                                                                ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
   if (!sub) {
     ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIClient::init: create_subscriber failed\n"));
     return DDS::RETCODE_ERROR;
@@ -210,17 +236,17 @@ DDS::ReturnCode_t CLIClient::init(DDS::DomainId_t domain_id, int argc, char* arg
 
   // Publish to the powersim::PowerTopology topic
   powersim::PowerTopologyTypeSupport_var pt_ts = new powersim::PowerTopologyTypeSupportImpl;
-  if (DDS::RETCODE_OK != pt_ts->register_type(dp, "")) {
+  if (DDS::RETCODE_OK != pt_ts->register_type(sim_participant_, "")) {
     ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIClient::init: register_type PowerTopology failed\n"));
     return DDS::RETCODE_ERROR;
   }
 
   CORBA::String_var pt_type_name = pt_ts->get_type_name();
-  DDS::Topic_var pt_topic = dp->create_topic(powersim::TOPIC_POWER_TOPOLOGY.c_str(),
-                                             pt_type_name,
-                                             TOPIC_QOS_DEFAULT,
-                                             nullptr,
-                                             ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
+  DDS::Topic_var pt_topic = sim_participant_->create_topic(powersim::TOPIC_POWER_TOPOLOGY.c_str(),
+                                                           pt_type_name,
+                                                           TOPIC_QOS_DEFAULT,
+                                                           nullptr,
+                                                           ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
   if (!pt_topic) {
     ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIClient::init: create_topic \"%C\" failed\n",
                powersim::TOPIC_POWER_TOPOLOGY.c_str()));

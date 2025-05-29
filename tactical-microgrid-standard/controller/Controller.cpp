@@ -21,6 +21,8 @@ DDS::ReturnCode_t Controller::init(DDS::DomainId_t domain_id, int argc, char* ar
 
   auto di = populate_device_info();
 
+  tms_domain_id_ = domain_id;;
+
   return send_device_info(di);
 }
 

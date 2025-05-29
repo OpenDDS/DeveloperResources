@@ -16,12 +16,6 @@ struct UnavailableController {
   tms::Identity id;
 };
 
-// Using this non-member operator== has a compile error.
-// bool operator==(const powersim::ConnectedDevice& cd1, const powersim::ConnectedDevice& cd2)
-// {
-//   return cd1.id() == cd2.id() && cd1.role() == cd2.role();
-// }
-
 struct ConnectedDeviceEqual {
   bool operator()(const powersim::ConnectedDevice& cd1, const powersim::ConnectedDevice& cd2) const
   {
@@ -45,6 +39,12 @@ public:
   void run();
 
 private:
+  // Initialize DDS entities in the TMS domain
+  DDS::ReturnCode_t init_tms(DDS::DomainId_t tms_domain_id, int argc = 0, char* argv[] = nullptr);
+
+  // Initialize DDS entities used for CLI commands and power simulation
+  DDS::ReturnCode_t init_sim(DDS::DomainId_t sim_domain_id);
+
   void run_cli();
   bool cli_stopped() const;
 
@@ -83,6 +83,7 @@ private:
   void any_timer_fired(TimerHandler<UnavailableController>::AnyTimer any_timer) final;
   int handle_signal(int, siginfo_t*, ucontext_t*);
 
+  DDS::DomainParticipant_var sim_participant_;
   Handshaking handshaking_;
   cli::PowerDevicesRequestDataWriter_var pdreq_dw_;
   tms::OperatorIntentRequestDataWriter_var oir_dw_;

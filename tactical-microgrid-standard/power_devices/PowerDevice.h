@@ -141,6 +141,9 @@ protected:
   // Source device has at most one connected device in this list.
   powersim::ConnectedDeviceSeq connected_devices_out_;
 
+  // Participant containing entities for simulation topics
+  DDS::DomainParticipant_var sim_participant_;
+
 private:
   void got_heartbeat(const tms::Heartbeat& hb, const DDS::SampleInfo& si);
   void got_device_info(const tms::DeviceInfo& di, const DDS::SampleInfo& si);

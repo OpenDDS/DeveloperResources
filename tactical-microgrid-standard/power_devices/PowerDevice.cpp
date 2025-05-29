@@ -110,29 +110,37 @@ DDS::ReturnCode_t PowerDevice::init(DDS::DomainId_t domain, int argc, char* argv
   }
 
   // Subscribe to the PowerConnection topic
-  DDS::DomainParticipant_var dp = get_domain_participant();
+  const DDS::DomainId_t sim_domain_id = Utils::get_sim_domain_id(domain);
+  sim_participant_ = get_participant_factory()->create_participant(sim_domain_id,
+                                                                   PARTICIPANT_QOS_DEFAULT,
+                                                                   nullptr,
+                                                                   ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
+  if (!sim_participant_) {
+    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: PowerDevice::init: create simulation participant failed\n"));
+    return DDS::RETCODE_ERROR;
+  }
 
   powersim::PowerConnectionTypeSupport_var pc_ts = new powersim::PowerConnectionTypeSupportImpl;
-  if (DDS::RETCODE_OK != pc_ts->register_type(dp, "")) {
+  if (DDS::RETCODE_OK != pc_ts->register_type(sim_participant_, "")) {
     ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: PowerDevice::init: register_type PowerConnection failed\n"));
     return DDS::RETCODE_ERROR;
   }
 
   CORBA::String_var pc_type_name = pc_ts->get_type_name();
-  DDS::Topic_var pc_topic = dp->create_topic(powersim::TOPIC_POWER_CONNECTION.c_str(),
-                                             pc_type_name,
-                                             TOPIC_QOS_DEFAULT,
-                                             nullptr,
-                                             ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
+  DDS::Topic_var pc_topic = sim_participant_->create_topic(powersim::TOPIC_POWER_CONNECTION.c_str(),
+                                                           pc_type_name,
+                                                           TOPIC_QOS_DEFAULT,
+                                                           nullptr,
+                                                           ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
   if (!pc_topic) {
     ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: PowerDevice::init: create_topic \"%C\" failed\n",
                powersim::TOPIC_POWER_CONNECTION.c_str()));
     return DDS::RETCODE_ERROR;
   }
 
-  DDS::Subscriber_var sim_sub = dp->create_subscriber(SUBSCRIBER_QOS_DEFAULT,
-                                                      nullptr,
-                                                      ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
+  DDS::Subscriber_var sim_sub = sim_participant_->create_subscriber(SUBSCRIBER_QOS_DEFAULT,
+                                                                    nullptr,
+                                                                    ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
   if (!sim_sub) {
     ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: PowerDevice::init: create_subscriber for simulating power connection failed\n"));
     return DDS::RETCODE_ERROR;

@@ -7,6 +7,11 @@
 
 namespace Utils {
 
+DDS::DomainId_t get_sim_domain_id(DDS::DomainId_t tms_domain_id)
+{
+  return (tms_domain_id < ACE_INT32_MAX) ? tms_domain_id + 1 : tms_domain_id - 1;
+}
+
 std::string device_role_to_string(tms::DeviceRole role)
 {
   switch (role) {

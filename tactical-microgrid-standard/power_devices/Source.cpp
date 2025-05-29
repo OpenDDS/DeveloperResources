@@ -129,26 +129,26 @@ public:
 
     // Publish to powersim::ElectricCurrent topic
     powersim::ElectricCurrentTypeSupport_var ec_ts = new powersim::ElectricCurrentTypeSupportImpl;
-    if (DDS::RETCODE_OK != ec_ts->register_type(dp, "")) {
+    if (DDS::RETCODE_OK != ec_ts->register_type(sim_participant_, "")) {
       ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: SourceDevice::init: register_type ElectricCurrent failed\n"));
       return DDS::RETCODE_ERROR;
     }
 
     CORBA::String_var ec_type_name = ec_ts->get_type_name();
-    DDS::Topic_var ec_topic = dp->create_topic(powersim::TOPIC_ELECTRIC_CURRENT.c_str(),
-                                               ec_type_name,
-                                               TOPIC_QOS_DEFAULT,
-                                               nullptr,
-                                               ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
+    DDS::Topic_var ec_topic = sim_participant_->create_topic(powersim::TOPIC_ELECTRIC_CURRENT.c_str(),
+                                                             ec_type_name,
+                                                             TOPIC_QOS_DEFAULT,
+                                                             nullptr,
+                                                             ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
     if (!ec_topic) {
       ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: SourceDevice::init: create_topic \"%C\" failed\n",
                  powersim::TOPIC_ELECTRIC_CURRENT.c_str()));
       return DDS::RETCODE_ERROR;
     }
 
-    DDS::Publisher_var sim_pub = dp->create_publisher(PUBLISHER_QOS_DEFAULT,
-                                                      nullptr,
-                                                      ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
+    DDS::Publisher_var sim_pub = sim_participant_->create_publisher(PUBLISHER_QOS_DEFAULT,
+                                                                    nullptr,
+                                                                    ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
     if (!sim_pub) {
       ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: SourceDevice::init: create_publisher failed\n"));
       return DDS::RETCODE_ERROR;
