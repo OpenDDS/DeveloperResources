@@ -28,8 +28,8 @@ private:
 
 class SourceDevice : public PowerDevice {
 public:
-  explicit SourceDevice(const tms::Identity& id)
-    : PowerDevice(id, tms::DeviceRole::ROLE_SOURCE)
+  explicit SourceDevice(const tms::Identity& id, bool verbose = false)
+    : PowerDevice(id, tms::DeviceRole::ROLE_SOURCE, verbose)
   {
   }
 
@@ -224,8 +224,9 @@ public:
                     "write ElectricCurrent failed: %C\n", OpenDDS::DCPS::retcode_to_string(rc)));
         }
 
-        // For debug
-        std::cout << "=== Sent ElectricCurrent sample to device \"" << connected_devs[0].id() << "\"..." << std::endl;
+        if (verbose_) {
+          std::cout << "=== Sending power to device \"" << connected_devs[0].id() << "\"..." << std::endl;
+        }
 
         // Frequency of messages can be proportional to the power measure?
         std::this_thread::sleep_for(std::chrono::seconds(1));
@@ -313,8 +314,15 @@ int main(int argc, char *argv[])
 {
   DDS::DomainId_t domain_id = OpenDDS::DOMAIN_UNKNOWN;
   const char *src_id = nullptr;
+  bool verbose = false;
 
-  ACE_Get_Opt get_opt(argc, argv, "i:d:");
+  ACE_Get_Opt get_opt(argc, argv, "d:i:v");
+  if (get_opt.long_option("domain", 'd', ACE_Get_Opt::ARG_REQUIRED) != 0 ||
+      get_opt.long_option("id", 'i', ACE_Get_Opt::ARG_REQUIRED) != 0 ||
+      get_opt.long_option("verbose", 'v', ACE_Get_Opt::NO_ARG) != 0) {
+    return 1;
+  }
+
   int c;
   while ((c = get_opt()) != -1) {
     switch (c) {
@@ -324,17 +332,20 @@ int main(int argc, char *argv[])
     case 'd':
       domain_id = static_cast<DDS::DomainId_t>(ACE_OS::atoi(get_opt.opt_arg()));
       break;
+    case 'v':
+      verbose = true;
+      break;
     default:
       break;
     }
   }
 
   if (domain_id == OpenDDS::DOMAIN_UNKNOWN || src_id == nullptr) {
-    ACE_ERROR((LM_ERROR, "Usage: %C -d DDS_Domain_Id -i Source_Device_Id\n", argv[0]));
+    ACE_ERROR((LM_ERROR, "Usage: %C -d DDS_Domain_Id -i Source_Device_Id [-v]\n", argv[0]));
     return 1;
   }
 
-  SourceDevice src_dev(src_id);
+  SourceDevice src_dev(src_id, verbose);
   if (src_dev.init(domain_id, argc, argv) != DDS::RETCODE_OK) {
     return 1;
   }

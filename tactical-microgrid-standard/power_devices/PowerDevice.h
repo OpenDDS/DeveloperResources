@@ -92,8 +92,9 @@ private:
 
 class OpenDDS_TMS_Export PowerDevice : public Handshaking {
 public:
-  explicit PowerDevice(const tms::Identity& id, tms::DeviceRole role = tms::DeviceRole::ROLE_SOURCE)
+  explicit PowerDevice(const tms::Identity& id, tms::DeviceRole role = tms::DeviceRole::ROLE_SOURCE, bool verbose = false)
     : Handshaking(id)
+    , verbose_(verbose)
     , controller_selector_(*this)
     , role_(role)
   {
@@ -129,6 +130,11 @@ public:
   // Set the devices connected to this device
   void connected_devices(const powersim::ConnectedDeviceSeq& devices);
 
+  bool verbose() const
+  {
+    return verbose_;
+  }
+
 protected:
   std::condition_variable connected_devices_cv_;
   mutable std::mutex connected_devices_m_;
@@ -143,6 +149,9 @@ protected:
 
   // Participant containing entities for simulation topics
   DDS::DomainParticipant_var sim_participant_;
+
+  // Whether to print power simulation messages
+  bool verbose_;
 
 private:
   void got_heartbeat(const tms::Heartbeat& hb, const DDS::SampleInfo& si);

@@ -26,8 +26,8 @@ private:
 
 class LoadDevice : public PowerDevice {
 public:
-  explicit LoadDevice(const tms::Identity& id)
-    : PowerDevice(id, tms::DeviceRole::ROLE_LOAD)
+  explicit LoadDevice(const tms::Identity& id, bool verbose = false)
+    : PowerDevice(id, tms::DeviceRole::ROLE_LOAD, verbose)
   {
   }
 
@@ -115,7 +115,7 @@ void ElectricCurrentDataReaderListenerImpl::on_data_available(DDS::DataReader_pt
       const tms::Identity& to = power_path[path_length - 1];
 
       if (from == load_dev_.connected_dev_id() && to == load_dev_.get_device_id()) {
-        ACE_DEBUG((LM_INFO, "Receiving power from \"%C\" -- %f Amps ...\n", from.c_str(), ec.amperage()));
+        ACE_DEBUG((LM_INFO, "=== Receiving power from \"%C\" -- %f Amps ...\n", from.c_str(), ec.amperage()));
         break;
       }
     }
@@ -126,8 +126,15 @@ int main(int argc, char* argv[])
 {
   DDS::DomainId_t domain_id = OpenDDS::DOMAIN_UNKNOWN;
   const char* load_id = nullptr;
+  bool verbose = false;
 
-  ACE_Get_Opt get_opt(argc, argv, "i:d:");
+  ACE_Get_Opt get_opt(argc, argv, "d:i:v");
+  if (get_opt.long_option("domain", 'd', ACE_Get_Opt::ARG_REQUIRED) != 0 ||
+      get_opt.long_option("id", 'i', ACE_Get_Opt::ARG_REQUIRED) != 0 ||
+      get_opt.long_option("verbose", 'v', ACE_Get_Opt::NO_ARG) != 0) {
+    return 1;
+  }
+
   int c;
   while ((c = get_opt()) != -1) {
     switch (c) {
@@ -137,17 +144,20 @@ int main(int argc, char* argv[])
     case 'd':
       domain_id = static_cast<DDS::DomainId_t>(ACE_OS::atoi(get_opt.opt_arg()));
       break;
+    case 'v':
+      verbose = true;
+      break;
     default:
       break;
     }
   }
 
   if (domain_id == OpenDDS::DOMAIN_UNKNOWN || load_id == nullptr) {
-    ACE_ERROR((LM_ERROR, "Usage: %C -d DDS_Domain_Id -i Load_Device_Id\n", argv[0]));
+    ACE_ERROR((LM_ERROR, "Usage: %C -d DDS_Domain_Id -i Load_Device_Id [-v]\n", argv[0]));
     return 1;
   }
 
-  LoadDevice load_dev(load_id);
+  LoadDevice load_dev(load_id, verbose);
   if (load_dev.init(domain_id, argc, argv) != DDS::RETCODE_OK) {
     return 1;
   }
