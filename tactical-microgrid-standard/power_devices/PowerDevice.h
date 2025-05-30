@@ -3,6 +3,7 @@
 
 #include "common/Handshaking.h"
 #include "PowerSimTypeSupportImpl.h"
+#include "PowerSim_Idl_Export.h"
 
 #include <dds/DCPS/Marked_Default_Qos.h>
 
@@ -45,7 +46,7 @@ class PowerDevice;
  * A: If heartbeat is from selected
  * S: If there's a selectable controller with a recent heartbeat
  */
-class OpenDDS_TMS_Export ControllerSelector :
+class PowerSim_Idl_Export ControllerSelector :
   public TimerHandler<NewController, MissedController, LostController, NoControllers> {
 public:
   explicit ControllerSelector(PowerDevice& pd)
@@ -90,7 +91,7 @@ private:
   std::map<tms::Identity, TimePoint> all_controllers_;
 };
 
-class OpenDDS_TMS_Export PowerDevice : public Handshaking {
+class PowerSim_Idl_Export PowerDevice : public Handshaking {
 public:
   explicit PowerDevice(const tms::Identity& id, tms::DeviceRole role = tms::DeviceRole::ROLE_SOURCE, bool verbose = false)
     : Handshaking(id)
