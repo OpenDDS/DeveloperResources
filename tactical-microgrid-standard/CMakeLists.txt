@@ -36,6 +36,7 @@ add_library(PowerSim_Idl
   power_devices/PowerDevice.cpp
   power_devices/PowerConnectionDataReaderListenerImpl.cpp
 )
+opendds_export_header(PowerSim_Idl)
 opendds_target_sources(PowerSim_Idl
   PUBLIC
     power_devices/PowerSim.idl

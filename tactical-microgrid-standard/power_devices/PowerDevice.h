@@ -3,7 +3,7 @@
 
 #include "common/Handshaking.h"
 #include "PowerSimTypeSupportImpl.h"
-#include "PowerSim_Idl_Export.h"
+#include "PowerSim_Idl_export.h"
 
 #include <dds/DCPS/Marked_Default_Qos.h>
 
