@@ -80,8 +80,7 @@ void Controller::heartbeat_cb(const tms::Heartbeat& hb, const DDS::SampleInfo& s
   if (OpenDDS::DCPS::DCPS_debug_level >= 8) {
     if (power_devices_.count(id) > 0) {
       ACE_DEBUG((LM_INFO, "(%P|%t) INFO: Controller::heartbeat_cb: known device: \"%C\", seqnum: %u\n", id.c_str(), seqnum));
-    }
-    else {
+    } else {
       ACE_DEBUG((LM_INFO, "(%P|%t) INFO: Controller::heartbeat_cb: new device: \"%C\", seqnum: %u\n", id.c_str(), seqnum));
     }
   }

@@ -7,7 +7,7 @@
 
 class DataReaderListenerBase : public virtual OpenDDS::DCPS::LocalObject<DDS::DataReaderListener> {
 public:
-  DataReaderListenerBase(const std::string& listener_name) : listener_name_(listener_name) {}
+  explicit DataReaderListenerBase(const std::string& listener_name) : listener_name_(listener_name) {}
 
   virtual void on_requested_deadline_missed(DDS::DataReader_ptr,
                                             const DDS::RequestedDeadlineMissedStatus&)

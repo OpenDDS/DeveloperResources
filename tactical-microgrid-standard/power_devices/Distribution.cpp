@@ -161,8 +161,6 @@ void ElectricCurrentDataReaderListenerImpl::on_data_available(DDS::DataReader_pt
 
       // Relay to all devices connected to the output power ports
       for (const auto& out_dev : connected_devices_out) {
-        // TODO(sonndinh): Update the power metrics, e.g., voltage, amperage, etc. to better
-        // simulate the power flow.
         powersim::ElectricCurrent relay_ec = ec;
         relay_ec.power_path().push_back(out_dev.id());
         const DDS::ReturnCode_t rc = dist_dev_.get_electric_current_data_writer()->write(relay_ec, DDS::HANDLE_NIL);

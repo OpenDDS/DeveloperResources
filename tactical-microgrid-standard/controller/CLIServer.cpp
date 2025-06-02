@@ -398,7 +398,10 @@ void CLIServer::start_stop_device(const tms::Identity& pd_id, tms::OperatorPrior
   }
 
   controller_.update_essl(pd_id, to_essl);
-  pending_essr_.insert(std::make_pair(essr.sequenceId(), pd_id));
+  {
+    std::lock_guard<std::mutex> guard(pending_essr_m_);
+    pending_essr_.insert(std::make_pair(essr.sequenceId(), pd_id));
+  }
 }
 
 std::string CLIServer::replycode_to_string(tms::ReplyCode code)
@@ -444,6 +447,9 @@ void CLIServer::receive_reply(const tms::Reply& reply)
                target_id.c_str(), replycode_to_string(status.code()).c_str()));
   }
 
-  // Regardless of the status, remove the entry for the pending request
-  pending_essr_.erase(seqnum);
+  {
+    // Regardless of the status, remove the entry for the pending request
+    std::lock_guard<std::mutex> guard(pending_essr_m_);
+    pending_essr_.erase(seqnum);
+  }
 }

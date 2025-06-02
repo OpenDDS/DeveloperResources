@@ -41,8 +41,8 @@ private:
   tms::RequestSequence essr_seqnum_ = 0;
 
   // Requests that are waiting for a reply from the target power device
-  // Need lock?
   std::unordered_map<tms::RequestSequence, tms::Identity> pending_essr_;
+  std::mutex pending_essr_m_;
 
   Controller& controller_;
   cli::PowerDevicesReplyDataWriter_var pdrep_dw_;

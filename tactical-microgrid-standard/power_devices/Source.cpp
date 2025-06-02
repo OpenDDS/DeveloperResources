@@ -179,11 +179,15 @@ public:
     return shutdown_;
   }
 
-  // TODO(sonndinh): add event handler for a terminate signal that set shutdown to true
-  void shutdown(bool shutdown)
+  int handle_signal(int, siginfo_t*, ucontext_t*) override
   {
-    std::lock_guard<std::mutex> guard(shutdown_m_);
-    shutdown_ = shutdown;
+    {
+      std::lock_guard<std::mutex> guard(shutdown_m_);
+      shutdown_ = true;
+    }
+
+    reactor_->end_reactor_event_loop();
+    return -1;
   }
 
   tms::EnergyStartStopLevel energy_level() const

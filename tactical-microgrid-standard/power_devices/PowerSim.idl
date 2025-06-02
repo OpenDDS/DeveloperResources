@@ -1,5 +1,7 @@
 #include "common/mil-std-3071_data_model.idl"
 
+// This contains topics used to simulate the power topology of power devices
+// and the electric current between them.
 module powersim {
 
   const string TOPIC_ELECTRIC_CURRENT = "Simulated Electric Current";
