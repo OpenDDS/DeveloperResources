@@ -1,9 +1,14 @@
 #ifndef TMS_POWER_DEVICE_H
 #define TMS_POWER_DEVICE_H
 
-#include "Handshaking.h"
+#include "common/Handshaking.h"
+#include "PowerSimTypeSupportImpl.h"
+#include "PowerSim_Idl_export.h"
+
+#include <dds/DCPS/Marked_Default_Qos.h>
 
 #include <map>
+#include <condition_variable>
 
 struct NewController {
   tms::Identity id;
@@ -41,7 +46,7 @@ class PowerDevice;
  * A: If heartbeat is from selected
  * S: If there's a selectable controller with a recent heartbeat
  */
-class OpenDDS_TMS_Export ControllerSelector :
+class PowerSim_Idl_Export ControllerSelector :
   public TimerHandler<NewController, MissedController, LostController, NoControllers> {
 public:
   explicit ControllerSelector(PowerDevice& pd)
@@ -86,11 +91,13 @@ private:
   std::map<tms::Identity, TimePoint> all_controllers_;
 };
 
-class OpenDDS_TMS_Export PowerDevice : public Handshaking {
+class PowerSim_Idl_Export PowerDevice : public Handshaking {
 public:
-  explicit PowerDevice(const tms::Identity& id)
+  explicit PowerDevice(const tms::Identity& id, tms::DeviceRole role = tms::DeviceRole::ROLE_SOURCE, bool verbose = false)
     : Handshaking(id)
+    , verbose_(verbose)
     , controller_selector_(*this)
+    , role_(role)
   {
   }
 
@@ -101,11 +108,58 @@ public:
     return controller_selector_.selected();
   }
 
+  virtual int run()
+  {
+    return reactor_->run_reactor_event_loop() == 0 ? 0 : 1;
+  }
+
+  powersim::ConnectedDeviceSeq connected_devices_in() const
+  {
+    std::lock_guard<std::mutex> guard(connected_devices_m_);
+    return connected_devices_in_;
+  }
+
+  powersim::ConnectedDeviceSeq connected_devices_out() const
+  {
+    std::lock_guard<std::mutex> guard(connected_devices_m_);
+    return connected_devices_out_;
+  }
+
+  // Wait for power connections to be established
+  void wait_for_connections();
+
+  // Set the devices connected to this device
+  void connected_devices(const powersim::ConnectedDeviceSeq& devices);
+
+  bool verbose() const
+  {
+    return verbose_;
+  }
+
+protected:
+  std::condition_variable connected_devices_cv_;
+  mutable std::mutex connected_devices_m_;
+
+  // List of devices that can send power to this device.
+  // Load device has at most one connected device in this list.
+  powersim::ConnectedDeviceSeq connected_devices_in_;
+
+  // List of devices that this device can send power to.
+  // Source device has at most one connected device in this list.
+  powersim::ConnectedDeviceSeq connected_devices_out_;
+
+  // Participant containing entities for simulation topics
+  DDS::DomainParticipant_var sim_participant_;
+
+  // Whether to print power simulation messages
+  bool verbose_;
+
 private:
   void got_heartbeat(const tms::Heartbeat& hb, const DDS::SampleInfo& si);
   void got_device_info(const tms::DeviceInfo& di, const DDS::SampleInfo& si);
 
   ControllerSelector controller_selector_;
+  tms::DeviceRole role_;
 };
 
 #endif

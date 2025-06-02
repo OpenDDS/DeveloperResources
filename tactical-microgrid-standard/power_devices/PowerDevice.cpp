@@ -1,0 +1,248 @@
+#include "PowerDevice.h"
+#include "PowerConnectionDataReaderListenerImpl.h"
+#include "common/Utils.h"
+
+void ControllerSelector::got_heartbeat(const tms::Heartbeat& hb)
+{
+  Guard g(lock_);
+  auto it = all_controllers_.find(hb.deviceId());
+  if (it != all_controllers_.end()) {
+    it->second = Clock::now(); // Update last heartbeat
+    cancel<NoControllers>();
+
+    if (selected_.empty()) {
+      if (!this->get_timer<NewController>()->active()) {
+        schedule_once(NewController{hb.deviceId()}, new_controller_delay);
+      }
+    } else if (is_selected(hb.deviceId())) {
+      cancel<LostController>();
+      if (this->get_timer<MissedController>()->active()) {
+        reschedule<MissedController>();
+      } else {
+        // MissedController was triggered, so we need to schedule it again.
+        schedule_once(MissedController{}, missed_controller_delay);
+      }
+    }
+  }
+}
+
+void ControllerSelector::got_device_info(const tms::DeviceInfo& di)
+{
+  Guard g(lock_);
+  // We don't know from the heartbeat what's a controller, so we have to
+  // insert entries for all_controllers_ here.
+  // TODO: Are these supposed to be removed somehow?
+  if (di.role() == tms::DeviceRole::ROLE_MICROGRID_CONTROLLER &&
+      !all_controllers_.count(di.deviceId())) {
+    all_controllers_[di.deviceId()] = TimePoint::min();
+  }
+}
+
+void ControllerSelector::timer_fired(Timer<NewController>& timer)
+{
+  Guard g(lock_);
+  const auto& id = timer.arg.id;
+  ACE_DEBUG((LM_INFO, "(%P|%t) INFO: ControllerSelector::timed_event(NewController): "
+    "\"%C\" -> \"%C\"\n", selected_.c_str(), id.c_str()));
+  select(id);
+}
+
+void ControllerSelector::timer_fired(Timer<MissedController>&)
+{
+  Guard g(lock_);
+  ACE_DEBUG((LM_INFO, "(%P|%t) INFO: ControllerSelector::timed_event(MissedController): "
+    "\"%C\"\n", selected_.c_str()));
+  schedule_once(LostController{}, lost_controller_delay);
+  schedule_once(NoControllers{}, no_controllers_delay);
+}
+
+void ControllerSelector::timer_fired(Timer<LostController>&)
+{
+  Guard g(lock_);
+  ACE_DEBUG((LM_INFO, "(%P|%t) INFO: ControllerSelector::timed_event(LostController): "
+    "\"%C\"\n", selected_.c_str()));
+  selected_.clear();
+
+  // Select a new controller if possible. If there are no recent controllers
+  // and we don't hear from another, the NoControllers timer will fire.
+  const TimePoint now = Clock::now();
+  for (auto it = all_controllers_.begin(); it != all_controllers_.end(); ++it) {
+    const auto last_hb = now - it->second;
+    if (last_hb < missed_controller_delay) {
+      select(it->first, std::chrono::duration_cast<Sec>(last_hb));
+      break;
+    }
+  }
+}
+
+void ControllerSelector::timer_fired(Timer<NoControllers>&)
+{
+  Guard g(lock_);
+  ACE_DEBUG((LM_INFO, "(%P|%t) INFO: ControllerSelector::timed_event(NoControllers)\n"));
+  // TODO: CONFIG_ON_COMMS_LOSS
+}
+
+void ControllerSelector::select(const tms::Identity& id, Sec last_hb)
+{
+  ACE_DEBUG((LM_INFO, "(%P|%t) INFO: ControllerSelector::select: \"%C\"\n", id.c_str()));
+  selected_ = id;
+  schedule_once(MissedController{}, missed_controller_delay - last_hb);
+  // TODO: Send ActiveMicrogridControllerState
+}
+
+DDS::ReturnCode_t PowerDevice::init(DDS::DomainId_t domain, int argc, char* argv[])
+{
+  DDS::ReturnCode_t rc = join_domain(domain, argc, argv);
+  if (rc != DDS::RETCODE_OK) {
+    return rc;
+  }
+
+  rc = create_subscribers(
+    [&](const auto& di, const auto& si) { got_device_info(di, si); },
+    [&](const auto& hb, const auto& si) { got_heartbeat(hb, si); });
+  if (rc != DDS::RETCODE_OK) {
+    return rc;
+  }
+
+  rc = create_publishers();
+  if (rc != DDS::RETCODE_OK) {
+    return rc;
+  }
+
+  // Subscribe to the PowerConnection topic
+  const DDS::DomainId_t sim_domain_id = Utils::get_sim_domain_id(domain);
+  sim_participant_ = get_participant_factory()->create_participant(sim_domain_id,
+                                                                   PARTICIPANT_QOS_DEFAULT,
+                                                                   nullptr,
+                                                                   ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
+  if (!sim_participant_) {
+    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: PowerDevice::init: create simulation participant failed\n"));
+    return DDS::RETCODE_ERROR;
+  }
+
+  powersim::PowerConnectionTypeSupport_var pc_ts = new powersim::PowerConnectionTypeSupportImpl;
+  if (DDS::RETCODE_OK != pc_ts->register_type(sim_participant_, "")) {
+    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: PowerDevice::init: register_type PowerConnection failed\n"));
+    return DDS::RETCODE_ERROR;
+  }
+
+  CORBA::String_var pc_type_name = pc_ts->get_type_name();
+  DDS::Topic_var pc_topic = sim_participant_->create_topic(powersim::TOPIC_POWER_CONNECTION.c_str(),
+                                                           pc_type_name,
+                                                           TOPIC_QOS_DEFAULT,
+                                                           nullptr,
+                                                           ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
+  if (!pc_topic) {
+    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: PowerDevice::init: create_topic \"%C\" failed\n",
+               powersim::TOPIC_POWER_CONNECTION.c_str()));
+    return DDS::RETCODE_ERROR;
+  }
+
+  DDS::Subscriber_var sim_sub = sim_participant_->create_subscriber(SUBSCRIBER_QOS_DEFAULT,
+                                                                    nullptr,
+                                                                    ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
+  if (!sim_sub) {
+    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: PowerDevice::init: create_subscriber for simulating power connection failed\n"));
+    return DDS::RETCODE_ERROR;
+  }
+
+  DDS::DataReaderQos dr_qos;
+  sim_sub->get_default_datareader_qos(dr_qos);
+  dr_qos.reliability.kind = DDS::RELIABLE_RELIABILITY_QOS;
+
+  DDS::DataReaderListener_var pc_listener(new PowerConnectionDataReaderListenerImpl(*this));
+  DDS::DataReader_var pc_dr_base = sim_sub->create_datareader(pc_topic,
+                                                              dr_qos,
+                                                              pc_listener,
+                                                              ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
+  if (!pc_dr_base) {
+    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: PowerDevice::init: create_datareader for topic \"%C\" failed\n",
+               powersim::TOPIC_POWER_CONNECTION.c_str()));
+    return DDS::RETCODE_ERROR;
+  }
+
+  // Advertise its device information and start heartbeats
+  auto di = get_device_info();
+  di.role(role_);
+
+  return send_device_info(di);
+}
+
+void PowerDevice::got_heartbeat(const tms::Heartbeat& hb, const DDS::SampleInfo& si)
+{
+  if (!si.valid_data || hb.deviceId() == device_id_) {
+    return;
+  }
+
+  if (OpenDDS::DCPS::DCPS_debug_level >= 8) {
+    ACE_DEBUG((LM_INFO, "(%P|%t) INFO: Handshaking::power_device_got_heartbeat: from %C\n", hb.deviceId().c_str()));
+  }
+  controller_selector_.got_heartbeat(hb);
+}
+
+void PowerDevice::got_device_info(const tms::DeviceInfo& di, const DDS::SampleInfo& si)
+{
+  if (!si.valid_data || di.deviceId() == device_id_) {
+    return;
+  }
+  ACE_DEBUG((LM_INFO, "(%P|%t) INFO: Handshaking::power_device_got_device_info: from %C\n", di.deviceId().c_str()));
+  controller_selector_.got_device_info(di);
+}
+
+void PowerDevice::wait_for_connections()
+{
+  std::unique_lock<std::mutex> lock(connected_devices_m_);
+  connected_devices_cv_.wait(lock, [this] { return !connected_devices_in_.empty() || !connected_devices_out_.empty(); });
+}
+
+void PowerDevice::connected_devices(const powersim::ConnectedDeviceSeq& devices)
+{
+  std::lock_guard<std::mutex> guard(connected_devices_m_);
+
+  for (size_t i = 0; i < devices.size(); ++i) {
+    switch (role_) {
+    case tms::DeviceRole::ROLE_SOURCE:
+      // Source device has a single out port
+      if (!connected_devices_out_.empty()) {
+        ACE_ERROR((LM_NOTICE, "(%P|%t) NOTICE: PowerDevice::connected_devices: Source \"%C\" already connects to \"%C\". Replace with \"%C\"\n",
+                   get_device_id().c_str(), connected_devices_out_[0].id().c_str(), devices[i].id().c_str()));
+      }
+      connected_devices_out_[0] = devices[i];
+      break;
+    case tms::DeviceRole::ROLE_LOAD:
+      // Load device has a single in port.
+      if (!connected_devices_in_.empty()) {
+        ACE_ERROR((LM_NOTICE, "(%P|%t) NOTICE: PowerDevice::connected_devices: Load \"%C\" already connects to \"%C\". Replace with \"%C\"\n",
+                   get_device_id().c_str(), connected_devices_in_[0].id().c_str(), devices[i].id().c_str()));
+      }
+      connected_devices_in_[0] = devices[i];
+      break;
+    case tms::DeviceRole::ROLE_DISTRIBUTION:
+      {
+        const tms::DeviceRole other_role = devices[i].role();
+        if (other_role == tms::DeviceRole::ROLE_SOURCE) {
+          // Can only receive power from the other device
+          connected_devices_in_.push_back(devices[i]);
+        } else if (other_role == tms::DeviceRole::ROLE_LOAD) {
+          // Can only send power to the other device
+          connected_devices_out_.push_back(devices[i]);
+        } else if (other_role == tms::DeviceRole::ROLE_DISTRIBUTION) {
+          // Can both send to and receive power from the other distribution device
+          connected_devices_in_.push_back(devices[i]);
+          connected_devices_out_.push_back(devices[i]);
+        } else {
+          // Should never happen, but just ignore this other device
+          ACE_ERROR((LM_WARNING, "(%P|%t) WARNING: PowerDevice::connected_devices: Unsupported device role (\"%C\") of other device!\n",
+                     Utils::device_role_to_string(other_role).c_str()));
+        }
+      }
+      break;
+    default:
+      // Should never happen
+      ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: PowerDevice::connected_devices: Unsupported device role (\"%C\") of mine!\n",
+                 Utils::device_role_to_string(role_).c_str()));
+      return;
+    }
+  }
+  connected_devices_cv_.notify_one();
+}

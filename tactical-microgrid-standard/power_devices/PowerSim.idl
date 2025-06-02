@@ -1,0 +1,46 @@
+#include "common/mil-std-3071_data_model.idl"
+
+// This contains topics used to simulate the power topology of power devices
+// and the electric current between them.
+module powersim {
+
+  const string TOPIC_ELECTRIC_CURRENT = "Simulated Electric Current";
+  const string TOPIC_POWER_CONNECTION = "Simulated Power Connection";
+  const string TOPIC_POWER_TOPOLOGY = "Simulated Power Topology";
+
+  typedef sequence<tms::Identity> IdentitySeq;
+
+  @topic
+  @extensibility(FINAL)
+  struct ElectricCurrent {
+    // Path of the simulated electric current.
+    // The first element is the original source device.
+    // Each subsequent element is an intermediate power device along the path.
+    // Each receiver of the message appends the next expected receiver to the path,
+    // unless it is the final receiver, i.e. a load device.
+    IdentitySeq power_path;
+    float amperage;
+  };
+
+  @nested
+  struct ConnectedDevice {
+    tms::Identity id;
+    tms::DeviceRole role;
+  };
+
+  typedef sequence<ConnectedDevice> ConnectedDeviceSeq;
+
+  @topic
+  @extensibility(FINAL)
+  struct PowerConnection {
+    @key tms::Identity pd_id;
+    ConnectedDeviceSeq connected_devices;
+  };
+
+  @topic
+  @extensibility(FINAL)
+  struct PowerTopology {
+    @key tms::Identity mc_id;
+    sequence<PowerConnection> connections;
+  };
+};

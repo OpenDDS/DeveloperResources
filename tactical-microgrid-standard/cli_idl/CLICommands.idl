@@ -12,13 +12,20 @@ module cli {
     @key tms::Identity mc_id;
   };
 
-  typedef sequence<tms::DeviceInfo> DeviceInfoSeq;
+  @nested
+  @extensibility(FINAL)
+  struct PowerDeviceInfo {
+    tms::DeviceInfo device_info;
+    tms::EnergyStartStopLevel essl;
+  };
+
+  typedef sequence<PowerDeviceInfo> PowerDeviceInfoSeq;
 
   @topic
   @extensibility(FINAL)
   struct PowerDevicesReply {
     @key tms::Identity mc_id;
-    DeviceInfoSeq devices;
+    PowerDeviceInfoSeq devices;
   };
 
   enum ControllerCmdType {

@@ -1,5 +1,5 @@
-#ifndef HANDSHAKING_H
-#define HANDSHAKING_H
+#ifndef TMS_COMMON_HANDSHAKING_H
+#define TMS_COMMON_HANDSHAKING_H
 
 #include "TimerHandler.h"
 
@@ -39,6 +39,11 @@ public:
   DDS::ReturnCode_t create_subscribers(
     std::function<void(const tms::DeviceInfo&, const DDS::SampleInfo&)> di_cb = nullptr,
     std::function<void(const tms::Heartbeat&, const DDS::SampleInfo&)> hb_cb = nullptr);
+
+  DDS::DomainParticipantFactory_var get_participant_factory() const
+  {
+    return dpf_;
+  }
 
   DDS::DomainParticipant_var get_domain_participant() const
   {

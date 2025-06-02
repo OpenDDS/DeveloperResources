@@ -5,13 +5,29 @@
 #include "controller/Common.h"
 
 #include <cli_idl/CLICommandsTypeSupportImpl.h>
+#include <power_devices/PowerSimTypeSupportImpl.h>
 
 #include <string>
 #include <utility>
 #include <mutex>
+#include <unordered_set>
 
 struct UnavailableController {
   tms::Identity id;
+};
+
+struct ConnectedDeviceEqual {
+  bool operator()(const powersim::ConnectedDevice& cd1, const powersim::ConnectedDevice& cd2) const
+  {
+    return cd1.id() == cd2.id() && cd1.role() == cd2.role();
+  }
+};
+
+struct ConnectedDeviceHash {
+  size_t operator()(const powersim::ConnectedDevice& cd) const
+  {
+    return std::hash<tms::Identity>{}(cd.id());
+  }
 };
 
 class CLIClient : public TimerHandler<UnavailableController> {
@@ -23,6 +39,12 @@ public:
   void run();
 
 private:
+  // Initialize DDS entities in the TMS domain
+  DDS::ReturnCode_t init_tms(DDS::DomainId_t tms_domain_id, int argc = 0, char* argv[] = nullptr);
+
+  // Initialize DDS entities used for CLI commands and power simulation
+  DDS::ReturnCode_t init_sim(DDS::DomainId_t sim_domain_id);
+
   void run_cli();
   bool cli_stopped() const;
 
@@ -30,10 +52,21 @@ private:
   OpArgPair parse(const std::string& input) const;
 
   void display_commands() const;
-  std::string device_role_to_string(tms::DeviceRole role) const;
+  std::string energy_level_to_string(tms::EnergyStartStopLevel essl) const;
   void display_controllers() const;
   void set_controller(const OpArgPair& op_arg);
   void list_power_devices();
+  bool is_single_port_device(tms::DeviceRole role) const;
+
+  // Check that two power devices can have a power connection
+  bool can_connect(const tms::Identity& id1, tms::DeviceRole role1,
+    const tms::Identity& id2, tms::DeviceRole role2) const;
+
+  // Create a power connection between two devices
+  void connect(const tms::Identity& id1, tms::DeviceRole role1,
+    const tms::Identity& id2, tms::DeviceRole role2);
+
+  void connect_power_devices();
   bool send_power_devices_request();
   void display_power_devices() const;
   void send_start_device_cmd(const OpArgPair& op_arg) const;
@@ -50,11 +83,13 @@ private:
   void any_timer_fired(TimerHandler<UnavailableController>::AnyTimer any_timer) final;
   int handle_signal(int, siginfo_t*, ucontext_t*);
 
+  DDS::DomainParticipant_var sim_participant_;
   Handshaking handshaking_;
   cli::PowerDevicesRequestDataWriter_var pdreq_dw_;
   tms::OperatorIntentRequestDataWriter_var oir_dw_;
   cli::PowerDevicesReplyDataReader_var pdrep_dr_;
   cli::ControllerCommandDataWriter_var cc_dw_;
+  powersim::PowerTopologyDataWriter_var pt_dw_;
 
   // If a heartbeat hasn't been received from a controller in this amount of time
   // since its last heartbeat, the controller is deemed unavailable.
@@ -85,6 +120,10 @@ private:
 
   // The power devices that are connected to the current controller
   PowerDevices power_devices_;
+
+  // Store the simulated power connections between power devices
+  using PowerConnection = std::unordered_map<tms::Identity, std::unordered_set<powersim::ConnectedDevice, ConnectedDeviceHash, ConnectedDeviceEqual>>;
+  PowerConnection power_connections_;
 
   // The current microgrid controller with which the CLI client is interacting
   tms::Identity curr_controller_;

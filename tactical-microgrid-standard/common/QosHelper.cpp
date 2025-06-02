@@ -16,7 +16,9 @@ namespace DataReader {
 const FnMap fn_map = {
   {tms::topic::TOPIC_HEARTBEAT, get_Medium},
   {tms::topic::TOPIC_DEVICE_INFO, get_PublishLast},
-  {tms::topic::TOPIC_OPERATOR_INTENT_REQUEST, get_Command}};
+  {tms::topic::TOPIC_OPERATOR_INTENT_REQUEST, get_Command},
+  {tms::topic::TOPIC_ENERGY_START_STOP_REQUEST, get_Command},
+  {tms::topic::TOPIC_REPLY, get_Reply}};
 }
 
 namespace DataWriter {
@@ -24,7 +26,9 @@ namespace DataWriter {
 const FnMap fn_map = {
   {tms::topic::TOPIC_HEARTBEAT, get_Medium},
   {tms::topic::TOPIC_DEVICE_INFO, get_PublishLast},
-  {tms::topic::TOPIC_OPERATOR_INTENT_REQUEST, get_Command}};
+  {tms::topic::TOPIC_OPERATOR_INTENT_REQUEST, get_Command},
+  {tms::topic::TOPIC_ENERGY_START_STOP_REQUEST, get_Command},
+  {tms::topic::TOPIC_REPLY, get_Reply}};
 }
 
 }

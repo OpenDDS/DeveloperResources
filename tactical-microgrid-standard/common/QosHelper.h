@@ -1,5 +1,5 @@
-#ifndef QOS_HELPER_H
-#define QOS_HELPER_H
+#ifndef TMS_COMMON_QOS_HELPER_H
+#define TMS_COMMON_QOS_HELPER_H
 
 #include <common/mil-std-3071_data_modelTypeSupportImpl.h>
 #include <common/OpenDDS_TMS_export.h>

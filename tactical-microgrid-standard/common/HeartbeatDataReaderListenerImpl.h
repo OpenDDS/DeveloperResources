@@ -1,5 +1,5 @@
-#ifndef HEARTBEAT_DATA_READER_LISTENER_IMPL_H
-#define HEARTBEAT_DATA_READER_LISTENER_IMPL_H
+#ifndef TMS_COMMON_HEARTBEAT_DATA_READER_LISTENER_IMPL_H
+#define TMS_COMMON_HEARTBEAT_DATA_READER_LISTENER_IMPL_H
 
 #include "DataReaderListenerBase.h"
 
@@ -8,7 +8,8 @@
 class HeartbeatDataReaderListenerImpl : public DataReaderListenerBase {
 public:
   explicit HeartbeatDataReaderListenerImpl(std::function<void(const tms::Heartbeat&, const DDS::SampleInfo&)> cb = nullptr)
-    : callback_(cb)
+    : DataReaderListenerBase("tms::Heartbeat - DataReaderListenerImpl")
+    , callback_(cb)
   {}
 
   virtual ~HeartbeatDataReaderListenerImpl() = default;

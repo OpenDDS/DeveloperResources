@@ -6,7 +6,9 @@
 
 class OperatorIntentRequestDataReaderListenerImpl : public DataReaderListenerBase {
 public:
-  explicit OperatorIntentRequestDataReaderListenerImpl(CLIServer& cli_server) : cli_server_(cli_server) {}
+  explicit OperatorIntentRequestDataReaderListenerImpl(CLIServer& cli_server)
+    : DataReaderListenerBase("tms::OperatorIntentRequest - DataReaderListenerImpl")
+    , cli_server_(cli_server) {}
 
   virtual ~OperatorIntentRequestDataReaderListenerImpl() = default;
 

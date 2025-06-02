@@ -1,5 +1,5 @@
-#ifndef TMS_TIMER_HANDLER_H
-#define TMS_TIMER_HANDLER_H
+#ifndef TMS_COMMON_TIMER_HANDLER_H
+#define TMS_COMMON_TIMER_HANDLER_H
 
 #include <ace/Event_Handler.h>
 #include <ace/Log_Msg.h>
