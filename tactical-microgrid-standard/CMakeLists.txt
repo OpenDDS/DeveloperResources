@@ -7,6 +7,7 @@ find_package(OpenDDS REQUIRED)
 
 add_library(TMS_Common
   common/Handshaking.cpp
+  common/ControllerSelector.cpp
   common/DeviceInfoDataReaderListenerImpl.cpp
   common/HeartbeatDataReaderListenerImpl.cpp
   common/QosHelper.cpp
