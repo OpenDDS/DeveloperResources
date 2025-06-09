@@ -11,6 +11,7 @@ add_library(TMS_Common
   common/DeviceInfoDataReaderListenerImpl.cpp
   common/HeartbeatDataReaderListenerImpl.cpp
   common/QosHelper.cpp
+  common/Utils.cpp
 )
 target_include_directories(TMS_Common PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 opendds_export_header(TMS_Common INCLUDE "common/OpenDDS_TMS_export.h" MACRO_PREFIX OpenDDS_TMS)
