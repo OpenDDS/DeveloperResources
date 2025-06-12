@@ -53,6 +53,9 @@ public:
   }
 
 protected:
+  // Concrete power device should override this function depending on their role.
+  virtual tms::DeviceInfo populate_device_info() const;
+
   std::condition_variable connected_devices_cv_;
   mutable std::mutex connected_devices_m_;
 

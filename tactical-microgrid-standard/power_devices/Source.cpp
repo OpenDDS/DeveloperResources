@@ -2,6 +2,7 @@
 #include "PowerSimTypeSupportImpl.h"
 #include "common/DataReaderListenerBase.h"
 #include "common/QosHelper.h"
+#include "common/Utils.h"
 
 #include <dds/DCPS/Marked_Default_Qos.h>
 
@@ -254,6 +255,29 @@ public:
   }
 
 private:
+  tms::DeviceInfo populate_device_info() const override
+  {
+    auto device_info = get_device_info();
+    device_info.role() = tms::DeviceRole::ROLE_SOURCE;
+    device_info.product() = Utils::get_ProductInfo();
+    device_info.topics() = Utils::get_TopicInfo({}, {}, { tms::topic::TOPIC_ENERGY_START_STOP_REQUEST });
+
+    tms::PowerDeviceInfo pdi;
+    {
+      // The spec require 1 power port entry for source device
+      pdi.powerPorts() = { tms::PowerPortInfo() };
+      tms::SourceInfo source_info;
+      {
+        source_info.features() = { tms::SourceFeature::SRCF_GENSET, tms::SourceFeature::SRCF_SOLAR };
+        source_info.supportedEnergyStartStopLevels() = { tms::EnergyStartStopLevel::ESSL_OFF,
+                                                         tms::EnergyStartStopLevel::ESSL_OPERATIONAL };
+      }
+      pdi.source() = source_info;
+    }
+    device_info.powerDevice() = pdi;
+    return device_info;
+  }
+
   // For graceful shutdown of the device
   mutable std::mutex shutdown_m_;
   bool shutdown_ = false;

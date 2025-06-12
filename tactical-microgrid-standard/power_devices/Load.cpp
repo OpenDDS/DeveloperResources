@@ -1,6 +1,7 @@
 #include "PowerDevice.h"
 #include "PowerSimTypeSupportImpl.h"
 #include "common/DataReaderListenerBase.h"
+#include "common/Utils.h"
 
 #include <dds/DCPS/Marked_Default_Qos.h>
 
@@ -85,6 +86,28 @@ public:
       return tms::Identity();
     }
     return connected_devs[0].id();
+  }
+
+private:
+  tms::DeviceInfo populate_device_info() const override
+  {
+    auto device_info = get_device_info();
+    device_info.role() = tms::DeviceRole::ROLE_LOAD;
+    device_info.product() = Utils::get_ProductInfo();
+    device_info.topics() = Utils::get_TopicInfo({}, {}, {});
+
+    tms::PowerDeviceInfo pdi;
+    {
+      pdi.powerPorts() = { tms::PowerPortInfo() };
+      tms::LoadInfo load_info;
+      {
+        // Pick a feature for the demo purpose.
+        load_info.features() = { tms::LoadFeature::LOADF_DEMAND_RESPONSE };
+      }
+      pdi.load() = load_info;
+    }
+    device_info.powerDevice() = pdi;
+    return device_info;
   }
 };
 

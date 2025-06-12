@@ -76,10 +76,15 @@ DDS::ReturnCode_t PowerDevice::init(DDS::DomainId_t domain, int argc, char* argv
   }
 
   // Advertise its device information and start heartbeats
+  auto di = populate_device_info();
+  return send_device_info(di);
+}
+
+tms::DeviceInfo PowerDevice::populate_device_info() const
+{
   auto di = get_device_info();
   di.role(role_);
-
-  return send_device_info(di);
+  return di;
 }
 
 void PowerDevice::got_heartbeat(const tms::Heartbeat& hb, const DDS::SampleInfo& si)

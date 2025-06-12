@@ -1,6 +1,7 @@
 #include "PowerDevice.h"
 #include "PowerSimTypeSupportImpl.h"
 #include "common/DataReaderListenerBase.h"
+#include "common/Utils.h"
 
 #include <dds/DCPS/Marked_Default_Qos.h>
 
@@ -111,6 +112,30 @@ public:
   }
 
 private:
+  tms::DeviceInfo populate_device_info() const override
+  {
+    auto device_info = get_device_info();
+    device_info.role() = tms::DeviceRole::ROLE_DISTRIBUTION;
+    device_info.product() = Utils::get_ProductInfo();
+    device_info.topics() = Utils::get_TopicInfo({}, {}, {});
+
+    tms::PowerDeviceInfo pdi;
+    {
+      // Distribution has >= 2 ports. For this app, we don't use
+      // the power ports information, so we just create 2 identical ports here.
+      const tms::PowerPortInfo tmp_port;
+      pdi.powerPorts() = { tmp_port, tmp_port };
+      tms::DistributionInfo dist_info;
+      {
+        dist_info.features() = { tms::DistributionFeature::DISTF_FEEDER,
+                                 tms::DistributionFeature::DISTF_DISTRIBUTION };
+      }
+      pdi.distribution() = dist_info;
+    }
+    device_info.powerDevice() = pdi;
+    return device_info;
+  }
+
   powersim::ElectricCurrentDataWriter_var ec_dw_;
 };
 

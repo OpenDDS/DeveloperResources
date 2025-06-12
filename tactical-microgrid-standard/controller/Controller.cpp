@@ -95,11 +95,15 @@ tms::DeviceInfo Controller::populate_device_info() const
   device_info.topics() = Utils::get_TopicInfo({}, { tms::topic::TOPIC_ENERGY_START_STOP_REQUEST },
     { tms::topic::TOPIC_OPERATOR_INTENT_REQUEST });
 
-  tms::MicrogridControllerInfo mc_info;
-  mc_info.features().push_back(tms::MicrogridControllerFeature::MCF_GENERAL);
-  mc_info.priorityRanking(0);
   tms::ControlServiceInfo csi;
-  csi.mc() = mc_info;
+  {
+    tms::MicrogridControllerInfo mc_info;
+    {
+      mc_info.features().push_back(tms::MicrogridControllerFeature::MCF_GENERAL);
+      mc_info.priorityRanking(0);
+    }
+    csi.mc() = mc_info;
+  }
   device_info.controlService() = csi;
 
   return device_info;
