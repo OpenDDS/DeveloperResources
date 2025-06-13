@@ -1,4 +1,5 @@
 #include "Controller.h"
+#include "common/Utils.h"
 
 DDS::ReturnCode_t Controller::init(DDS::DomainId_t domain_id, int argc, char* argv[])
 {
@@ -21,7 +22,7 @@ DDS::ReturnCode_t Controller::init(DDS::DomainId_t domain_id, int argc, char* ar
 
   auto di = populate_device_info();
 
-  tms_domain_id_ = domain_id;;
+  tms_domain_id_ = domain_id;
 
   return send_device_info(di);
 }
@@ -89,40 +90,21 @@ void Controller::heartbeat_cb(const tms::Heartbeat& hb, const DDS::SampleInfo& s
 tms::DeviceInfo Controller::populate_device_info() const
 {
   auto device_info = get_device_info();
-  device_info.role(tms::DeviceRole::ROLE_MICROGRID_CONTROLLER);
+  device_info.role() = tms::DeviceRole::ROLE_MICROGRID_CONTROLLER;
+  device_info.product() = Utils::get_ProductInfo();
+  device_info.topics() = Utils::get_TopicInfo({}, { tms::topic::TOPIC_ENERGY_START_STOP_REQUEST },
+    { tms::topic::TOPIC_OPERATOR_INTENT_REQUEST });
 
-  tms::ProductInfo prod_info;
-  prod_info.nsn({'6', '2', '4', '0', '0', '0', '0', '2', '7', '2', '0', '5', '9'});
-  prod_info.gtin({'0', '0', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '5'});
-  prod_info.manufacturerName("Manufacturer A");
-  prod_info.modelName("Model A");
-  prod_info.modelNumber("n235ka");
-  prod_info.serialNumber("C02CG123DC79");
-  prod_info.softwareVersion("0.1");
-  device_info.product(prod_info);
-
-  tms::TopicInfo topic_info;
-  topic_info.dataModelVersion(tms::TMS_VERSION);
-  // List of conditional topics that are published by this controller: nothing
-  // List of optional topics that are published by this controller
-  topic_info.publishedOptionalTopics().push_back(tms::topic::TOPIC_ENERGY_START_STOP_REQUEST);
-  topic_info.publishedOptionalTopics().push_back(tms::topic::TOPIC_AC_LOAD_SHARING_REQUEST);
-  topic_info.publishedOptionalTopics().push_back(tms::topic::TOPIC_POWER_SWITCH_REQUEST);
-  // List of request topics subscribed by this controller: nothing
-  device_info.topics(topic_info);
-
-  tms::MicrogridControllerInfo mc_info;
-  mc_info.features().push_back(tms::MicrogridControllerFeature::MCF_GENERAL);
-  mc_info.priorityRanking(0);
   tms::ControlServiceInfo csi;
-  csi.mc() = mc_info;
+  {
+    tms::MicrogridControllerInfo mc_info;
+    {
+      mc_info.features().push_back(tms::MicrogridControllerFeature::MCF_GENERAL);
+      mc_info.priorityRanking(0);
+    }
+    csi.mc() = mc_info;
+  }
   device_info.controlService() = csi;
 
-  // The other fields are IDL optional:
-  // - controlHardware: probably ignore
-  // - powerHardware: not applicable
-  // - controlParameters, metricParameters: optional depending whether we want to
-  //   include these parameters information
-  // - powerDevice: not applicable
   return device_info;
 }

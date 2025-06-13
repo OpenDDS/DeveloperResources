@@ -2,39 +2,27 @@
 #define TMS_COMMON_UTILS_H
 
 #include <common/mil-std-3071_data_modelTypeSupportImpl.h>
+#include <common/OpenDDS_TMS_export.h>
 
 #include <string>
+#include <random>
+
+extern const char* MANUFACTURER_NAME;
+extern const char* MODEL_NAME;
+extern const char* MODEL_NUMBER;
+extern const char* SERIAL_NUMBER;
+extern const char* SOFTWARE_VERSION;
 
 namespace Utils {
 
-DDS::DomainId_t get_sim_domain_id(DDS::DomainId_t tms_domain_id)
-{
-  return (tms_domain_id < ACE_INT32_MAX) ? tms_domain_id + 1 : tms_domain_id - 1;
-}
+OpenDDS_TMS_Export DDS::DomainId_t get_sim_domain_id(DDS::DomainId_t tms_domain_id);
 
-std::string device_role_to_string(tms::DeviceRole role)
-{
-  switch (role) {
-  case tms::DeviceRole::ROLE_MICROGRID_CONTROLLER:
-    return "Microgrid Controller";
-  case tms::DeviceRole::ROLE_SOURCE:
-    return "Source";
-  case tms::DeviceRole::ROLE_LOAD:
-    return "Load";
-  case tms::DeviceRole::ROLE_STORAGE:
-    return "Storage";
-  case tms::DeviceRole::ROLE_DISTRIBUTION:
-    return "Distribution";
-  case tms::DeviceRole::ROLE_MICROGRID_DASHBOARD:
-    return "Microgrid Dashboard";
-  case tms::DeviceRole::ROLE_CONVERSION:
-    return "Conversion";
-  case tms::DeviceRole::ROLE_MONITOR:
-    return "Monitor";
-  default:
-    return "Unknown";
-  }
-}
+OpenDDS_TMS_Export std::string device_role_to_string(tms::DeviceRole role);
+
+OpenDDS_TMS_Export tms::ProductInfo get_ProductInfo();
+
+OpenDDS_TMS_Export tms::TopicInfo get_TopicInfo(const tms::TopicList& published_conditional_topics,
+  const tms::TopicList& published_optional_topics, const tms::TopicList& subscribed_topics);
 
 }
 
