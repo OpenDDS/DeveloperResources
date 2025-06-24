@@ -17,6 +17,8 @@ namespace Utils {
 
 OpenDDS_TMS_Export DDS::DomainId_t get_sim_domain_id(DDS::DomainId_t tms_domain_id);
 
+OpenDDS_TMS_Export void setup_sim_transport(DDS::DomainParticipant_var sim_dp);
+
 OpenDDS_TMS_Export std::string device_role_to_string(tms::DeviceRole role);
 
 OpenDDS_TMS_Export tms::ProductInfo get_ProductInfo();

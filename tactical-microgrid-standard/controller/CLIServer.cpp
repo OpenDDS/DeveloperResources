@@ -162,6 +162,8 @@ DDS::ReturnCode_t CLIServer::init_sim()
     return DDS::RETCODE_ERROR;
   }
 
+  Utils::setup_sim_transport(sim_participant_);
+
   // Subscribe to the cli::PowerDevicesRequest topic
   cli::PowerDevicesRequestTypeSupport_var pdreq_ts = new cli::PowerDevicesRequestTypeSupportImpl;
   if (DDS::RETCODE_OK != pdreq_ts->register_type(sim_participant_, "")) {

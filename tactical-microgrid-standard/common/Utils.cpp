@@ -1,5 +1,9 @@
 #include "Utils.h"
 
+#include <dds/DCPS/transport/framework/TransportRegistry.h>
+#include <dds/DCPS/transport/framework/TransportConfig.h>
+#include <dds/DCPS/transport/framework/TransportInst.h>
+
 const char* MANUFACTURER_NAME = "OCI TMS Demo";
 const char* MODEL_NAME = "OCI TMS Model Name";
 const char* MODEL_NUMBER = "OCI TMS Model Number";
@@ -48,6 +52,16 @@ namespace Utils {
   DDS::DomainId_t get_sim_domain_id(DDS::DomainId_t tms_domain_id)
   {
     return (tms_domain_id < ACE_INT32_MAX) ? tms_domain_id + 1 : tms_domain_id - 1;
+  }
+
+  void setup_sim_transport(DDS::DomainParticipant_var sim_dp)
+  {
+    OpenDDS::DCPS::TransportConfig_rch sim_config =
+      TheTransportRegistry->create_config("sim_transport_config");
+    OpenDDS::DCPS::TransportInst_rch sim_inst =
+      TheTransportRegistry->create_inst("sim_rtps_transport", "rtps_udp");
+    sim_config->instances_.push_back(sim_inst);
+    TheTransportRegistry->bind_config("sim_transport_config", sim_dp);
   }
 
   std::string device_role_to_string(tms::DeviceRole role)

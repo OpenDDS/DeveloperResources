@@ -34,6 +34,8 @@ DDS::ReturnCode_t PowerDevice::init(DDS::DomainId_t domain, int argc, char* argv
     return DDS::RETCODE_ERROR;
   }
 
+  Utils::setup_sim_transport(sim_participant_);
+
   powersim::PowerConnectionTypeSupport_var pc_ts = new powersim::PowerConnectionTypeSupportImpl;
   if (DDS::RETCODE_OK != pc_ts->register_type(sim_participant_, "")) {
     ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: PowerDevice::init: register_type PowerConnection failed\n"));

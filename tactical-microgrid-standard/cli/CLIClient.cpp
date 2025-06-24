@@ -105,6 +105,9 @@ DDS::ReturnCode_t CLIClient::init_sim(DDS::DomainId_t sim_domain_id)
     return DDS::RETCODE_ERROR;
   }
 
+  // Separate transport instance for the simulation domain
+  Utils::setup_sim_transport(sim_participant_);
+
   // Publish to the cli::PowerDevicesRequest topic
   cli::PowerDevicesRequestTypeSupport_var pdreq_ts = new cli::PowerDevicesRequestTypeSupportImpl;
   if (DDS::RETCODE_OK != pdreq_ts->register_type(sim_participant_, "")) {
