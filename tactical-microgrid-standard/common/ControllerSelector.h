@@ -63,9 +63,9 @@ public:
   }
 
 private:
-  static constexpr Sec new_controller_delay = Sec(3);
-  static constexpr Sec missed_controller_delay = Sec(3);
-  static constexpr Sec lost_controller_delay = Sec(6);
+  static constexpr Sec heartbeat_deadline = Sec(3);
+  static constexpr Sec new_active_controller_delay = Sec(3);
+  static constexpr Sec lost_active_controller_delay = Sec(6);
   static constexpr Sec no_controllers_delay = Sec(10);
 
   void timer_fired(Timer<NewController>& timer);
