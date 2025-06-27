@@ -2,6 +2,8 @@
 
 void ControllerSelector::got_heartbeat(const tms::Heartbeat& hb)
 {
+  std::cout << "==================  ControllerSelector::got_heartbeat..." << std::endl;
+  std::cout << "Received heartbeat from MC: " << hb.deviceId() << std::endl;
   Guard g(lock_);
   auto it = all_controllers_.find(hb.deviceId());
   if (it != all_controllers_.end()) {
@@ -9,19 +11,25 @@ void ControllerSelector::got_heartbeat(const tms::Heartbeat& hb)
     cancel<NoControllers>();
 
     if (selected_.empty()) {
+      std::cout << "No Active MC selected yet." << std::endl;
       if (!this->get_timer<NewController>()->active()) {
-        schedule_once(NewController{hb.deviceId()}, new_controller_delay);
+        std::cout << "Scheduling a New MC timer to decide a new active MC..." << std::endl;
+        schedule_once(NewController{hb.deviceId()}, new_active_controller_delay);
       }
     } else if (is_selected(hb.deviceId())) {
+      std::cout << "Received heartbeat is from the current active MC" << std::endl;
       cancel<LostController>();
       if (this->get_timer<MissedController>()->active()) {
+        std::cout << "A MissedController timer was scheduled and active. Rescheduling it..." << std::endl;
         reschedule<MissedController>();
       } else {
+        std::cout << "Schedule a new MissedController" << std::endl;
         // MissedController was triggered, so we need to schedule it again.
-        schedule_once(MissedController{}, missed_controller_delay);
+        schedule_once(MissedController{}, heartbeat_deadline);
       }
     }
   }
+  std::cout << "..... ======================================\n" << std::endl;
 }
 
 void ControllerSelector::got_device_info(const tms::DeviceInfo& di)
@@ -39,19 +47,49 @@ void ControllerSelector::got_device_info(const tms::DeviceInfo& di)
 void ControllerSelector::timer_fired(Timer<NewController>& timer)
 {
   Guard g(lock_);
-  const auto& id = timer.arg.id;
+  const auto& mc_id = timer.arg.id;
   ACE_DEBUG((LM_INFO, "(%P|%t) INFO: ControllerSelector::timed_event(NewController): "
-    "\"%C\" -> \"%C\"\n", selected_.c_str(), id.c_str()));
-  select(id);
+    "\"%C\" -> \"%C\"\n", selected_.c_str(), mc_id.c_str()));
+
+  // The TMS spec isn't clear to whether the device needs to verify that the last
+  // heartbeat of this controller was received less than 3s (i.e., heartbeat deadline) ago.
+  // This check makes sense since if its last heartbeat was more than 3s ago, that means
+  // the controller is not available and should not be selected as the active controller.
+  const TimePoint now = Clock::now();
+  auto it = all_controllers_.find(mc_id);
+  if (it == all_controllers_.end()) {
+    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: ControllerSelector::timed_event(NewController): Controller \"%C\" not found!\n",
+               mc_id.c_str()));
+    return;
+  }
+
+  if (now - it->second < heartbeat_deadline) {
+    selected_ = mc_id;
+    // TODO: Send ActiveMicrogridControllerState
+  }
 }
 
-void ControllerSelector::timer_fired(Timer<MissedController>&)
+void ControllerSelector::timer_fired(Timer<MissedController>& timer)
 {
   Guard g(lock_);
+  const auto& timer_id = timer.id;
   ACE_DEBUG((LM_INFO, "(%P|%t) INFO: ControllerSelector::timed_event(MissedController): "
-    "\"%C\"\n", selected_.c_str()));
-  schedule_once(LostController{}, lost_controller_delay);
-  schedule_once(NoControllers{}, no_controllers_delay);
+    "\"%C\". Timer id: %d\n", selected_.c_str(), timer_id));
+  schedule_once(LostController{}, lost_active_controller_delay);
+
+  // Start a No MC timer if the device has missed heartbeats from all MCs
+  const TimePoint now = Clock::now();
+  bool no_avail_mc = true;
+  for (const auto& pair : all_controllers_) {
+    if (now - pair.second < heartbeat_deadline) {
+      no_avail_mc = false;
+      break;
+    }
+  }
+
+  if (no_avail_mc) {
+    schedule_once(NoControllers{}, no_controllers_delay);
+  }
 }
 
 void ControllerSelector::timer_fired(Timer<LostController>&)
@@ -66,7 +104,7 @@ void ControllerSelector::timer_fired(Timer<LostController>&)
   const TimePoint now = Clock::now();
   for (auto it = all_controllers_.begin(); it != all_controllers_.end(); ++it) {
     const auto last_hb = now - it->second;
-    if (last_hb < missed_controller_delay) {
+    if (last_hb < heartbeat_deadline) {
       select(it->first, std::chrono::duration_cast<Sec>(last_hb));
       break;
     }
@@ -84,6 +122,6 @@ void ControllerSelector::select(const tms::Identity& id, Sec last_hb)
 {
   ACE_DEBUG((LM_INFO, "(%P|%t) INFO: ControllerSelector::select: \"%C\"\n", id.c_str()));
   selected_ = id;
-  schedule_once(MissedController{}, missed_controller_delay - last_hb);
+  schedule_once(MissedController{}, heartbeat_deadline - last_hb);
   // TODO: Send ActiveMicrogridControllerState
 }
