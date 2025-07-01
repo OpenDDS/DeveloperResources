@@ -110,8 +110,6 @@ public:
     assert_inactive<EventType>(timer);
     const TimerId id = reactor_->schedule_timer(
       this, &timer->id, ACE_Time_Value(timer->delay), ACE_Time_Value(timer->period));
-    std::cout << "TimerHandler::schedule(): timer id = " << id << ", name = " << timer->name
-      << ", delay = " << timer->delay.count() << ", period = " << timer->period.count() << std::endl;
     timer->id = id;
     active_timers_[id] = timer;
   }
@@ -188,26 +186,27 @@ public:
   int handle_timeout(const ACE_Time_Value&, const void* arg)
   {
     Guard g(lock_);
-    auto timer = active_timers_[*reinterpret_cast<const TimerId*>(arg)];
+    auto timer_id = *reinterpret_cast<const TimerId*>(arg);
+    if (active_timers_.count(timer_id) == 0) {
+      ACE_ERROR((LM_WARNING, "(%P|%t) WARNING: TimerHandler::handle_timeout: timer id %d does NOT exist\n",
+                 timer_id));
+    }
+    auto timer = active_timers_[timer_id];
     any_timer_fired(timer);
     bool exit_after = false;
-    int ret = 0;
     std::visit([&](auto&& value) {
       if (!value->period.count()) {
         using EventType = typename std::remove_reference_t<decltype(value)>::element_type::Arg;
         timer_wont_run<EventType>(value);
-        ret = -1;
       }
       exit_after = value->exit_after;
     }, timer);
     return end_event_loop(exit_after);
-    //end_event_loop(exit_after);
-    //return ret;
   }
 
 protected:
   mutable Mutex lock_;
-  ACE_Reactor* const reactor_;
+  ACE_Reactor* reactor_;
 
   int end_event_loop(bool yes = true)
   {

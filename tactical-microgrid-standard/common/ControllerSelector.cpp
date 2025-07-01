@@ -1,9 +1,37 @@
 #include "ControllerSelector.h"
 
+#include <ace/Timer_Hash.h>
+#include <ace/Timer_Heap.h>
+#include <ace/Select_Reactor.h>
+
+// If caller passes a non-null reactor, use it unmodified.
+// Otherwise, create another reactor for this class separated from the one for Handshaking.
+ControllerSelector::ControllerSelector(ACE_Reactor* reactor)
+  : TimerHandler(reactor)
+{
+  if (!reactor) {
+    reactor_ = new ACE_Reactor;
+
+    // We had an issue with using ACE_Reactor's default timer queue, which is
+    // ACE_Timer_Heap, when the rate of timer creation and cancellation is high
+    // for detecting missed heartbeat deadline from microgrid controllers.
+    // ACE_Timer_Hash seems working okay.
+    timer_queue_ = new ACE_Timer_Hash;
+    reactor_->timer_queue(timer_queue_);
+    own_reactor_ = true;
+  }
+}
+
+ControllerSelector::~ControllerSelector()
+{
+  if (own_reactor_) {
+    delete timer_queue_;
+    delete reactor_;
+  }
+}
+
 void ControllerSelector::got_heartbeat(const tms::Heartbeat& hb)
 {
-  std::cout << "==================  ControllerSelector::got_heartbeat..." << std::endl;
-  std::cout << "Received heartbeat from MC: " << hb.deviceId() << std::endl;
   Guard g(lock_);
   auto it = all_controllers_.find(hb.deviceId());
   if (it != all_controllers_.end()) {
@@ -11,25 +39,19 @@ void ControllerSelector::got_heartbeat(const tms::Heartbeat& hb)
     cancel<NoControllers>();
 
     if (selected_.empty()) {
-      std::cout << "No Active MC selected yet." << std::endl;
       if (!this->get_timer<NewController>()->active()) {
-        std::cout << "Scheduling a New MC timer to decide a new active MC..." << std::endl;
         schedule_once(NewController{hb.deviceId()}, new_active_controller_delay);
       }
     } else if (is_selected(hb.deviceId())) {
-      std::cout << "Received heartbeat is from the current active MC" << std::endl;
       cancel<LostController>();
-      if (this->get_timer<MissedController>()->active()) {
-        std::cout << "A MissedController timer was scheduled and active. Rescheduling it..." << std::endl;
-        reschedule<MissedController>();
+      if (this->get_timer<MissedHeartbeat>()->active()) {
+        reschedule<MissedHeartbeat>();
       } else {
-        std::cout << "Schedule a new MissedController" << std::endl;
-        // MissedController was triggered, so we need to schedule it again.
-        schedule_once(MissedController{}, heartbeat_deadline);
+        // MissedHeartbeat was triggered, so we need to schedule it again.
+        schedule_once(MissedHeartbeat{}, heartbeat_deadline);
       }
     }
   }
-  std::cout << "..... ======================================\n" << std::endl;
 }
 
 void ControllerSelector::got_device_info(const tms::DeviceInfo& di)
@@ -69,11 +91,11 @@ void ControllerSelector::timer_fired(Timer<NewController>& timer)
   }
 }
 
-void ControllerSelector::timer_fired(Timer<MissedController>& timer)
+void ControllerSelector::timer_fired(Timer<MissedHeartbeat>& timer)
 {
   Guard g(lock_);
   const auto& timer_id = timer.id;
-  ACE_DEBUG((LM_INFO, "(%P|%t) INFO: ControllerSelector::timed_event(MissedController): "
+  ACE_DEBUG((LM_INFO, "(%P|%t) INFO: ControllerSelector::timed_event(MissedHeartbeat): "
     "\"%C\". Timer id: %d\n", selected_.c_str(), timer_id));
   schedule_once(LostController{}, lost_active_controller_delay);
 
@@ -122,6 +144,6 @@ void ControllerSelector::select(const tms::Identity& id, Sec last_hb)
 {
   ACE_DEBUG((LM_INFO, "(%P|%t) INFO: ControllerSelector::select: \"%C\"\n", id.c_str()));
   selected_ = id;
-  schedule_once(MissedController{}, heartbeat_deadline - last_hb);
+  schedule_once(MissedHeartbeat{}, heartbeat_deadline - last_hb);
   // TODO: Send ActiveMicrogridControllerState
 }

@@ -11,7 +11,7 @@
 struct NewController {
   tms::Identity id;
 };
-struct MissedController {};
+struct MissedHeartbeat {};
 struct LostController {};
 struct NoControllers {};
 
@@ -30,7 +30,7 @@ class PowerDevice;
  *                   |                    |         [S]  |
  *                   |                   [6s]        |   |
  *                   |                    |          V   V
- *                   +-[A,R]->MissedController<-[3s]-select()->{ActiveMicrogridControllerState}
+ *                   +-[A,R]->MissedHeartbeat<-[3s]-select()->{ActiveMicrogridControllerState}
  *                   |          |
  *                   |        [10s]
  *                   |          |
@@ -45,8 +45,11 @@ class PowerDevice;
  * S: If there's a selectable controller with a recent heartbeat
  */
 class OpenDDS_TMS_Export ControllerSelector :
-  public TimerHandler<NewController, MissedController, LostController, NoControllers> {
+  public TimerHandler<NewController, MissedHeartbeat, LostController, NoControllers> {
 public:
+  explicit ControllerSelector(ACE_Reactor* reactor = nullptr);
+  ~ControllerSelector();
+
   void got_heartbeat(const tms::Heartbeat& hb);
   void got_device_info(const tms::DeviceInfo& di);
 
@@ -62,14 +65,24 @@ public:
     return selected_ == id;
   }
 
+  ACE_Reactor* const get_reactor() const
+  {
+    Guard g(lock_);
+    return reactor_;
+  }
+
 private:
+  // Allow using non-default timer queue
+  ACE_Timer_Queue* timer_queue_ = nullptr;
+  bool own_reactor_ = false;
+
   static constexpr Sec heartbeat_deadline = Sec(3);
   static constexpr Sec new_active_controller_delay = Sec(3);
   static constexpr Sec lost_active_controller_delay = Sec(6);
   static constexpr Sec no_controllers_delay = Sec(10);
 
   void timer_fired(Timer<NewController>& timer);
-  void timer_fired(Timer<MissedController>&);
+  void timer_fired(Timer<MissedHeartbeat>&);
   void timer_fired(Timer<LostController>&);
   void timer_fired(Timer<NoControllers>&);
   void any_timer_fired(AnyTimer timer)
