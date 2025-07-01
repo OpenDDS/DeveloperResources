@@ -4,7 +4,7 @@ void ActiveMicrogridControllerStateDataReaderListenerImpl::on_data_available(DDS
 {
   tms::ActiveMicrogridControllerStateSeq data;
   DDS::SampleInfoSeq info_seq;
-  tms::ActiveMicrogridControllerStateDataReader_var typed_reader = tms::ActiveMicroogridControllerStateDataReader::_narrow(reader);
+  tms::ActiveMicrogridControllerStateDataReader_var typed_reader = tms::ActiveMicrogridControllerStateDataReader::_narrow(reader);
   DDS::ReturnCode_t rc = typed_reader->take(data, info_seq, DDS::LENGTH_UNLIMITED,
                                             DDS::ANY_SAMPLE_STATE, DDS::ANY_VIEW_STATE, DDS::ANY_INSTANCE_STATE);
   if (rc != DDS::RETCODE_OK) {
