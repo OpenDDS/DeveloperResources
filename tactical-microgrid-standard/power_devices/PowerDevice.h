@@ -14,6 +14,7 @@ public:
   explicit PowerDevice(const tms::Identity& id, tms::DeviceRole role = tms::DeviceRole::ROLE_SOURCE, bool verbose = false)
     : Handshaking(id)
     , verbose_(verbose)
+    , controller_selector_(id)
     , role_(role)
   {
   }

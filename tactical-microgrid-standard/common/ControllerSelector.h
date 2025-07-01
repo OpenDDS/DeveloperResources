@@ -47,7 +47,7 @@ class PowerDevice;
 class OpenDDS_TMS_Export ControllerSelector :
   public TimerHandler<NewController, MissedHeartbeat, LostController, NoControllers> {
 public:
-  explicit ControllerSelector(ACE_Reactor* reactor = nullptr);
+  explicit ControllerSelector(const tms::Identity& device_id, ACE_Reactor* reactor = nullptr);
   ~ControllerSelector();
 
   void got_heartbeat(const tms::Heartbeat& hb);
@@ -71,6 +71,11 @@ public:
     return reactor_;
   }
 
+  void set_ActiveMicrogridControllerState_writer(tms::ActiveMicrogridControllerStateDataWriter_var amcs_dw)
+  {
+    amcs_dw_ = amcs_dw;
+  }
+
 private:
   // Allow using non-default timer queue
   ACE_Timer_Queue* timer_queue_ = nullptr;
@@ -92,8 +97,15 @@ private:
 
   void select(const tms::Identity& id, Sec last_hb = Sec(0));
 
+  void send_controller_state();
+
   tms::Identity selected_;
   std::map<tms::Identity, TimePoint> all_controllers_;
+
+  // Device ID to which this controller selector belong.
+  tms::Identity device_id_;
+
+  tms::ActiveMicrogridControllerStateDataWriter_var amcs_dw_;
 };
 
 #endif

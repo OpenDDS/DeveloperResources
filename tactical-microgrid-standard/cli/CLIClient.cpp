@@ -1,6 +1,7 @@
 #include "CLIClient.h"
 #include "common/QosHelper.h"
 #include "common/Utils.h"
+#include "ActiveMicrogridControllerStateDataReaderListenerImpl.h"
 
 #include <dds/DCPS/PublisherImpl.h>
 #include <dds/DCPS/SubscriberImpl.h>
@@ -87,6 +88,46 @@ DDS::ReturnCode_t CLIClient::init_tms(DDS::DomainId_t domain_id, int argc, char*
   oir_dw_ = tms::OperatorIntentRequestDataWriter::_narrow(oir_dw_base);
   if (!oir_dw_) {
     ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIClient::init: OperatorIntentRequestDataWriter narrow failed\n"));
+    return DDS::RETCODE_ERROR;
+  }
+
+  // Subscribe to the tms::ActiveMicrogridControllerState topic
+  tms::ActiveMicrogridControllerStateTypeSupport_var amcs_ts = new tms::ActiveMicrogridControllerStateTypeSupportImpl;
+  if (DDS::RETCODE_OK != amcs_ts->register_type(dp, "")) {
+    ACE_ERROR((LM_ERROR, "(%P|%t) CLIClient::init: register_type ActiveMicrogridControllerState failed\n"));
+    return DDS::RETCODE_ERROR;
+  }
+
+  CORBA::String_var amcs_type_name = amcs_ts->get_type_name();
+  DDS::Topic_var amcs_topic = dp->create_topic(tms::topic::TOPIC_ACTIVE_MICROGRID_CONTROLLER_STATE.c_str(),
+                                               amcs_type_name,
+                                               TOPIC_QOS_DEFAULT,
+                                               nullptr,
+                                               ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
+  if (!amcs_topic) {
+    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIClient::init: create_topic \"%C\" failed\n",
+               tms::topic::TOPIC_ACTIVE_MICROGRID_CONTROLLER_STATE.c_str()));
+    return DDS::RETCODE_ERROR;
+  }
+
+  const DDS::SubscriberQos tms_sub_qos = Qos::Subscriber::get_qos();
+  DDS::Subscriber_var tms_sub = dp->create_subscriber(tms_sub_qos,
+                                                      nullptr,
+                                                      ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
+  if (!tms_sub) {
+    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIClient::init: create_subscriber with TMS QoS failed\n"));
+    return DDS::RETCODE_ERROR;
+  }
+
+  const DDS::DataReaderQos& amcs_dr_qos = Qos::DataReader::fn_map.at(tms::topic::TOPIC_ACTIVE_MICROGRID_CONTROLLER_STATE)(device_id);
+  DDS::DataReaderListener_var amcs_listener(new ActiveMicrogridControllerStateDataReaderListenerImpl(*this));
+  DDS::DataReader_var amcs_dr_base = tms_sub->create_datareader(amcs_topic,
+                                                                amcs_dr_qos,
+                                                                amcs_listener,
+                                                                ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
+  if (!amcs_dr_base) {
+    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIClient::init: create_datareader for topic \"%C\" failed\n",
+               tms::topic::TOPIC_ACTIVE_MICROGRID_CONTROLLER_STATE.c_str()));
     return DDS::RETCODE_ERROR;
   }
 
@@ -326,6 +367,19 @@ void CLIClient::run()
   std::thread thr(&CLIClient::run_cli, this);
   reactor_->run_reactor_event_loop();
   thr.join();
+}
+
+void CLIClient::set_active_controller(const tms::Identity& device_id,
+                                      const OPENDDS_OPTIONAL_NS::optional<tms::Identity>& master_id)
+{
+  std::lock_guard<std::mutex> guard(active_controller_m_);
+  if (master_id.has_value()) {
+    active_controllers_[device_id] = master_id.value();
+  }
+  else {
+    // The device has lost its active controller or hasn't selected one yet.
+    active_controllers_[device_id] = "";
+  }
 }
 
 void CLIClient::tolower(std::string& s) const

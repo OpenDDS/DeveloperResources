@@ -6,8 +6,9 @@
 
 // If caller passes a non-null reactor, use it unmodified.
 // Otherwise, create another reactor for this class separated from the one for Handshaking.
-ControllerSelector::ControllerSelector(ACE_Reactor* reactor)
+ControllerSelector::ControllerSelector(const tms::Identity& device_id, ACE_Reactor* reactor)
   : TimerHandler(reactor)
+  , device_id_(device_id)
 {
   if (!reactor) {
     reactor_ = new ACE_Reactor;
@@ -87,7 +88,7 @@ void ControllerSelector::timer_fired(Timer<NewController>& timer)
 
   if (now - it->second < heartbeat_deadline) {
     selected_ = mc_id;
-    // TODO: Send ActiveMicrogridControllerState
+    send_controller_state();
   }
 }
 
@@ -144,6 +145,20 @@ void ControllerSelector::select(const tms::Identity& id, Sec last_hb)
 {
   ACE_DEBUG((LM_INFO, "(%P|%t) INFO: ControllerSelector::select: \"%C\"\n", id.c_str()));
   selected_ = id;
+  send_controller_state();
   schedule_once(MissedHeartbeat{}, heartbeat_deadline - last_hb);
-  // TODO: Send ActiveMicrogridControllerState
+}
+
+void ControllerSelector::send_controller_state()
+{
+  tms::ActiveMicrogridControllerState amcs;
+  amcs.deviceId() = device_id_;
+  if (!selected_.empty()) {
+    amcs.masterId() = selected_;
+  }
+
+  const DDS::ReturnCode_t rc = amcs_dw_->write(amcs, DDS::HANDLE_NIL);
+  if (rc != DDS::RETCODE_OK) {
+    ACE_ERROR((LM_WARNING, "(%P|%t) WARNING: ControllerSelector::send_controller_state: write ActiveMicrogridControllerState failed\n"));
+  }
 }
