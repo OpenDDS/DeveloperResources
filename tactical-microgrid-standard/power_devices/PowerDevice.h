@@ -7,6 +7,7 @@
 #include "PowerSim_Idl_export.h"
 
 #include <condition_variable>
+#include <thread>
 
 class PowerSim_Idl_Export PowerDevice : public Handshaking {
 public:
