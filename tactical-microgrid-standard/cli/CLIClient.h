@@ -1,5 +1,5 @@
-#ifndef CONTROLLER_CLI_CLIENT_H
-#define CONTROLLER_CLI_CLIENT_H
+#ifndef CLI_CLI_CLIENT_H
+#define CLI_CLI_CLIENT_H
 
 #include "common/Handshaking.h"
 #include "controller/Common.h"
@@ -36,7 +36,10 @@ public:
   ~CLIClient() {}
 
   DDS::ReturnCode_t init(DDS::DomainId_t domain_id, int argc = 0, char* argv[] = nullptr);
+
   void run();
+
+  void set_active_controller(const tms::Identity& device_id, const OPENDDS_OPTIONAL_NS::optional<tms::Identity>& master_id);
 
 private:
   // Initialize DDS entities in the TMS domain
@@ -127,6 +130,12 @@ private:
 
   // The current microgrid controller with which the CLI client is interacting
   tms::Identity curr_controller_;
+
+  mutable std::mutex active_controllers_m_;
+
+  // Active controller selected by each power device (power device => its controller).
+  // Can be used to check that all power devices will eventually select the same active controller.
+  std::map<tms::Identity, tms::Identity> active_controllers_;
 };
 
 #endif

@@ -13,6 +13,7 @@
 #include <memory>
 #include <stdexcept>
 #include <typeinfo>
+#include <iostream>
 
 using Sec = std::chrono::seconds;
 using Clock = std::chrono::system_clock;
@@ -185,7 +186,12 @@ public:
   int handle_timeout(const ACE_Time_Value&, const void* arg)
   {
     Guard g(lock_);
-    auto timer = active_timers_[*reinterpret_cast<const TimerId*>(arg)];
+    auto timer_id = *reinterpret_cast<const TimerId*>(arg);
+    if (active_timers_.count(timer_id) == 0) {
+      ACE_ERROR((LM_WARNING, "(%P|%t) WARNING: TimerHandler::handle_timeout: timer id %d does NOT exist\n",
+                 timer_id));
+    }
+    auto timer = active_timers_[timer_id];
     any_timer_fired(timer);
     bool exit_after = false;
     std::visit([&](auto&& value) {
@@ -200,7 +206,7 @@ public:
 
 protected:
   mutable Mutex lock_;
-  ACE_Reactor* const reactor_;
+  ACE_Reactor* reactor_;
 
   int end_event_loop(bool yes = true)
   {

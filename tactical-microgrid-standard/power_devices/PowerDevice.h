@@ -7,12 +7,14 @@
 #include "PowerSim_Idl_export.h"
 
 #include <condition_variable>
+#include <thread>
 
 class PowerSim_Idl_Export PowerDevice : public Handshaking {
 public:
   explicit PowerDevice(const tms::Identity& id, tms::DeviceRole role = tms::DeviceRole::ROLE_SOURCE, bool verbose = false)
     : Handshaking(id)
     , verbose_(verbose)
+    , controller_selector_(id)
     , role_(role)
   {
   }
@@ -26,7 +28,7 @@ public:
 
   virtual int run()
   {
-    return reactor_->run_reactor_event_loop() == 0 ? 0 : 1;
+    return run_i();
   }
 
   powersim::ConnectedDeviceSeq connected_devices_in() const
@@ -53,6 +55,19 @@ public:
   }
 
 protected:
+  virtual int run_i()
+  {
+    if (controller_selector_.reactor() == reactor_) {
+      // Same reactor instance for both handshaking and controller selection
+      return reactor_->run_reactor_event_loop() == 0 ? 0 : 1;
+    }
+
+    std::thread handshaking_thr([&] { reactor_->run_reactor_event_loop(); });
+    const int ret = controller_selector_.get_reactor()->run_reactor_event_loop() == 0 ? 0 : 1;
+    handshaking_thr.join();
+    return ret;
+  }
+
   // Concrete power device should override this function depending on their role.
   virtual tms::DeviceInfo populate_device_info() const;
 
