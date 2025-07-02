@@ -376,8 +376,7 @@ void CLIClient::set_active_controller(const tms::Identity& device_id,
   std::lock_guard<std::mutex> guard(active_controllers_m_);
   if (master_id.has_value()) {
     active_controllers_[device_id] = master_id.value();
-  }
-  else {
+  } else {
     // The device has lost its active controller or hasn't selected one yet.
     active_controllers_[device_id] = "";
   }
