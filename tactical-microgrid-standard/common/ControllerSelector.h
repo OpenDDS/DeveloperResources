@@ -65,7 +65,7 @@ public:
     return selected_ == id;
   }
 
-  ACE_Reactor* const get_reactor() const
+  ACE_Reactor* get_reactor() const
   {
     Guard g(lock_);
     return reactor_;
