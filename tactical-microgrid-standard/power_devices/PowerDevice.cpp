@@ -40,7 +40,7 @@ DDS::ReturnCode_t PowerDevice::init(DDS::DomainId_t domain, int argc, char* argv
                                                          TOPIC_QOS_DEFAULT,
                                                          nullptr,
                                                          ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
-  if (amcs_topic) {
+  if (!amcs_topic) {
     ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: PowerDevice::init: create topic '%C' failed\n",
                tms::topic::TOPIC_ACTIVE_MICROGRID_CONTROLLER_STATE.c_str()));
     return DDS::RETCODE_ERROR;

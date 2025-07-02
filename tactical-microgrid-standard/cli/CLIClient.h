@@ -131,7 +131,7 @@ private:
   // The current microgrid controller with which the CLI client is interacting
   tms::Identity curr_controller_;
 
-  mutable std::mutex active_controller_m_;
+  mutable std::mutex active_controllers_m_;
 
   // Active controller selected by each power device (power device => its controller).
   // Can be used to check that all power devices will eventually select the same active controller.

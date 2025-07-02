@@ -10,6 +10,7 @@
 
 #include <cctype>
 #include <thread>
+#include <iomanip>
 
 CLIClient::CLIClient(const tms::Identity& id)
   : handshaking_(id)
@@ -372,7 +373,7 @@ void CLIClient::run()
 void CLIClient::set_active_controller(const tms::Identity& device_id,
                                       const OPENDDS_OPTIONAL_NS::optional<tms::Identity>& master_id)
 {
-  std::lock_guard<std::mutex> guard(active_controller_m_);
+  std::lock_guard<std::mutex> guard(active_controllers_m_);
   if (master_id.has_value()) {
     active_controllers_[device_id] = master_id.value();
   }
@@ -469,9 +470,22 @@ void CLIClient::display_power_devices() const
   std::cout << "Number of Connected Power Devices: " << power_devices_.size() << std::endl;
   size_t i = 1;
   for (auto it = power_devices_.begin(); it != power_devices_.end(); ++it) {
-    std::cout << i << ". Device Id: " << it->first <<
-      ". Type: " << Utils::device_role_to_string(it->second.device_info().role()) <<
-      ". Energy Level: " << energy_level_to_string(it->second.essl()) << std::endl;
+    std::string selected_controller;
+    {
+      std::lock_guard<std::mutex> guard(active_controllers_m_);
+      auto ac_it = active_controllers_.find(it->first);
+      if (ac_it != active_controllers_.end()) {
+        selected_controller = "\"" + ac_it->second + "\"";
+      } else {
+        selected_controller = "\"Undetermined\"";
+      }
+    }
+    const std::string formated_id = "\"" + it->first + "\"";
+    std::cout << std::setfill(' ') << std::setw(3) << i++
+      << ". Id: " << std::left << std::setw(15) << formated_id
+      << "| Type: " << std::left << std::setw(18) << Utils::device_role_to_string(it->second.device_info().role())
+      << "| Energy Level: " << std::left << std::setw(15) << energy_level_to_string(it->second.essl())
+      << "| Active Controller: " << std::left << selected_controller << std::endl;
   }
 }
 
