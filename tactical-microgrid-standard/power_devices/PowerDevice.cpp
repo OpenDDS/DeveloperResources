@@ -178,16 +178,20 @@ void PowerDevice::connected_devices(const powersim::ConnectedDeviceSeq& devices)
       if (!connected_devices_out_.empty()) {
         ACE_ERROR((LM_NOTICE, "(%P|%t) NOTICE: PowerDevice::connected_devices: Source \"%C\" already connects to \"%C\". Replace with \"%C\"\n",
                    get_device_id().c_str(), connected_devices_out_[0].id().c_str(), devices[i].id().c_str()));
+        connected_devices_out_[0] = devices[i];
+      } else {
+        connected_devices_out_.push_back(devices[i]);
       }
-      connected_devices_out_[0] = devices[i];
       break;
     case tms::DeviceRole::ROLE_LOAD:
       // Load device has a single in port.
       if (!connected_devices_in_.empty()) {
         ACE_ERROR((LM_NOTICE, "(%P|%t) NOTICE: PowerDevice::connected_devices: Load \"%C\" already connects to \"%C\". Replace with \"%C\"\n",
                    get_device_id().c_str(), connected_devices_in_[0].id().c_str(), devices[i].id().c_str()));
+        connected_devices_in_[0] = devices[i];
+      } else {
+        connected_devices_in_.push_back(devices[i]);
       }
-      connected_devices_in_[0] = devices[i];
       break;
     case tms::DeviceRole::ROLE_DISTRIBUTION:
       {

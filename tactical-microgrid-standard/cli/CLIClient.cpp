@@ -476,7 +476,7 @@ void CLIClient::display_power_devices() const
       }
     }
     const std::string formated_id = "\"" + it->first + "\"";
-    std::cout << std::setfill(' ') << std::setw(3) << i++
+    std::cout << std::right << std::setfill(' ') << std::setw(3) << i++
       << ". Id: " << std::left << std::setw(15) << formated_id
       << "| Type: " << std::left << std::setw(18) << Utils::device_role_to_string(it->second.device_info().role())
       << "| Energy Level: " << std::left << std::setw(15) << energy_level_to_string(it->second.essl())
