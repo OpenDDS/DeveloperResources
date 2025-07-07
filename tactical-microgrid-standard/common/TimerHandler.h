@@ -15,6 +15,8 @@
 #include <typeinfo>
 #include <iostream>
 
+#include <ace/Timer_Hash.h>
+
 using Sec = std::chrono::seconds;
 using Clock = std::chrono::system_clock;
 using TimePoint = std::chrono::time_point<Clock>;
@@ -79,14 +81,32 @@ class TimerHandler : public ACE_Event_Handler, protected TimerHolder<EventTypes>
 public:
   using AnyTimer = std::variant<typename Timer<EventTypes>::Ptr...>;
 
+  // Create a new ACE_Reactor with ACE_Timer_Hash if @a reactor is null.
+  // Otherwise, use the provided reactor.
   explicit TimerHandler(ACE_Reactor* reactor = nullptr)
-    : reactor_(reactor ? reactor : ACE_Reactor::instance())
+    : reactor_(reactor)
   {
+    if (!reactor) {
+      reactor_ = new ACE_Reactor;
+
+      // We had an issue with using ACE_Reactor's default timer queue, which is
+      // ACE_Timer_Heap, when the rate of timer creation and cancellation is high
+      // for detecting missed heartbeat deadline from microgrid controllers.
+      // ACE_Timer_Hash seems working okay.
+      timer_queue_ = new ACE_Timer_Hash;
+      reactor_->timer_queue(timer_queue_);
+      own_reactor_ = true;
+    }
   }
 
   virtual ~TimerHandler()
   {
     cancel_all();
+
+    if (own_reactor_) {
+      delete timer_queue_;
+      delete reactor_;
+    }
   }
 
   template <typename EventType>
@@ -207,6 +227,10 @@ public:
 protected:
   mutable Mutex lock_;
   ACE_Reactor* reactor_;
+
+  // Allow using non-default timer queue
+  ACE_Timer_Queue* timer_queue_ = nullptr;
+  bool own_reactor_ = false;
 
   int end_event_loop(bool yes = true)
   {

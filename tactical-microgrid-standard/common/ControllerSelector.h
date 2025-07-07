@@ -47,7 +47,7 @@ class PowerDevice;
 class OpenDDS_TMS_Export ControllerSelector :
   public TimerHandler<NewController, MissedHeartbeat, LostController, NoControllers> {
 public:
-  explicit ControllerSelector(const tms::Identity& device_id, ACE_Reactor* reactor = nullptr);
+  explicit ControllerSelector(const tms::Identity& device_id);
   ~ControllerSelector();
 
   void got_heartbeat(const tms::Heartbeat& hb);
@@ -77,10 +77,6 @@ public:
   }
 
 private:
-  // Allow using non-default timer queue
-  ACE_Timer_Queue* timer_queue_ = nullptr;
-  bool own_reactor_ = false;
-
   static constexpr Sec heartbeat_deadline = Sec(3);
   static constexpr Sec new_active_controller_delay = Sec(3);
   static constexpr Sec lost_active_controller_delay = Sec(6);

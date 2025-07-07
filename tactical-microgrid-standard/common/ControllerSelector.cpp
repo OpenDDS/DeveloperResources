@@ -1,34 +1,12 @@
 #include "ControllerSelector.h"
 
-#include <ace/Timer_Hash.h>
-#include <ace/Timer_Heap.h>
-#include <ace/Select_Reactor.h>
-
-// If caller passes a non-null reactor, use it unmodified.
-// Otherwise, create another reactor for this class separated from the one for Handshaking.
-ControllerSelector::ControllerSelector(const tms::Identity& device_id, ACE_Reactor* reactor)
-  : TimerHandler(reactor)
-  , device_id_(device_id)
+ControllerSelector::ControllerSelector(const tms::Identity& device_id)
+  : device_id_(device_id)
 {
-  if (!reactor) {
-    reactor_ = new ACE_Reactor;
-
-    // We had an issue with using ACE_Reactor's default timer queue, which is
-    // ACE_Timer_Heap, when the rate of timer creation and cancellation is high
-    // for detecting missed heartbeat deadline from microgrid controllers.
-    // ACE_Timer_Hash seems working okay.
-    timer_queue_ = new ACE_Timer_Hash;
-    reactor_->timer_queue(timer_queue_);
-    own_reactor_ = true;
-  }
 }
 
 ControllerSelector::~ControllerSelector()
 {
-  if (own_reactor_) {
-    delete timer_queue_;
-    delete reactor_;
-  }
 }
 
 void ControllerSelector::got_heartbeat(const tms::Heartbeat& hb)
