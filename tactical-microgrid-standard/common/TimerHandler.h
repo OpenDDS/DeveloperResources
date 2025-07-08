@@ -209,7 +209,7 @@ public:
     auto timer_id = *reinterpret_cast<const TimerId*>(arg);
     if (active_timers_.count(timer_id) == 0) {
       ACE_ERROR((LM_WARNING, "(%P|%t) WARNING: TimerHandler::handle_timeout: timer id %q does NOT exist\n",
-                 timer_id));
+                 static_cast<ACE_INT64>(timer_id)));
     }
     auto timer = active_timers_[timer_id];
     any_timer_fired(timer);
