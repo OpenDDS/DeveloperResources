@@ -13,7 +13,8 @@
 class OpenDDS_TMS_Export Handshaking : public TimerHandler<tms::Heartbeat> {
 public:
   explicit Handshaking(const tms::Identity& device_id)
-    : device_id_(device_id)
+    : TimerHandler(ACE_Reactor::instance())
+    , device_id_(device_id)
     , seq_num_(0)
   {}
 

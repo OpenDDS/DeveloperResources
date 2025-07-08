@@ -1,6 +1,7 @@
 #include "CLIClient.h"
 #include "common/QosHelper.h"
 #include "common/Utils.h"
+#include "ActiveMicrogridControllerStateDataReaderListenerImpl.h"
 
 #include <dds/DCPS/PublisherImpl.h>
 #include <dds/DCPS/SubscriberImpl.h>
@@ -9,6 +10,7 @@
 
 #include <cctype>
 #include <thread>
+#include <iomanip>
 
 CLIClient::CLIClient(const tms::Identity& id)
   : handshaking_(id)
@@ -87,6 +89,46 @@ DDS::ReturnCode_t CLIClient::init_tms(DDS::DomainId_t domain_id, int argc, char*
   oir_dw_ = tms::OperatorIntentRequestDataWriter::_narrow(oir_dw_base);
   if (!oir_dw_) {
     ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIClient::init: OperatorIntentRequestDataWriter narrow failed\n"));
+    return DDS::RETCODE_ERROR;
+  }
+
+  // Subscribe to the tms::ActiveMicrogridControllerState topic
+  tms::ActiveMicrogridControllerStateTypeSupport_var amcs_ts = new tms::ActiveMicrogridControllerStateTypeSupportImpl;
+  if (DDS::RETCODE_OK != amcs_ts->register_type(dp, "")) {
+    ACE_ERROR((LM_ERROR, "(%P|%t) CLIClient::init: register_type ActiveMicrogridControllerState failed\n"));
+    return DDS::RETCODE_ERROR;
+  }
+
+  CORBA::String_var amcs_type_name = amcs_ts->get_type_name();
+  DDS::Topic_var amcs_topic = dp->create_topic(tms::topic::TOPIC_ACTIVE_MICROGRID_CONTROLLER_STATE.c_str(),
+                                               amcs_type_name,
+                                               TOPIC_QOS_DEFAULT,
+                                               nullptr,
+                                               ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
+  if (!amcs_topic) {
+    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIClient::init: create_topic \"%C\" failed\n",
+               tms::topic::TOPIC_ACTIVE_MICROGRID_CONTROLLER_STATE.c_str()));
+    return DDS::RETCODE_ERROR;
+  }
+
+  const DDS::SubscriberQos tms_sub_qos = Qos::Subscriber::get_qos();
+  DDS::Subscriber_var tms_sub = dp->create_subscriber(tms_sub_qos,
+                                                      nullptr,
+                                                      ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
+  if (!tms_sub) {
+    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIClient::init: create_subscriber with TMS QoS failed\n"));
+    return DDS::RETCODE_ERROR;
+  }
+
+  const DDS::DataReaderQos& amcs_dr_qos = Qos::DataReader::fn_map.at(tms::topic::TOPIC_ACTIVE_MICROGRID_CONTROLLER_STATE)(device_id);
+  DDS::DataReaderListener_var amcs_listener(new ActiveMicrogridControllerStateDataReaderListenerImpl(*this));
+  DDS::DataReader_var amcs_dr_base = tms_sub->create_datareader(amcs_topic,
+                                                                amcs_dr_qos,
+                                                                amcs_listener,
+                                                                ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
+  if (!amcs_dr_base) {
+    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIClient::init: create_datareader for topic \"%C\" failed\n",
+               tms::topic::TOPIC_ACTIVE_MICROGRID_CONTROLLER_STATE.c_str()));
     return DDS::RETCODE_ERROR;
   }
 
@@ -328,6 +370,14 @@ void CLIClient::run()
   thr.join();
 }
 
+void CLIClient::set_active_controller(const tms::Identity& device_id,
+                                      const std::optional<tms::Identity>& master_id)
+{
+  std::lock_guard<std::mutex> guard(active_controllers_m_);
+  // The value is absent if the device has lost its active controller or hasn't selected one yet.
+  active_controllers_[device_id] = master_id.value_or("");
+}
+
 void CLIClient::tolower(std::string& s) const
 {
   for (size_t i = 0; i < s.size(); ++i) {
@@ -415,9 +465,22 @@ void CLIClient::display_power_devices() const
   std::cout << "Number of Connected Power Devices: " << power_devices_.size() << std::endl;
   size_t i = 1;
   for (auto it = power_devices_.begin(); it != power_devices_.end(); ++it) {
-    std::cout << i << ". Device Id: " << it->first <<
-      ". Type: " << Utils::device_role_to_string(it->second.device_info().role()) <<
-      ". Energy Level: " << energy_level_to_string(it->second.essl()) << std::endl;
+    std::string selected_controller;
+    {
+      std::lock_guard<std::mutex> guard(active_controllers_m_);
+      auto ac_it = active_controllers_.find(it->first);
+      if (ac_it != active_controllers_.end()) {
+        selected_controller = "\"" + ac_it->second + "\"";
+      } else {
+        selected_controller = "\"Undetermined\"";
+      }
+    }
+    const std::string formated_id = "\"" + it->first + "\"";
+    std::cout << std::right << std::setfill(' ') << std::setw(3) << i++
+      << ". Id: " << std::left << std::setw(15) << formated_id
+      << "| Type: " << std::left << std::setw(18) << Utils::device_role_to_string(it->second.device_info().role())
+      << "| Energy Level: " << std::left << std::setw(15) << energy_level_to_string(it->second.essl())
+      << "| Active Controller: " << std::left << selected_controller << std::endl;
   }
 }
 

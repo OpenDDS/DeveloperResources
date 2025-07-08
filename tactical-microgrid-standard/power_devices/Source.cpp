@@ -241,12 +241,10 @@ public:
 
   int run() override
   {
-    std::thread thr(&SourceDevice::simulate_power_flow, this);
-    if (reactor_->run_reactor_event_loop() != 0) {
-      return 1;
-    }
-    thr.join();
-    return 0;
+    std::thread sim_thr(&SourceDevice::simulate_power_flow, this);
+    const int ret = run_i();
+    sim_thr.join();
+    return ret;
   }
 
   tms::ReplyDataWriter_var reply_dw() const

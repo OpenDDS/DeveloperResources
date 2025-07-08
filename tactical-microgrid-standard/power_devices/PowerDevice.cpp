@@ -1,6 +1,7 @@
 #include "PowerDevice.h"
 #include "PowerConnectionDataReaderListenerImpl.h"
 #include "common/Utils.h"
+#include "common/QosHelper.h"
 
 #include <dds/DCPS/Marked_Default_Qos.h>
 
@@ -22,6 +23,56 @@ DDS::ReturnCode_t PowerDevice::init(DDS::DomainId_t domain, int argc, char* argv
   if (rc != DDS::RETCODE_OK) {
     return rc;
   }
+
+  DDS::DomainParticipant_var dp = get_domain_participant();
+
+  // Publish to the tms::ActiveMicrogridControllerState topic
+  tms::ActiveMicrogridControllerStateTypeSupport_var amcs_ts = new tms::ActiveMicrogridControllerStateTypeSupportImpl();
+  rc = amcs_ts->register_type(participant_, "");
+  if (DDS::RETCODE_OK != rc) {
+    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: PowerDevice::init: register_type for ActiveMicrogridControllerState failed\n"));
+    return rc;
+  }
+
+  CORBA::String_var amcs_type_name = amcs_ts->get_type_name();
+  DDS::Topic_var amcs_topic = participant_->create_topic(tms::topic::TOPIC_ACTIVE_MICROGRID_CONTROLLER_STATE.c_str(),
+                                                         amcs_type_name,
+                                                         TOPIC_QOS_DEFAULT,
+                                                         nullptr,
+                                                         ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
+  if (!amcs_topic) {
+    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: PowerDevice::init: create topic '%C' failed\n",
+               tms::topic::TOPIC_ACTIVE_MICROGRID_CONTROLLER_STATE.c_str()));
+    return DDS::RETCODE_ERROR;
+  }
+
+  const DDS::PublisherQos tms_pub_qos = Qos::Publisher::get_qos();
+  DDS::Publisher_var tms_pub = dp->create_publisher(tms_pub_qos,
+                                                    nullptr,
+                                                    ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
+  if (!tms_pub) {
+    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: PowerDevice::init: create_publisher with TMS QoS failed\n"));
+    return DDS::RETCODE_ERROR;
+  }
+
+  const DDS::DataWriterQos& amcs_dw_qos = Qos::DataWriter::fn_map.at(tms::topic::TOPIC_ACTIVE_MICROGRID_CONTROLLER_STATE)(device_id_);
+  DDS::DataWriter_var amcs_dw_base = tms_pub->create_datawriter(amcs_topic,
+                                                             amcs_dw_qos,
+                                                             nullptr,
+                                                             ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
+  if (!amcs_dw_base) {
+    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: PowerDevice::init: create_datawriter for topic \"%C\" failed\n",
+               tms::topic::TOPIC_ACTIVE_MICROGRID_CONTROLLER_STATE.c_str()));
+    return DDS::RETCODE_ERROR;
+  }
+
+  tms::ActiveMicrogridControllerStateDataWriter_var amcs_dw = tms::ActiveMicrogridControllerStateDataWriter::_narrow(amcs_dw_base);
+  if (!amcs_dw) {
+    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: PowerDevice::init: ActiveMicrogridControllerStateDataWriter narrow failed\n"));
+    return DDS::RETCODE_ERROR;
+  }
+
+  controller_selector_.set_ActiveMicrogridControllerState_writer(amcs_dw);
 
   // Subscribe to the PowerConnection topic
   const DDS::DomainId_t sim_domain_id = Utils::get_sim_domain_id(domain);
@@ -127,16 +178,20 @@ void PowerDevice::connected_devices(const powersim::ConnectedDeviceSeq& devices)
       if (!connected_devices_out_.empty()) {
         ACE_ERROR((LM_NOTICE, "(%P|%t) NOTICE: PowerDevice::connected_devices: Source \"%C\" already connects to \"%C\". Replace with \"%C\"\n",
                    get_device_id().c_str(), connected_devices_out_[0].id().c_str(), devices[i].id().c_str()));
+        connected_devices_out_[0] = devices[i];
+      } else {
+        connected_devices_out_.push_back(devices[i]);
       }
-      connected_devices_out_[0] = devices[i];
       break;
     case tms::DeviceRole::ROLE_LOAD:
       // Load device has a single in port.
       if (!connected_devices_in_.empty()) {
         ACE_ERROR((LM_NOTICE, "(%P|%t) NOTICE: PowerDevice::connected_devices: Load \"%C\" already connects to \"%C\". Replace with \"%C\"\n",
                    get_device_id().c_str(), connected_devices_in_[0].id().c_str(), devices[i].id().c_str()));
+        connected_devices_in_[0] = devices[i];
+      } else {
+        connected_devices_in_.push_back(devices[i]);
       }
-      connected_devices_in_[0] = devices[i];
       break;
     case tms::DeviceRole::ROLE_DISTRIBUTION:
       {
