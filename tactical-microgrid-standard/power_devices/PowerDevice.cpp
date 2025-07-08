@@ -1,5 +1,6 @@
 #include "PowerDevice.h"
 #include "PowerConnectionDataReaderListenerImpl.h"
+#include "EnergyStartStopRequestDataReaderListenerImpl.h"
 #include "common/Utils.h"
 #include "common/QosHelper.h"
 
@@ -26,6 +27,91 @@ DDS::ReturnCode_t PowerDevice::init(DDS::DomainId_t domain, int argc, char* argv
 
   DDS::DomainParticipant_var dp = get_domain_participant();
 
+  // Subscribe to tms::EnergyStartStopRequest topic
+  tms::EnergyStartStopRequestTypeSupport_var essr_ts = new tms::EnergyStartStopRequestTypeSupportImpl;
+  if (DDS::RETCODE_OK != essr_ts->register_type(dp, "")) {
+    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: SourceDevice::init: register_type EnergyStartStopRequest failed\n"));
+    return DDS::RETCODE_ERROR;
+  }
+
+  CORBA::String_var essr_type_name = essr_ts->get_type_name();
+  DDS::Topic_var essr_topic = dp->create_topic(tms::topic::TOPIC_ENERGY_START_STOP_REQUEST.c_str(),
+                                               essr_type_name,
+                                               TOPIC_QOS_DEFAULT,
+                                               nullptr,
+                                               ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
+  if (!essr_topic) {
+    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: SourceDevice::init: create_topic \"%C\" failed\n",
+               tms::topic::TOPIC_ENERGY_START_STOP_REQUEST.c_str()));
+    return DDS::RETCODE_ERROR;
+  }
+
+  const DDS::SubscriberQos tms_sub_qos = Qos::Subscriber::get_qos();
+  DDS::Subscriber_var tms_sub = dp->create_subscriber(tms_sub_qos,
+                                                      nullptr,
+                                                      ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
+  if (!tms_sub) {
+    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: SourceDevice::init: create_subscriber with TMS QoS failed\n"));
+    return DDS::RETCODE_ERROR;
+  }
+
+  const DDS::DataReaderQos& essr_dr_qos = Qos::DataReader::fn_map.at(tms::topic::TOPIC_ENERGY_START_STOP_REQUEST)(device_id_);
+  DDS::DataReaderListener_var essr_dr_listener(new EnergyStartStopRequestDataReaderListenerImpl(*this));
+  DDS::DataReader_var essr_dr_base = tms_sub->create_datareader(essr_topic,
+                                                                essr_dr_qos,
+                                                                essr_dr_listener,
+                                                                ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
+  if (!essr_dr_base) {
+    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: SourceDevice::init: create_datareader for topic \"%C\" failed\n",
+               tms::topic::TOPIC_ENERGY_START_STOP_REQUEST.c_str()));
+    return DDS::RETCODE_ERROR;
+  }
+
+  // Publish to tms::Reply topic
+  tms::ReplyTypeSupport_var reply_ts = new tms::ReplyTypeSupportImpl;
+  if (DDS::RETCODE_OK != reply_ts->register_type(dp, "")) {
+    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: SourceDevice::init: register_type tms::Reply failed\n"));
+    return DDS::RETCODE_ERROR;
+  }
+
+  CORBA::String_var reply_type_name = reply_ts->get_type_name();
+  DDS::Topic_var reply_topic = dp->create_topic(tms::topic::TOPIC_REPLY.c_str(),
+                                                reply_type_name,
+                                                TOPIC_QOS_DEFAULT,
+                                                nullptr,
+                                                ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
+  if (!reply_topic) {
+    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: SourceDevice::init: create_topic \"%C\" failed\n",
+               tms::topic::TOPIC_REPLY.c_str()));
+    return DDS::RETCODE_ERROR;
+  }
+
+  const DDS::PublisherQos tms_pub_qos = Qos::Publisher::get_qos();
+  DDS::Publisher_var tms_pub = dp->create_publisher(tms_pub_qos,
+                                                    nullptr,
+                                                    ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
+  if (!tms_pub) {
+    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: SourceDevice::init: create_publisher with TMS QoS failed\n"));
+    return DDS::RETCODE_ERROR;
+  }
+
+  const DDS::DataWriterQos& reply_dw_qos = Qos::DataWriter::fn_map.at(tms::topic::TOPIC_REPLY)(device_id_);
+  DDS::DataWriter_var reply_dw_base = tms_pub->create_datawriter(reply_topic,
+                                                                 reply_dw_qos,
+                                                                 nullptr,
+                                                                 ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
+  if (!reply_dw_base) {
+    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: SourceDevice::init: create_datawriter for topic \"%C\" failed\n",
+               tms::topic::TOPIC_REPLY.c_str()));
+    return DDS::RETCODE_ERROR;
+  }
+
+  reply_dw_ = tms::ReplyDataWriter::_narrow(reply_dw_base);
+  if (!reply_dw_) {
+    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: SourceDevice::init: ReplyDataWriter narrow failed\n"));
+    return DDS::RETCODE_ERROR;
+  }
+
   // Publish to the tms::ActiveMicrogridControllerState topic
   tms::ActiveMicrogridControllerStateTypeSupport_var amcs_ts = new tms::ActiveMicrogridControllerStateTypeSupportImpl();
   rc = amcs_ts->register_type(participant_, "");
@@ -43,15 +129,6 @@ DDS::ReturnCode_t PowerDevice::init(DDS::DomainId_t domain, int argc, char* argv
   if (!amcs_topic) {
     ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: PowerDevice::init: create topic '%C' failed\n",
                tms::topic::TOPIC_ACTIVE_MICROGRID_CONTROLLER_STATE.c_str()));
-    return DDS::RETCODE_ERROR;
-  }
-
-  const DDS::PublisherQos tms_pub_qos = Qos::Publisher::get_qos();
-  DDS::Publisher_var tms_pub = dp->create_publisher(tms_pub_qos,
-                                                    nullptr,
-                                                    ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
-  if (!tms_pub) {
-    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: PowerDevice::init: create_publisher with TMS QoS failed\n"));
     return DDS::RETCODE_ERROR;
   }
 
@@ -74,7 +151,7 @@ DDS::ReturnCode_t PowerDevice::init(DDS::DomainId_t domain, int argc, char* argv
 
   controller_selector_.set_ActiveMicrogridControllerState_writer(amcs_dw);
 
-  // Subscribe to the PowerConnection topic
+  // Subscribe to the powersim::PowerConnection topic
   const DDS::DomainId_t sim_domain_id = Utils::get_sim_domain_id(domain);
   sim_participant_ = get_participant_factory()->create_participant(sim_domain_id,
                                                                    PARTICIPANT_QOS_DEFAULT,

@@ -37,6 +37,7 @@ target_link_libraries(Commands_Idl PUBLIC TMS_Common)
 add_library(PowerSim_Idl
   power_devices/PowerDevice.cpp
   power_devices/PowerConnectionDataReaderListenerImpl.cpp
+  power_devices/EnergyStartStopRequestDataReaderListenerImpl.cpp
 )
 opendds_export_header(PowerSim_Idl)
 opendds_target_sources(PowerSim_Idl
