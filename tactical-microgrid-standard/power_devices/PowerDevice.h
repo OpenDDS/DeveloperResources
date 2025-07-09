@@ -54,6 +54,25 @@ public:
     return verbose_;
   }
 
+  tms::ReplyDataWriter_var reply_dw() const
+  {
+    return reply_dw_;
+  }
+
+  // Each concrete power device overrides this method, if necessary, to handle
+  // the change in energy level for that particular power device.
+  virtual void energy_level(tms::EnergyStartStopLevel essl)
+  {
+    std::lock_guard<std::mutex> guard(essl_m_);
+    essl_ = essl;
+  }
+
+  tms::EnergyStartStopLevel energy_level() const
+  {
+    std::lock_guard<std::mutex> guard(essl_m_);
+    return essl_;
+  }
+
 protected:
   virtual int run_i()
   {
@@ -84,6 +103,12 @@ protected:
 
   // Participant containing entities for simulation topics
   DDS::DomainParticipant_var sim_participant_;
+
+  // Data writer for sending tms::Reply. Used for tms::EnergyStartStopRequest, for example.
+  tms::ReplyDataWriter_var reply_dw_;
+
+  mutable std::mutex essl_m_;
+  tms::EnergyStartStopLevel essl_ = tms::EnergyStartStopLevel::ESSL_OPERATIONAL;
 
   // Whether to print power simulation messages
   bool verbose_;

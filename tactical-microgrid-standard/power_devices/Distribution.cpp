@@ -152,6 +152,11 @@ void ElectricCurrentDataReaderListenerImpl::on_data_available(DDS::DataReader_pt
     return;
   }
 
+  // Simulate the non-operational mode by ignoring the simulated current messages
+  if (dist_dev_.energy_level() != tms::EnergyStartStopLevel::ESSL_OPERATIONAL) {
+    return;
+  }
+
   const powersim::ConnectedDeviceSeq& connected_devices_in = dist_dev_.connected_devices_in();
   const powersim::ConnectedDeviceSeq& connected_devices_out = dist_dev_.connected_devices_out();
 

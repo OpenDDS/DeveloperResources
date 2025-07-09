@@ -109,6 +109,8 @@ private:
     device_info.powerDevice() = pdi;
     return device_info;
   }
+
+  tms::EnergyStartStopLevel essl_ = tms::EnergyStartStopLevel::ESSL_OPERATIONAL;
 };
 
 void ElectricCurrentDataReaderListenerImpl::on_data_available(DDS::DataReader_ptr reader)
@@ -121,6 +123,11 @@ void ElectricCurrentDataReaderListenerImpl::on_data_available(DDS::DataReader_pt
   if (rc != DDS::RETCODE_OK) {
     ACE_ERROR((LM_WARNING, "(%P|%t) WARNING: ElectricCurrentDataReaderListenerImpl::on_data_available: "
                "take data failed: %C\n", OpenDDS::DCPS::retcode_to_string(rc)));
+    return;
+  }
+
+  // Simulate the non-operational mode by ignoring the simulated current messages
+  if (load_dev_.energy_level() != tms::EnergyStartStopLevel::ESSL_OPERATIONAL) {
     return;
   }
 
