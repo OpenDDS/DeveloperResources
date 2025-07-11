@@ -21,6 +21,7 @@ using Sec = std::chrono::seconds;
 using Clock = std::chrono::system_clock;
 using TimePoint = std::chrono::time_point<Clock>;
 using TimerId = long;
+using TimerKey = std::string;
 constexpr TimerId null_timer_id = 0;
 using Mutex = std::recursive_mutex;
 using Guard = std::lock_guard<Mutex>;
@@ -34,6 +35,17 @@ struct Timer {
 
   std::string name;
   TimerId id = null_timer_id;
+
+  // Timer Ids returned by ACE are not unique and can cause issue.
+  // E.g., MissedHeartbeat timer is scheduled once. When it expires,
+  // LostController is scheduled and the returned id may be the same as the one
+  // associated with the MissedHeartbeat timer. handle_timeout() then adds a new
+  // entry for LostController keyed with that one timer Id. It then erases the
+  // entry for MissedHeartbeat, which used the same exact timer Id as its key.
+  // Consequently, the newly created entry for LostController is deleted instead.
+  // This fixes that with a string key constructed in activate().
+  TimerKey key;
+
   EventType arg = {};
   Sec period = Sec(0);
   Sec delay = Sec(0);
@@ -44,6 +56,18 @@ struct Timer {
     return id != null_timer_id;
   }
 
+  void activate(TimerId a_id)
+  {
+    id = a_id;
+    key = std::to_string(id) + "_" + typeid(EventType).name();
+  }
+
+  void deactivate()
+  {
+    id = null_timer_id;
+    key.clear();
+  }
+
   std::string display_name() const
   {
     std::string rv = std::string("Timer<\"") + typeid(EventType).name() + "\">";
@@ -51,6 +75,11 @@ struct Timer {
       rv += "\"" + name + "\"";
     }
     return rv;
+  }
+
+  void display() const
+  {
+    std::cout << key << std::endl;
   }
 };
 
@@ -129,9 +158,10 @@ public:
     Guard g(lock_);
     assert_inactive<EventType>(timer);
     const TimerId id = reactor_->schedule_timer(
-      this, &timer->id, ACE_Time_Value(timer->delay), ACE_Time_Value(timer->period));
-    timer->id = id;
-    active_timers_[id] = timer;
+      this, &timer->key, ACE_Time_Value(timer->delay), ACE_Time_Value(timer->period));
+    //timer->id = id;
+    timer->activate(id);
+    active_timers_[timer->key] = timer;
   }
 
   template <typename EventType>
@@ -195,9 +225,11 @@ public:
   {
     Guard g(lock_);
     for (auto it = active_timers_.begin(); it != active_timers_.end(); ++it) {
-      reactor_->cancel_timer(it->first);
+      //reactor_->cancel_timer(it->first);
       std::visit([&](auto&& timer) {
-        timer->id = null_timer_id;
+        //timer->id = null_timer_id;
+        reactor_->cancel_timer(timer->id);
+        timer->deactivate();
       }, it->second);
     }
     active_timers_.clear();
@@ -206,12 +238,18 @@ public:
   int handle_timeout(const ACE_Time_Value&, const void* arg)
   {
     Guard g(lock_);
-    auto timer_id = *reinterpret_cast<const TimerId*>(arg);
-    if (active_timers_.count(timer_id) == 0) {
-      ACE_ERROR((LM_WARNING, "(%P|%t) WARNING: TimerHandler::handle_timeout: timer id %q does NOT exist\n",
-                 static_cast<ACE_INT64>(timer_id)));
+    //auto timer_id = *reinterpret_cast<const TimerId*>(arg);
+    //if (active_timers_.count(timer_id) == 0) {
+    //  ACE_ERROR((LM_WARNING, "(%P|%t) WARNING: TimerHandler::handle_timeout: timer id %q does NOT exist\n",
+    //             static_cast<ACE_INT64>(timer_id)));
+    //}
+    auto key = *reinterpret_cast<const std::string*>(arg);
+    if (active_timers_.count(key) == 0) {
+      ACE_ERROR((LM_WARNING, "(%P|%t) WARNING: TimerHandler::handle_timeout: timer key %C does NOT exist\n", key.c_str()));
     }
-    auto timer = active_timers_[timer_id];
+
+    //auto timer = active_timers_[timer_id];
+    auto timer = active_timers_[key];
     any_timer_fired(timer);
     bool exit_after = false;
     std::visit([&](auto&& value) {
@@ -243,6 +281,20 @@ protected:
 
   virtual void any_timer_fired(AnyTimer timer) = 0;
 
+  void display_active_timers(const std::string& prefix) const
+  {
+    // Assume lock_ was held by the caller
+    std::cout << prefix;
+    for (const auto& pair : active_timers_) {
+      //std::cout << "Timer key: " << pair.first;
+      const auto timer = pair.second;
+      std::visit([&](auto&& value) {
+        value->display();
+        //std::cout << "; Timer name: " << value->display_name() << std::endl;
+      }, timer);
+    }
+  }
+
 private:
   template <typename EventType>
   typename Timer<EventType>::MapPtr get_timers()
@@ -261,11 +313,14 @@ private:
   template <typename EventType>
   void timer_wont_run(typename Timer<EventType>::Ptr timer)
   {
-    active_timers_.erase(timer->id);
-    timer->id = null_timer_id;
+    //active_timers_.erase(timer->id);
+    //timer->id = null_timer_id;
+    active_timers_.erase(timer->key);
+    timer->deactivate();
   }
 
-  std::map<TimerId, AnyTimer> active_timers_;
+  //std::map<TimerId, AnyTimer> active_timers_;
+  std::map<TimerKey, AnyTimer> active_timers_;
 };
 
 #endif

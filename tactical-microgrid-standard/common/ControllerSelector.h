@@ -11,6 +11,7 @@
 struct NewController {
   tms::Identity id;
 };
+
 struct MissedHeartbeat {};
 struct LostController {};
 struct NoControllers {};
