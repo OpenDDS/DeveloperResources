@@ -10,11 +10,20 @@
 
 struct NewController {
   tms::Identity id;
+  static const char* name() { return "NewController"; }
 };
 
-struct MissedHeartbeat {};
-struct LostController {};
-struct NoControllers {};
+struct MissedHeartbeat {
+  static const char* name() { return "MissedHeartbeat"; }
+};
+
+struct LostController {
+  static const char* name() { return "LostController"; }
+};
+
+struct NoControllers {
+  static const char* name() { return "NoControllers"; }
+};
 
 class PowerDevice;
 

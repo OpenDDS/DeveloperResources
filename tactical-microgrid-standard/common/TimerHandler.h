@@ -14,7 +14,6 @@
 #include <type_traits>
 #include <memory>
 #include <stdexcept>
-#include <typeinfo>
 #include <iostream>
 
 using Sec = std::chrono::seconds;
@@ -26,6 +25,7 @@ constexpr TimerId null_timer_id = 0;
 using Mutex = std::recursive_mutex;
 using Guard = std::lock_guard<Mutex>;
 
+// EventType must implement: static const char* name();
 template <typename EventType>
 struct Timer {
   using Arg = EventType;
@@ -59,7 +59,7 @@ struct Timer {
   void activate(TimerId a_id)
   {
     id = a_id;
-    key = std::to_string(id) + "_" + typeid(EventType).name();
+    key = std::to_string(id) + "_" + EventType::name();
   }
 
   void deactivate()
@@ -70,7 +70,7 @@ struct Timer {
 
   std::string display_name() const
   {
-    std::string rv = std::string("Timer<\"") + typeid(EventType).name() + "\">";
+    std::string rv = std::string("Timer<\"") + EventType::name() + "\">";
     if (name.size()) {
       rv += "\"" + name + "\"";
     }
@@ -79,7 +79,15 @@ struct Timer {
 
   void display() const
   {
-    std::cout << key << std::endl;
+    std::cout << "{\n"
+      << "  name: \"" << name << "\"\n"
+      << "  id: " << id << "\n"
+      << "  key: \"" << key << "\"\n"
+      << "  period: " << period.count() << "\n"
+      << "  delay: " << delay.count() << "\n"
+      << "  exit_after: " << (exit_after ? "true" : "false") << "\n"
+      << "}"
+      << std::endl;
   }
 };
 
@@ -159,7 +167,6 @@ public:
     assert_inactive<EventType>(timer);
     const TimerId id = reactor_->schedule_timer(
       this, &timer->key, ACE_Time_Value(timer->delay), ACE_Time_Value(timer->period));
-    //timer->id = id;
     timer->activate(id);
     active_timers_[timer->key] = timer;
   }
@@ -225,9 +232,7 @@ public:
   {
     Guard g(lock_);
     for (auto it = active_timers_.begin(); it != active_timers_.end(); ++it) {
-      //reactor_->cancel_timer(it->first);
       std::visit([&](auto&& timer) {
-        //timer->id = null_timer_id;
         reactor_->cancel_timer(timer->id);
         timer->deactivate();
       }, it->second);
@@ -238,17 +243,11 @@ public:
   int handle_timeout(const ACE_Time_Value&, const void* arg)
   {
     Guard g(lock_);
-    //auto timer_id = *reinterpret_cast<const TimerId*>(arg);
-    //if (active_timers_.count(timer_id) == 0) {
-    //  ACE_ERROR((LM_WARNING, "(%P|%t) WARNING: TimerHandler::handle_timeout: timer id %q does NOT exist\n",
-    //             static_cast<ACE_INT64>(timer_id)));
-    //}
     auto key = *reinterpret_cast<const std::string*>(arg);
     if (active_timers_.count(key) == 0) {
       ACE_ERROR((LM_WARNING, "(%P|%t) WARNING: TimerHandler::handle_timeout: timer key %C does NOT exist\n", key.c_str()));
     }
 
-    //auto timer = active_timers_[timer_id];
     auto timer = active_timers_[key];
     any_timer_fired(timer);
     bool exit_after = false;
@@ -283,14 +282,12 @@ protected:
 
   void display_active_timers(const std::string& prefix) const
   {
-    // Assume lock_ was held by the caller
+    // lock_ must already be held
     std::cout << prefix;
     for (const auto& pair : active_timers_) {
-      //std::cout << "Timer key: " << pair.first;
       const auto timer = pair.second;
       std::visit([&](auto&& value) {
         value->display();
-        //std::cout << "; Timer name: " << value->display_name() << std::endl;
       }, timer);
     }
   }
@@ -313,13 +310,10 @@ private:
   template <typename EventType>
   void timer_wont_run(typename Timer<EventType>::Ptr timer)
   {
-    //active_timers_.erase(timer->id);
-    //timer->id = null_timer_id;
     active_timers_.erase(timer->key);
     timer->deactivate();
   }
 
-  //std::map<TimerId, AnyTimer> active_timers_;
   std::map<TimerKey, AnyTimer> active_timers_;
 };
 

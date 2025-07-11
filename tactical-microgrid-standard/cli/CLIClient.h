@@ -14,6 +14,7 @@
 
 struct UnavailableController {
   tms::Identity id;
+  static const char* name() { return "UnavailableController"; }
 };
 
 struct ConnectedDeviceEqual {
