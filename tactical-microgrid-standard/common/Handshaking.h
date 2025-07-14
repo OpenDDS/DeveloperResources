@@ -10,7 +10,12 @@
 
 #include <functional>
 
-class OpenDDS_TMS_Export Handshaking : public TimerHandler<tms::Heartbeat> {
+struct HeartbeatEvent {
+  tms::Heartbeat hb;
+  static const char* name() { return "tms::Heartbeat"; }
+};
+
+class OpenDDS_TMS_Export Handshaking : public TimerHandler<HeartbeatEvent> {
 public:
   explicit Handshaking(const tms::Identity& device_id)
     : TimerHandler(ACE_Reactor::instance())
@@ -70,7 +75,7 @@ protected:
 private:
   static constexpr Sec heartbeat_period = Sec(1);
 
-  void timer_fired(Timer<tms::Heartbeat>& timer);
+  void timer_fired(Timer<HeartbeatEvent>& timer);
   void any_timer_fired(AnyTimer timer)
   {
     std::visit([&](auto&& value) { this->timer_fired(*value); }, timer);

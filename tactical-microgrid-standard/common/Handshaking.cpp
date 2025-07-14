@@ -170,10 +170,11 @@ DDS::ReturnCode_t Handshaking::start_heartbeats()
     return DDS::RETCODE_ERROR;
   }
 
-  if (!get_timer<tms::Heartbeat>()->active()) {
+  if (!get_timer<HeartbeatEvent>()->active()) {
     tms::Heartbeat hb;
     hb.deviceId(device_id_);
-    schedule(hb, heartbeat_period);
+    HeartbeatEvent hb_ev = { hb };
+    schedule(hb_ev, heartbeat_period);
   }
 
   return DDS::RETCODE_OK;
@@ -181,8 +182,8 @@ DDS::ReturnCode_t Handshaking::start_heartbeats()
 
 void Handshaking::stop_heartbeats()
 {
-  if (get_timer<tms::Heartbeat>()->active()) {
-    cancel<tms::Heartbeat>();
+  if (get_timer<HeartbeatEvent>()->active()) {
+    cancel<HeartbeatEvent>();
   }
 }
 
@@ -231,10 +232,10 @@ DDS::ReturnCode_t Handshaking::create_subscribers(
   return DDS::RETCODE_OK;
 }
 
-void Handshaking::timer_fired(Timer<tms::Heartbeat>& timer)
+void Handshaking::timer_fired(Timer<HeartbeatEvent>& timer)
 {
-  timer.arg.sequenceNumber(seq_num_++);
-  const DDS::ReturnCode_t rc = hb_dw_->write(timer.arg, DDS::HANDLE_NIL);
+  timer.arg.hb.sequenceNumber(seq_num_++);
+  const DDS::ReturnCode_t rc = hb_dw_->write(timer.arg.hb, DDS::HANDLE_NIL);
   if (rc != DDS::RETCODE_OK) {
     ACE_ERROR((LM_WARNING, "(%P|%t) WARNING: Handshaking::send_heartbeats: write Heartbeat failed\n"));
   }

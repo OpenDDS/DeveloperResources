@@ -16,13 +16,16 @@ const std::string device_id = "dev";
 struct McStart {
   std::vector<std::string> ids;
   Sec run_for;
+  static const char* name() { return "McStart"; };
 };
 struct McSelected {
   std::string id;
   bool exit_after = false;
+  static const char* name() { return "McSelected"; }
 };
 struct McStop {
   std::vector<pid_t> pids;
+  static const char* name() { return "McStop"; }
 };
 const std::string mc1 = "mc1";
 const std::string mc2 = "mc2";

@@ -1,6 +1,9 @@
 #include "controller/Controller.h"
 
-struct Timeout {};
+struct Timeout {
+  static const char* name() { return "Timeout"; }
+};
+
 class Test : public TimerHandler<Timeout> {
 public:
   Test()
