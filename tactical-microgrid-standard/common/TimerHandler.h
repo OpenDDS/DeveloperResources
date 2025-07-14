@@ -280,10 +280,10 @@ protected:
 
   virtual void any_timer_fired(AnyTimer timer) = 0;
 
-  void display_active_timers(const std::string& prefix) const
+  // For debugging purposes. Caller must already hold lock_.
+  void display_active_timers(const std::string& preamble) const
   {
-    // lock_ must already be held
-    std::cout << prefix;
+    std::cout << preamble;
     for (const auto& pair : active_timers_) {
       const auto timer = pair.second;
       std::visit([&](auto&& value) {

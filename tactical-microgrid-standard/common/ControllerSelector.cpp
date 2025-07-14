@@ -31,7 +31,6 @@ void ControllerSelector::got_heartbeat(const tms::Heartbeat& hb)
       }
     }
   }
-  display_active_timers("ControllerSelector::got_heartbeat -- active timers:\n");
 }
 
 void ControllerSelector::got_device_info(const tms::DeviceInfo& di)
@@ -92,7 +91,6 @@ void ControllerSelector::timer_fired(Timer<MissedHeartbeat>& timer)
   if (no_avail_mc) {
     schedule_once(NoControllers{}, no_controllers_delay);
   }
-  display_active_timers("ControllerSelector::timer_event(MissedHeartbeat) -- active timers: \n");
 }
 
 void ControllerSelector::timer_fired(Timer<LostController>&)
