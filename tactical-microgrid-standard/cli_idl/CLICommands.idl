@@ -17,6 +17,9 @@ module cli {
   struct PowerDeviceInfo {
     tms::DeviceInfo device_info;
     tms::EnergyStartStopLevel essl;
+    // The MC that controls this device.
+    // Obtain from tms::ActiveMicrogridControllerState sent by the device.
+    @optional tms::Identity master_id;
   };
 
   typedef sequence<PowerDeviceInfo> PowerDeviceInfoSeq;
