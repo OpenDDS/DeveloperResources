@@ -4,11 +4,10 @@
 #include <common/mil-std-3071_data_modelTypeSupportImpl.h>
 #include <cli_idl/CLICommandsTypeSupportImpl.h>
 
-#include <dds/DCPS/optional.h>
-
 #include <unordered_map>
+#include <optional>
 
-using OpArgPair = std::pair<std::string, OpenDDS::DCPS::optional<std::string>>;
+using OpArgPair = std::pair<std::string, std::optional<std::string>>;
 using PowerDevices = std::unordered_map<tms::Identity, cli::PowerDeviceInfo>;
 
 #endif
