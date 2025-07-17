@@ -50,24 +50,20 @@ void ControllerSelector::timer_fired(Timer<NewController>& timer)
   Guard g(lock_);
   const auto& mc_id = timer.arg.id;
   ACE_DEBUG((LM_INFO, "(%P|%t) INFO: ControllerSelector::timed_event(NewController): "
-    "\"%C\" -> \"%C\"\n", selected_.c_str(), mc_id.c_str()));
+    "triggered by \"%C\" heartbeat\n", mc_id.c_str()));
 
-  // The TMS spec isn't clear to whether the device needs to verify that the last
-  // heartbeat of this controller was received less than 3s (i.e., heartbeat deadline) ago.
-  // This check makes sense since if its last heartbeat was more than 3s ago, that means
-  // the controller is not available and should not be selected as the active controller.
-  const TimePoint now = Clock::now();
-  auto it = all_controllers_.find(mc_id);
-  if (it == all_controllers_.end()) {
+  if (all_controllers_.find(mc_id) == all_controllers_.end()) {
     ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: ControllerSelector::timed_event(NewController): Controller \"%C\" not found!\n",
                mc_id.c_str()));
     return;
   }
 
-  if (now - it->second < heartbeat_deadline) {
-    selected_ = mc_id;
-    send_controller_state();
-  }
+  // Select the highest priority controller from the list of available controllers.
+  // The TMS spec doesn't specify this, and an implementation may select the controller
+  // associated with this timer. However, that could cause different controllers to be
+  // selected by different devices, since each device may receive the first heartbeat from
+  // a different controller and thus select a different controller when the timer expires.
+  select_controller();
 }
 
 void ControllerSelector::timer_fired(Timer<MissedHeartbeat>& timer)
@@ -102,14 +98,7 @@ void ControllerSelector::timer_fired(Timer<LostController>&)
 
   // Select a new controller if possible. If there are no recent controllers
   // and we don't hear from another, the NoControllers timer will fire.
-  const TimePoint now = Clock::now();
-  for (auto it = all_controllers_.begin(); it != all_controllers_.end(); ++it) {
-    const auto last_hb = now - it->second;
-    if (last_hb < heartbeat_deadline) {
-      select(it->first, std::chrono::duration_cast<Sec>(last_hb));
-      break;
-    }
-  }
+  select_controller();
 }
 
 void ControllerSelector::timer_fired(Timer<NoControllers>&)
@@ -117,6 +106,25 @@ void ControllerSelector::timer_fired(Timer<NoControllers>&)
   Guard g(lock_);
   ACE_DEBUG((LM_INFO, "(%P|%t) INFO: ControllerSelector::timed_event(NoControllers)\n"));
   // TODO: CONFIG_ON_COMMS_LOSS
+}
+
+// Select a new controller at start up,
+// or when a device loses its active controller and has to select a new one.
+bool ControllerSelector::select_controller()
+{
+  const TimePoint now = Clock::now();
+
+  // Select an available controller with smallest identity alphabetically
+  for (auto it = all_controllers_.begin(); it != all_controllers_.end(); ++it) {
+    const auto last_hb = now - it->second;
+    // TMS spec doesn't specify this. But it should make sure the controller is still available
+    // i.e., last heartbeat received within 3 seconds.
+    if (last_hb < heartbeat_deadline) {
+      select(it->first, std::chrono::duration_cast<Sec>(last_hb));
+      return true;
+    }
+  }
+  return false;
 }
 
 void ControllerSelector::select(const tms::Identity& id, Sec last_hb)

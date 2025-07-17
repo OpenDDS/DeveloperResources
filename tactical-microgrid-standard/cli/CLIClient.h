@@ -114,7 +114,7 @@ private:
   // Mutex for the following data
   mutable std::mutex data_m_;
 
-  // Microgrid controllers to which the CLI client is connected
+  // Microgrid controllers that are (and were) reachable by the CLI
   std::unordered_map<tms::Identity, ControllerInfo> controllers_;
 
   // For each controller, cache the power devices that select it as the active controller.

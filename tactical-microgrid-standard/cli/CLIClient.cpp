@@ -401,6 +401,10 @@ bool CLIClient::collect_power_devices()
     const auto status = controller_status(now, it->second.last_hb);
     if (status == ControllerStatus::AVAILABLE) {
       ret &= send_power_devices_request(it->first);
+    } else {
+      // There may be stale entries that need to be deleted,
+      // so displaying power devices looks clean.
+      mc_to_devices_.erase(it->first);
     }
   }
   return ret;
@@ -472,9 +476,14 @@ void CLIClient::connect(const tms::Identity& id1, tms::DeviceRole role1,
   power_connections_[id2].insert(powersim::ConnectedDevice{id1, role1});
 }
 
+// Gather information for all power devices in the microgrid from all MCs.
+// The total information of all devices is then used to construct a topology
+// of power devices to simulate a microgrid with devices connected by power cable.
+// This is necessary when simulating network partition is supported, e.g., MC 1
+// has connections to a subset of devices and MC 2 has connections to the remaining devices.
+// When there is no network partition, all MCs should have the same set of devices.
 void CLIClient::consolidate_power_devices()
 {
-  std::lock_guard<std::mutex> guard(data_m_);
   if (mc_to_devices_.empty()) {
     collect_power_devices();
   }
@@ -485,6 +494,8 @@ void CLIClient::consolidate_power_devices()
   }
 }
 
+// Construct connections between power devices to simulate a microgrid.
+// Each connection simulates a physical connection using a power cable.
 void CLIClient::connect_power_devices()
 {
   std::lock_guard<std::mutex> guard(data_m_);
@@ -642,10 +653,12 @@ bool CLIClient::send_power_devices_request(const tms::Identity& mc_id)
 
     if (info_seq[i].valid_data) {
       const cli::PowerDeviceInfoSeq& pdi_seq = data[i].devices();
+      auto& power_devices = mc_to_devices_[mc_id];
       for (auto it = pdi_seq.begin(); it != pdi_seq.end(); ++it) {
-        PowerDevices power_devices;
-        power_devices.insert(std::make_pair(it->device_info().deviceId(), *it));
-        mc_to_devices_[mc_id] = power_devices;
+        // Add to the existing list of power devices.
+        // This allows power devices to be added gradually in case
+        // the "list-pd" command is issued before all devices have joined.
+        power_devices.insert_or_assign(it->device_info().deviceId(), *it);
       }
     } else if (info_seq[i].instance_state == DDS::NOT_ALIVE_DISPOSED_INSTANCE_STATE) {
       mc_to_devices_.erase(mc_id);

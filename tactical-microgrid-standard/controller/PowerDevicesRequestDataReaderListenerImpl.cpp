@@ -19,8 +19,10 @@ void PowerDevicesRequestDataReaderListenerImpl::on_data_available(DDS::DataReade
   bool my_request = false;
   for (CORBA::ULong i = 0; i < data.length(); ++i) {
     if (data[i].mc_id() != id) {
-      ACE_DEBUG((LM_INFO, "(%P|%t) INFO: PowerDevicesRequestDataReaderListenerImpl::on_data_available: "
-                 " Received request for different controller with Id: %C\n", data[i].mc_id().c_str()));
+      if (OpenDDS::DCPS::DCPS_debug_level >= 8) {
+        ACE_DEBUG((LM_INFO, "(%P|%t) INFO: PowerDevicesRequestDataReaderListenerImpl::on_data_available: "
+                   " Received request for different controller with Id: %C\n", data[i].mc_id().c_str()));
+      }
       continue;
     }
 
