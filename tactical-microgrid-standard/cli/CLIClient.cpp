@@ -687,21 +687,6 @@ void CLIClient::send_start_stop_request(const OpArgPair& op_arg,
     collect_power_devices();
   }
 
-  // Send to start/stop request to the controller that manages this power device
-  tms::Identity target_mc;
-  for (auto it = mc_to_devices_.begin(); it != mc_to_devices_.end(); ++it) {
-    const auto& devices = it->second;
-    if (devices.count(pd_id)) {
-      target_mc = it->first;
-      break;
-    }
-  }
-
-  if (target_mc.empty()) {
-    std::cerr << "There is no controller for the power device \"" << pd_id << "\"!!!" << std::endl;
-    return;
-  }
-
   const tms::Identity my_id = handshaking_.get_device_id();
 
   tms::OperatorIntentRequest oir;
@@ -709,7 +694,6 @@ void CLIClient::send_start_stop_request(const OpArgPair& op_arg,
   // This doesn't seem to get used since there is no reply for this request.
   oir.sequenceId() = 0;
   tms::OperatorIntent oi;
-  oi.requestId().requestingDeviceId() = target_mc;
   oi.intentType() = tms::OperatorIntentType::OIT_OPERATOR_DEFINED;
   tms::DeviceIntent intent;
   intent.deviceId() = pd_id;
@@ -718,12 +702,33 @@ void CLIClient::send_start_stop_request(const OpArgPair& op_arg,
   oi.devices().push_back(intent);
   oir.desiredOperatorIntent() = oi;
 
-  DDS::ReturnCode_t rc = oir_dw_->write(oir, DDS::HANDLE_NIL);
-  if (rc != DDS::RETCODE_OK) {
-    ACE_ERROR((LM_WARNING, "(%P|%t) WARNING: CLIClient::send_start_stop_request: write %C request returned \"%C\"\n",
-               opt == tms::OperatorPriorityType::OPT_ALWAYS_OPERATE ? "start" : "stop",
-               OpenDDS::DCPS::retcode_to_string(rc)));
-    return;
+  // Send a request to all controllers.
+  // Only the controller responsible for the device will send a command to it.
+  // The other controllers only update the energy level of the device locally.
+  const auto now = Clock::now();
+  for (auto it = mc_to_devices_.begin(); it != mc_to_devices_.end(); ++it) {
+    // Verify that the controller is available
+    const tms::Identity& mc_id = it->first;
+    auto it2 = controllers_.find(mc_id);
+    if (it2 == controllers_.end()) {
+      ACE_ERROR((LM_WARNING, "(%P|%t) WARNING: CLIClient::send_start_stop_request: controller \"%C\" not found\n",
+                 mc_id.c_str()));
+      return;
+    }
+
+    if (controller_status(now, it2->second.last_hb) == ControllerStatus::UNAVAILABLE) {
+      continue;
+    }
+
+    oir.desiredOperatorIntent().requestId().requestingDeviceId() = mc_id;
+
+    DDS::ReturnCode_t rc = oir_dw_->write(oir, DDS::HANDLE_NIL);
+    if (rc != DDS::RETCODE_OK) {
+      ACE_ERROR((LM_WARNING, "(%P|%t) WARNING: CLIClient::send_start_stop_request: write %C request for device \"%C\" "
+                 "to controller \"%C\" returned \"%C\"\n",
+                 opt == tms::OperatorPriorityType::OPT_ALWAYS_OPERATE ? "start" : "stop",
+                 pd_id.c_str(), mc_id.c_str(), OpenDDS::DCPS::retcode_to_string(rc)));
+    }
   }
 }
 
