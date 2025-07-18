@@ -19,8 +19,10 @@ void PowerDevicesRequestDataReaderListenerImpl::on_data_available(DDS::DataReade
   bool my_request = false;
   for (CORBA::ULong i = 0; i < data.length(); ++i) {
     if (data[i].mc_id() != id) {
-      ACE_DEBUG((LM_INFO, "(%P|%t) INFO: PowerDevicesRequestDataReaderListenerImpl::on_data_available: "
-                 " Received request for different controller with Id: %C\n", data[i].mc_id().c_str()));
+      if (OpenDDS::DCPS::DCPS_debug_level >= 8) {
+        ACE_DEBUG((LM_INFO, "(%P|%t) INFO: PowerDevicesRequestDataReaderListenerImpl::on_data_available: "
+                   " Received request for different controller with Id: %C\n", data[i].mc_id().c_str()));
+      }
       continue;
     }
 
@@ -40,9 +42,15 @@ void PowerDevicesRequestDataReaderListenerImpl::on_data_available(DDS::DataReade
   reply.mc_id(id);
   const size_t num_devices = power_devices.size();
   cli::PowerDeviceInfoSeq& pdi_seq = reply.devices();
-  pdi_seq.reserve(num_devices);
+
+  // Only reply with the power devices that:
+  // - have selected this MC as its active MC, or
+  // - haven't selected an active MC yet.
   for (auto it = power_devices.begin(); it != power_devices.end(); ++it) {
-    pdi_seq.push_back(it->second);
+    const auto selected_mc = it->second.master_id();
+    if (!selected_mc.has_value() || selected_mc.value() == id) {
+      pdi_seq.push_back(it->second);
+    }
   }
 
   cli::PowerDevicesReplyDataWriter_var pdreply_writer = cli_server_.get_PowerDevicesReply_writer();

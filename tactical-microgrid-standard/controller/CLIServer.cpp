@@ -384,6 +384,14 @@ void CLIServer::start_stop_device(const tms::Identity& pd_id, tms::OperatorPrior
     return;
   }
 
+  // Only update the energy level of the device locally if this is not its active controller.
+  const auto& master_id = it->second.master_id();
+  if (!master_id.has_value() || master_id.value() != controller_.get_device_id()) {
+    controller_.update_essl(pd_id, to_essl);
+    return;
+  }
+
+  // Else, send a command to the device to actually start/stop it.
   tms::EnergyStartStopRequest essr;
   essr.requestId().requestingDeviceId(controller_.id());
   essr.requestId().targetDeviceId(pd_id);

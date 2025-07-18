@@ -1,7 +1,6 @@
 #include "CLIClient.h"
 #include "common/QosHelper.h"
 #include "common/Utils.h"
-#include "ActiveMicrogridControllerStateDataReaderListenerImpl.h"
 
 #include <dds/DCPS/PublisherImpl.h>
 #include <dds/DCPS/SubscriberImpl.h>
@@ -89,46 +88,6 @@ DDS::ReturnCode_t CLIClient::init_tms(DDS::DomainId_t domain_id, int argc, char*
   oir_dw_ = tms::OperatorIntentRequestDataWriter::_narrow(oir_dw_base);
   if (!oir_dw_) {
     ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIClient::init: OperatorIntentRequestDataWriter narrow failed\n"));
-    return DDS::RETCODE_ERROR;
-  }
-
-  // Subscribe to the tms::ActiveMicrogridControllerState topic
-  tms::ActiveMicrogridControllerStateTypeSupport_var amcs_ts = new tms::ActiveMicrogridControllerStateTypeSupportImpl;
-  if (DDS::RETCODE_OK != amcs_ts->register_type(dp, "")) {
-    ACE_ERROR((LM_ERROR, "(%P|%t) CLIClient::init: register_type ActiveMicrogridControllerState failed\n"));
-    return DDS::RETCODE_ERROR;
-  }
-
-  CORBA::String_var amcs_type_name = amcs_ts->get_type_name();
-  DDS::Topic_var amcs_topic = dp->create_topic(tms::topic::TOPIC_ACTIVE_MICROGRID_CONTROLLER_STATE.c_str(),
-                                               amcs_type_name,
-                                               TOPIC_QOS_DEFAULT,
-                                               nullptr,
-                                               ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
-  if (!amcs_topic) {
-    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIClient::init: create_topic \"%C\" failed\n",
-               tms::topic::TOPIC_ACTIVE_MICROGRID_CONTROLLER_STATE.c_str()));
-    return DDS::RETCODE_ERROR;
-  }
-
-  const DDS::SubscriberQos tms_sub_qos = Qos::Subscriber::get_qos();
-  DDS::Subscriber_var tms_sub = dp->create_subscriber(tms_sub_qos,
-                                                      nullptr,
-                                                      ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
-  if (!tms_sub) {
-    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIClient::init: create_subscriber with TMS QoS failed\n"));
-    return DDS::RETCODE_ERROR;
-  }
-
-  const DDS::DataReaderQos& amcs_dr_qos = Qos::DataReader::fn_map.at(tms::topic::TOPIC_ACTIVE_MICROGRID_CONTROLLER_STATE)(device_id);
-  DDS::DataReaderListener_var amcs_listener(new ActiveMicrogridControllerStateDataReaderListenerImpl(*this));
-  DDS::DataReader_var amcs_dr_base = tms_sub->create_datareader(amcs_topic,
-                                                                amcs_dr_qos,
-                                                                amcs_listener,
-                                                                ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
-  if (!amcs_dr_base) {
-    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIClient::init: create_datareader for topic \"%C\" failed\n",
-               tms::topic::TOPIC_ACTIVE_MICROGRID_CONTROLLER_STATE.c_str()));
     return DDS::RETCODE_ERROR;
   }
 
@@ -323,6 +282,21 @@ bool CLIClient::cli_stopped() const
   return stop_cli_;
 }
 
+void CLIClient::display_commands() const
+{
+  const char* msg = R"(=== Command-Line Interface for Microgrid Controller (MC) ===
+list-mc          : list the connected MCs.
+list-pd          : list the power devices reported by the connected MCs.
+connect-pd       : connect power devices to simulate the power topology of a microgrid.
+start   <pd_id>  : start a power device with the given Id.
+stop    <pd_id>  : stop a power device with the given Id.
+suspend <mc_id>  : suspend the heartbeats of the given MC (simulating an MC becomming unavailable).
+resume  <mc_id>  : resume the heartbeats of the given MC (simulating an MC becomming available).
+term    <mc_id>  : terminate the given MC's process.
+show             : display this list of CLI commands.)";
+  std::cout << msg << std::endl;
+}
+
 void CLIClient::run_cli()
 {
   const std::string prompt = "ENTER COMMAND:> ";
@@ -342,18 +316,16 @@ void CLIClient::run_cli()
       list_power_devices();
     } else if (op == "connect-pd") {
       connect_power_devices();
-    } else if (op == "set") {
-      set_controller(op_pair);
-    } else if (op == "enable") {
+    } else if (op == "start") {
       send_start_device_cmd(op_pair);
-    } else if (op == "disable") {
-      send_stop_device_cmd(op_pair);
     } else if (op == "stop") {
-      send_stop_controller_cmd();
+      send_stop_device_cmd(op_pair);
+    } else if (op == "suspend") {
+      send_suspend_controller_cmd(op_pair);
     } else if (op == "resume") {
-      send_resume_controller_cmd();
+      send_resume_controller_cmd(op_pair);
     } else if (op == "term") {
-      send_terminate_controller_cmd();
+      send_terminate_controller_cmd(op_pair);
     } else if (op == "show") {
       display_commands();
     } else {
@@ -370,14 +342,6 @@ void CLIClient::run()
   thr.join();
 }
 
-void CLIClient::set_active_controller(const tms::Identity& device_id,
-                                      const std::optional<tms::Identity>& master_id)
-{
-  std::lock_guard<std::mutex> guard(active_controllers_m_);
-  // The value is absent if the device has lost its active controller or hasn't selected one yet.
-  active_controllers_[device_id] = master_id.value_or("");
-}
-
 void CLIClient::tolower(std::string& s) const
 {
   for (size_t i = 0; i < s.size(); ++i) {
@@ -390,38 +354,20 @@ OpArgPair CLIClient::parse(const std::string& input) const
   const std::string whitespace = " \t";
   const size_t first = input.find_first_not_of(whitespace);
   if (first == std::string::npos) {
-    return std::make_pair("", OpenDDS::DCPS::optional<std::string>());
+    return std::make_pair("", std::optional<std::string>());
   }
 
   const size_t last = input.find_last_not_of(whitespace);
   const std::string trimed_input = input.substr(first, last - first + 1);
   const size_t delim = trimed_input.find_first_of(whitespace);
   if (delim == std::string::npos) {
-    return std::make_pair(trimed_input, OpenDDS::DCPS::optional<std::string>());
+    return std::make_pair(trimed_input, std::optional<std::string>());
   }
 
   const std::string op = trimed_input.substr(0, delim);
   const size_t arg_begin = trimed_input.find_first_not_of(whitespace, delim + 1);
   const std::string arg = trimed_input.substr(arg_begin);
-  return std::make_pair(op, OpenDDS::DCPS::optional<std::string>(arg));
-}
-
-void CLIClient::display_commands() const
-{
-  const char* msg = R"(=== Command-Line Interface for Microgrid Controller ===
-list-mc        : list the connected microgrid controllers.
-set <mc_id>    : set the current microgrid controller.
-                 Subsequent commands target this controller
-                 until another set command is used.
-list-pd        : list the power devices connected to the current controller.
-connect-pd     : connect power devices to simulate a power topology.
-enable <pd_id> : start a power device with the given Id.
-disable <pd_id>: stop a power device with the given Id.
-stop           : stop the current controller's heartbeats.
-resume         : resume the current controller's heartbeats.
-term           : terminate the current controller.
-show           : display the list of CLI commands.)";
-  std::cout << msg << std::endl;
+  return std::make_pair(op, std::optional<std::string>(arg));
 }
 
 std::string CLIClient::energy_level_to_string(tms::EnergyStartStopLevel essl) const
@@ -446,42 +392,50 @@ std::string CLIClient::energy_level_to_string(tms::EnergyStartStopLevel essl) co
   }
 }
 
-void CLIClient::list_power_devices()
+// Collect the list of power devices from the available MCs.
+bool CLIClient::collect_power_devices()
 {
-  std::lock_guard<std::mutex> guard(data_m_);
-  if (curr_controller_.empty()) {
-    std::cerr << "Must set the current controller first!" << std::endl;
-    return;
+  bool ret = true;
+  const auto now = Clock::now();
+  for (auto it = controllers_.begin(); it != controllers_.end(); ++it) {
+    const auto status = controller_status(now, it->second.last_hb);
+    if (status == ControllerStatus::AVAILABLE) {
+      ret &= send_power_devices_request(it->first);
+    } else {
+      // There may be stale entries that need to be deleted,
+      // so displaying power devices looks clean.
+      mc_to_devices_.erase(it->first);
+    }
   }
-
-  if (send_power_devices_request()) {
-    display_power_devices();
-  }
+  return ret;
 }
 
 void CLIClient::display_power_devices() const
 {
-  std::cout << "Current Microgrid Controller's Id: " << curr_controller_ << std::endl;
-  std::cout << "Number of Connected Power Devices: " << power_devices_.size() << std::endl;
   size_t i = 1;
-  for (auto it = power_devices_.begin(); it != power_devices_.end(); ++it) {
-    std::string selected_controller;
-    {
-      std::lock_guard<std::mutex> guard(active_controllers_m_);
-      auto ac_it = active_controllers_.find(it->first);
-      if (ac_it != active_controllers_.end()) {
-        selected_controller = "\"" + ac_it->second + "\"";
-      } else {
-        selected_controller = "\"Undetermined\"";
-      }
+  for (auto it = mc_to_devices_.begin(); it != mc_to_devices_.end(); ++it) {
+    const auto mc_id = it->first;
+    const auto power_devices = it->second;
+    std::cout << "Devices connected to Microgrid Controller \"" << mc_id << "\":" << std::endl;
+    for (auto it2 = power_devices.begin(); it2 != power_devices.end(); ++it2) {
+      const std::string formated_id = std::string("\"") + it2->first + "\"";
+      std::string selected_controller = std::string("\"") + it2->second.master_id().value_or("Undetermined") + "\"";
+
+      std::cout << std::right << std::setfill(' ') << std::setw(3) << i++
+        << ". Id: " << std::left << std::setw(15) << formated_id
+        << "| Type: " << std::left << std::setw(18) << Utils::device_role_to_string(it2->second.device_info().role())
+        << "| Energy Level: " << std::left << std::setw(15) << energy_level_to_string(it2->second.essl())
+        << "| Active Controller: " << std::left << selected_controller << std::endl;
     }
-    const std::string formated_id = "\"" + it->first + "\"";
-    std::cout << std::right << std::setfill(' ') << std::setw(3) << i++
-      << ". Id: " << std::left << std::setw(15) << formated_id
-      << "| Type: " << std::left << std::setw(18) << Utils::device_role_to_string(it->second.device_info().role())
-      << "| Energy Level: " << std::left << std::setw(15) << energy_level_to_string(it->second.essl())
-      << "| Active Controller: " << std::left << selected_controller << std::endl;
+    std::cout << std::endl;
   }
+}
+
+void CLIClient::list_power_devices()
+{
+  std::lock_guard<std::mutex> guard(data_m_);
+  collect_power_devices();
+  display_power_devices();
 }
 
 bool CLIClient::is_single_port_device(tms::DeviceRole role) const
@@ -522,10 +476,31 @@ void CLIClient::connect(const tms::Identity& id1, tms::DeviceRole role1,
   power_connections_[id2].insert(powersim::ConnectedDevice{id1, role1});
 }
 
+// Gather information for all power devices in the microgrid from all MCs.
+// The total information of all devices is then used to construct a topology
+// of power devices to simulate a microgrid with devices connected by power cable.
+// This is necessary when simulating network partition is supported, e.g., MC 1
+// has connections to a subset of devices and MC 2 has connections to the remaining devices.
+// When there is no network partition, all MCs should have the same set of devices.
+void CLIClient::consolidate_power_devices()
+{
+  if (mc_to_devices_.empty()) {
+    collect_power_devices();
+  }
+
+  for (auto it = mc_to_devices_.begin(); it != mc_to_devices_.end(); ++it) {
+    const PowerDevices& pds = it->second;
+    power_devices_.insert(pds.begin(), pds.end());
+  }
+}
+
+// Construct connections between power devices to simulate a microgrid.
+// Each connection simulates a physical connection using a power cable.
 void CLIClient::connect_power_devices()
 {
+  std::lock_guard<std::mutex> guard(data_m_);
   if (power_devices_.empty()) {
-    send_power_devices_request();
+    consolidate_power_devices();
   }
 
   for (auto it1 = power_devices_.begin(); it1 != power_devices_.end(); ++it1) {
@@ -561,7 +536,6 @@ void CLIClient::connect_power_devices()
   // Send the power topology to the current controller which then
   // distributes the power connections to its managed power devices.
   powersim::PowerTopology pt;
-  pt.mc_id() = curr_controller_;
   pt.connections().reserve(power_connections_.size());
   CORBA::ULong i = 0;
   for (auto it = power_connections_.begin(); it != power_connections_.end(); ++it, ++i) {
@@ -574,11 +548,34 @@ void CLIClient::connect_power_devices()
     pt.connections().push_back(pc);
   }
 
-  DDS::ReturnCode_t rc = pt_dw_->write(pt, DDS::HANDLE_NIL);
-  if (rc != DDS::RETCODE_OK) {
-    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIClient::connect_power_devices: "
-               "write power topology to controller \"%C\" failed\n", curr_controller_.c_str()));
+  // Forward to the first available controller in the list
+  const auto now = Clock::now();
+  bool sent = false;
+  for (auto it = controllers_.begin(); !sent && it != controllers_.end(); ++it) {
+    if (controller_status(now, it->second.last_hb) == ControllerStatus::UNAVAILABLE) {
+      continue;
+    }
+
+    const auto& mc_id = it->first;
+    pt.mc_id() = mc_id;
+    DDS::ReturnCode_t rc = pt_dw_->write(pt, DDS::HANDLE_NIL);
+    if (rc != DDS::RETCODE_OK) {
+      ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIClient::connect_power_devices: "
+                 "write power topology to controller \"%C\" failed\n", mc_id.c_str()));
+    } else {
+      sent = true;
+    }
   }
+
+  if (!sent) {
+    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIClient::connect_power_devices: "
+               "Failed to setup power topology for the simulation!\n"));
+  }
+}
+
+CLIClient::ControllerStatus CLIClient::controller_status(TimePoint now, TimePoint last_heartbeat) const
+{
+  return (now - last_heartbeat < unavail_controller_delay) ? ControllerStatus::AVAILABLE : ControllerStatus::UNAVAILABLE;
 }
 
 void CLIClient::display_controllers() const
@@ -586,46 +583,31 @@ void CLIClient::display_controllers() const
   std::lock_guard<std::mutex> guard(data_m_);
   std::cout << "Number of Connected Microgrid Controllers: " << controllers_.size() << std::endl;
   size_t i = 1;
+  const auto now = Clock::now();
   for (auto it = controllers_.begin(); it != controllers_.end(); ++it) {
-    std::cout << i <<  ". Controller Id: " << it->first << " (" <<
-      (it->second.status == ControllerInfo::Status::AVAILABLE ? "available)" : "unavailable)") << std::endl;
+    std::cout << i << ". Controller Id: " << it->first << " (" <<
+      (controller_status(now, it->second.last_hb) == ControllerStatus::AVAILABLE ? "available)" : "unavailable)")
+      << std::endl;
   }
 }
 
-void CLIClient::set_controller(const OpArgPair& op_arg)
-{
-  if (!op_arg.second.has_value()) {
-    std::cerr << "No microgrid controller specified!" << std::endl;
-    return;
-  }
-
-  std::lock_guard<std::mutex> guard(data_m_);
-  auto& value = op_arg.second.value();
-  if (!controllers_.count(value)) {
-    std::cerr << "No controller with Id: " << value << std::endl;
-    return;
-  }
-
-  curr_controller_ = value;
-  std::cout << "Current microgrid controller set to: " << curr_controller_ << std::endl;
-}
-
-bool CLIClient::send_power_devices_request()
+// Caller must already hold data_m_ lock
+bool CLIClient::send_power_devices_request(const tms::Identity& mc_id)
 {
   cli::PowerDevicesRequest pd_req;
-  pd_req.mc_id(curr_controller_);
+  pd_req.mc_id(mc_id);
 
   DDS::ReturnCode_t rc = pdreq_dw_->write(pd_req, DDS::HANDLE_NIL);
   if (rc != DDS::RETCODE_OK) {
     ACE_ERROR((LM_WARNING, "(%P|%t) WARNING: CLIClient::send_power_devices_request: "
-               "write to controller \"%C\" failed\n", curr_controller_.c_str()));
+               "write to controller \"%C\" failed\n", mc_id.c_str()));
     return false;
   }
 
   // Wait for the reply
   DDS::StringSeq params;
   params.length(1);
-  params[0] = curr_controller_.c_str();
+  params[0] = mc_id.c_str();
   DDS::QueryCondition_var qc = pdrep_dr_->create_querycondition(DDS::NOT_READ_SAMPLE_STATE,
                                                                 DDS::ANY_VIEW_STATE,
                                                                 DDS::ANY_INSTANCE_STATE,
@@ -634,7 +616,7 @@ bool CLIClient::send_power_devices_request()
   if (!qc) {
     ACE_ERROR((LM_WARNING, "(%P|%t) WARNING: CLIClient::send_power_devices_request: "
                "create_querycondition to receive from controller \"%C\" failed\n",
-               curr_controller_.c_str()));
+               mc_id.c_str()));
     return false;
   }
 
@@ -662,123 +644,142 @@ bool CLIClient::send_power_devices_request()
 
   bool received = false;
   for (CORBA::ULong i = 0; !received && i < data.length(); ++i) {
-    if (data[i].mc_id() != curr_controller_) {
+    if (data[i].mc_id() != mc_id) {
       ACE_ERROR((LM_WARNING, "(%P|%t) WARNING: CLIClient::send_power_devices_request: "
                  "reply expected from controller \"%C\". Received from \"%C\"\n",
-                 curr_controller_.c_str(), data[i].mc_id().c_str()));
+                 mc_id.c_str(), data[i].mc_id().c_str()));
       continue;
     }
 
     if (info_seq[i].valid_data) {
       const cli::PowerDeviceInfoSeq& pdi_seq = data[i].devices();
+      auto& power_devices = mc_to_devices_[mc_id];
       for (auto it = pdi_seq.begin(); it != pdi_seq.end(); ++it) {
-        power_devices_.insert(std::make_pair(it->device_info().deviceId(), *it));
+        // Add to the existing list of power devices.
+        // This allows power devices to be added gradually in case
+        // the "list-pd" command is issued before all devices have joined.
+        power_devices.insert_or_assign(it->device_info().deviceId(), *it);
       }
     } else if (info_seq[i].instance_state == DDS::NOT_ALIVE_DISPOSED_INSTANCE_STATE) {
-      power_devices_.clear();
+      mc_to_devices_.erase(mc_id);
     }
     received = true;
   }
 
   if (!received) {
     ACE_DEBUG((LM_DEBUG, "(%P|%t) DEBUG: CLIClient::send_power_devices_request: "
-               "Failed to receive data from current controller (%C)\n", curr_controller_.c_str()));
+               "Failed to receive data from controller (%C)\n", mc_id.c_str()));
   }
   return true;
 }
 
 void CLIClient::send_start_stop_request(const OpArgPair& op_arg,
-                                        tms::OperatorPriorityType opt) const
+                                        tms::OperatorPriorityType opt)
 {
   if (!op_arg.second.has_value()) {
     std::cerr << "No power device specified!" << std::endl;
     return;
   }
+  auto& pd_id = op_arg.second.value();
 
-  if (curr_controller_.empty()) {
-    std::cerr << "Must set the current controller first!" << std::endl;
-    return;
+  std::lock_guard<std::mutex> guard(data_m_);
+  if (mc_to_devices_.empty()) {
+    collect_power_devices();
   }
 
-  auto& value = op_arg.second.value();
-  {
-    std::lock_guard<std::mutex> guard(data_m_);
-    if (!power_devices_.count(value)) {
-      std::cerr << "The current controller has no connected device with Id: " << value << std::endl;
-      return;
-    }
-  }
-
-  const tms::Identity device_id = handshaking_.get_device_id();
+  const tms::Identity my_id = handshaking_.get_device_id();
 
   tms::OperatorIntentRequest oir;
-  oir.requestId().requestingDeviceId() = device_id;
+  oir.requestId().requestingDeviceId() = my_id;
   // This doesn't seem to get used since there is no reply for this request.
   oir.sequenceId() = 0;
   tms::OperatorIntent oi;
-  {
-    std::lock_guard<std::mutex> guard(data_m_);
-    oi.requestId().requestingDeviceId() = curr_controller_;
-  }
   oi.intentType() = tms::OperatorIntentType::OIT_OPERATOR_DEFINED;
   tms::DeviceIntent intent;
-  intent.deviceId() = value;
+  intent.deviceId() = pd_id;
   intent.battleShort() = false;
   intent.priority().priorityType() = opt;
   oi.devices().push_back(intent);
   oir.desiredOperatorIntent() = oi;
 
-  DDS::ReturnCode_t rc = oir_dw_->write(oir, DDS::HANDLE_NIL);
-  if (rc != DDS::RETCODE_OK) {
-    ACE_ERROR((LM_WARNING, "(%P|%t) WARNING: CLIClient::send_start_stop_request: write %C request returned \"%C\"\n",
-               opt == tms::OperatorPriorityType::OPT_ALWAYS_OPERATE ? "start" : "stop",
-               OpenDDS::DCPS::retcode_to_string(rc)));
-    return;
+  // Send a request to all controllers.
+  // Only the controller responsible for the device will send a command to it.
+  // The other controllers only update the energy level of the device locally.
+  const auto now = Clock::now();
+  for (auto it = mc_to_devices_.begin(); it != mc_to_devices_.end(); ++it) {
+    // Verify that the controller is available
+    const tms::Identity& mc_id = it->first;
+    auto it2 = controllers_.find(mc_id);
+    if (it2 == controllers_.end()) {
+      ACE_ERROR((LM_WARNING, "(%P|%t) WARNING: CLIClient::send_start_stop_request: controller \"%C\" not found\n",
+                 mc_id.c_str()));
+      return;
+    }
+
+    if (controller_status(now, it2->second.last_hb) == ControllerStatus::UNAVAILABLE) {
+      continue;
+    }
+
+    oir.desiredOperatorIntent().requestId().requestingDeviceId() = mc_id;
+
+    DDS::ReturnCode_t rc = oir_dw_->write(oir, DDS::HANDLE_NIL);
+    if (rc != DDS::RETCODE_OK) {
+      ACE_ERROR((LM_WARNING, "(%P|%t) WARNING: CLIClient::send_start_stop_request: write %C request for device \"%C\" "
+                 "to controller \"%C\" returned \"%C\"\n",
+                 opt == tms::OperatorPriorityType::OPT_ALWAYS_OPERATE ? "start" : "stop",
+                 pd_id.c_str(), mc_id.c_str(), OpenDDS::DCPS::retcode_to_string(rc)));
+    }
   }
 }
 
-void CLIClient::send_start_device_cmd(const OpArgPair& op_arg) const
+void CLIClient::send_start_device_cmd(const OpArgPair& op_arg)
 {
   send_start_stop_request(op_arg, tms::OperatorPriorityType::OPT_ALWAYS_OPERATE);
 }
 
-void CLIClient::send_stop_device_cmd(const OpArgPair& op_arg) const
+void CLIClient::send_stop_device_cmd(const OpArgPair& op_arg)
 {
   send_start_stop_request(op_arg, tms::OperatorPriorityType::OPT_NEVER_OPERATE);
 }
 
-void CLIClient::send_controller_cmd(cli::ControllerCmdType cmd_type) const
+void CLIClient::send_controller_cmd(const OpArgPair& op_arg, cli::ControllerCmdType cmd_type) const
 {
   std::lock_guard<std::mutex> guard(data_m_);
-  if (curr_controller_.empty()) {
-    std::cerr << "Must set the current controller first!" << std::endl;
+  if (!op_arg.second.has_value()) {
+    std::cerr << "No microgrid controller specified!" << std::endl;
+    return;
+  }
+
+  const auto& mc_id = op_arg.second.value();
+  if (!controllers_.count(mc_id)) {
+    std::cerr << "Unknown controller \"" << mc_id << "\"!!!" << std::endl;
     return;
   }
 
   cli::ControllerCommand cmd;
-  cmd.mc_id() = curr_controller_;
+  cmd.mc_id() = mc_id;
   cmd.type() = cmd_type;
 
   DDS::ReturnCode_t rc = cc_dw_->write(cmd, DDS::HANDLE_NIL);
   if (rc != DDS::RETCODE_OK) {
-    ACE_ERROR((LM_WARNING, "CLIClient::send_controller_cmd: write ControllerCommand failed: \"%C\"\n",
-               OpenDDS::DCPS::retcode_to_string(rc)));
+    ACE_ERROR((LM_WARNING, "CLIClient::send_controller_cmd: write ControllerCommand to MC \"%C\" failed: \"%C\"\n",
+               mc_id.c_str(), OpenDDS::DCPS::retcode_to_string(rc)));
   }
 }
 
-void CLIClient::send_stop_controller_cmd() const
+void CLIClient::send_suspend_controller_cmd(const OpArgPair& op_arg) const
 {
-  send_controller_cmd(cli::ControllerCmdType::CCT_STOP);
+  send_controller_cmd(op_arg, cli::ControllerCmdType::CCT_STOP);
 }
 
-void CLIClient::send_resume_controller_cmd() const
+void CLIClient::send_resume_controller_cmd(const OpArgPair& op_arg) const
 {
-  send_controller_cmd(cli::ControllerCmdType::CCT_RESUME);
+  send_controller_cmd(op_arg, cli::ControllerCmdType::CCT_RESUME);
 }
 
-void CLIClient::send_terminate_controller_cmd() const
+void CLIClient::send_terminate_controller_cmd(const OpArgPair& op_arg) const
 {
-  send_controller_cmd(cli::ControllerCmdType::CCT_TERMINATE);
+  send_controller_cmd(op_arg, cli::ControllerCmdType::CCT_TERMINATE);
 }
 
 void CLIClient::process_device_info(const tms::DeviceInfo& di, const DDS::SampleInfo& si)
@@ -786,11 +787,9 @@ void CLIClient::process_device_info(const tms::DeviceInfo& di, const DDS::Sample
   std::lock_guard<std::mutex> guard(data_m_);
   if (si.valid_data) {
     if (di.role() == tms::DeviceRole::ROLE_MICROGRID_CONTROLLER) {
-      controllers_.insert(std::make_pair(di.deviceId(), ControllerInfo{di, ControllerInfo::Status::AVAILABLE, Clock::now()}));
-      schedule_once(di.deviceId(), UnavailableController{di.deviceId()}, unavail_controller_delay);
+      controllers_.insert(std::make_pair(di.deviceId(), ControllerInfo{ di, Clock::now() }));
     }
   } else if (si.instance_state & DDS::NOT_ALIVE_DISPOSED_INSTANCE_STATE){
-    cancel<UnavailableController>(di.deviceId());
     controllers_.erase(di.deviceId());
   }
 }
@@ -801,25 +800,10 @@ void CLIClient::process_heartbeat(const tms::Heartbeat& hb, const DDS::SampleInf
   if (si.valid_data) {
     auto it = controllers_.find(hb.deviceId());
     if (it != controllers_.end()) {
-      it->second.status = ControllerInfo::Status::AVAILABLE;
       it->second.last_hb = Clock::now();
-      reschedule<UnavailableController>(hb.deviceId());
     }
   } else if (si.instance_state & DDS::NOT_ALIVE_DISPOSED_INSTANCE_STATE) {
-    cancel<UnavailableController>(hb.deviceId());
     controllers_.erase(hb.deviceId());
-  }
-}
-
-void CLIClient::any_timer_fired(TimerHandler<UnavailableController>::AnyTimer any_timer)
-{
-  const tms::Identity& mc_id = std::get<Timer<UnavailableController>::Ptr>(any_timer)->arg.id;
-  std::lock_guard<std::mutex> guard(data_m_);
-  auto it = controllers_.find(mc_id);
-  if (it != controllers_.end()) {
-    it->second.status = ControllerInfo::Status::UNAVAILABLE;
-  } else {
-    ACE_ERROR((LM_WARNING, "(%P|%t) WARNING: CLIClient::any_timer_fired: Could't find controller with Id \"%C\"\n", mc_id.c_str()));;
   }
 }
 
