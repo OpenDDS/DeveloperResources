@@ -457,6 +457,7 @@ bool CLIClient::can_connect(const tms::Identity& id1, tms::DeviceRole role1,
     return false;
   }
 
+  std::lock_guard<std::mutex> guard(data_m_);
   const bool dev1_is_not_connected = power_connections_.count(id1) == 0 || power_connections_.at(id1).empty();
   const bool dev2_is_not_connected = power_connections_.count(id2) == 0 || power_connections_.at(id2).empty();
 
@@ -472,6 +473,7 @@ bool CLIClient::can_connect(const tms::Identity& id1, tms::DeviceRole role1,
 void CLIClient::connect(const tms::Identity& id1, tms::DeviceRole role1,
                         const tms::Identity& id2, tms::DeviceRole role2)
 {
+  std::lock_guard<std::mutex> guard(data_m_);
   power_connections_[id1].insert(powersim::ConnectedDevice{id2, role2});
   power_connections_[id2].insert(powersim::ConnectedDevice{id1, role1});
 }
@@ -498,25 +500,36 @@ void CLIClient::consolidate_power_devices()
 // Each connection simulates a physical connection using a power cable.
 void CLIClient::connect_power_devices()
 {
-  std::lock_guard<std::mutex> guard(data_m_);
-  if (power_devices_.empty()) {
-    consolidate_power_devices();
+  // Reading input from user for connecting devices can take long.
+  // So we work on a copy of the power devices list and release the lock
+  // so that the CLI can continue processing heartbeats from MCs and
+  // does not incorrectly report available MCs as unavailable.
+  PowerDevices local_pds;
+  {
+    std::lock_guard<std::mutex> guard(data_m_);
+    if (power_devices_.empty()) {
+      consolidate_power_devices();
+    }
+    local_pds = power_devices_;
   }
 
-  for (auto it1 = power_devices_.begin(); it1 != power_devices_.end(); ++it1) {
+  for (auto it1 = local_pds.begin(); it1 != local_pds.end(); ++it1) {
     const tms::Identity& id1 = it1->first;
     const tms::DeviceRole role1 = it1->second.device_info().role();
     auto it2 = it1;
     ++it2;
-    std::cout << "Select devices to connect to device Id: " << id1 << std::endl;
-    for (; it2 != power_devices_.end(); ++it2) {
+    if (it2 != local_pds.end()) {
+      std::cout << "=== Connections for device Id: " << id1 << std::endl;
+    }
+
+    for (; it2 != local_pds.end(); ++it2) {
       const tms::Identity& id2 = it2->first;
       const tms::DeviceRole role2 = it2->second.device_info().role();
       if (!can_connect(id1, role1, id2, role2)) {
         continue;
       }
 
-      std::cout << "Connect to device Id: " << id2 << " (Y/n)";
+      std::cout << "  Connect to device Id: " << id2 << " (Y/n)> ";
       while (true) {
         std::string line;
         std::getline(std::cin, line);
@@ -535,6 +548,7 @@ void CLIClient::connect_power_devices()
 
   // Send the power topology to the current controller which then
   // distributes the power connections to its managed power devices.
+  std::lock_guard<std::mutex> guard(data_m_);
   powersim::PowerTopology pt;
   pt.connections().reserve(power_connections_.size());
   CORBA::ULong i = 0;
