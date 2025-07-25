@@ -599,7 +599,7 @@ void CLIClient::display_controllers() const
   size_t i = 1;
   const auto now = Clock::now();
   for (auto it = controllers_.begin(); it != controllers_.end(); ++it) {
-    std::cout << i << ". Controller Id: " << it->first << " (" <<
+    std::cout << i++ << ". Controller Id: " << it->first << " (" <<
       (controller_status(now, it->second.last_hb) == ControllerStatus::AVAILABLE ? "available)" : "unavailable)")
       << std::endl;
   }

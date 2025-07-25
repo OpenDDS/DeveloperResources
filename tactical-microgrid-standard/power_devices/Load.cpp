@@ -146,7 +146,7 @@ void ElectricCurrentDataReaderListenerImpl::on_data_available(DDS::DataReader_pt
 
       if (from == load_dev_.connected_dev_id() && to == load_dev_.get_device_id()) {
         if (load_dev_.verbose()) {
-          ACE_DEBUG((LM_INFO, "=== Receiving power from \"%C\" -- %f Amps ...\n", from.c_str(), ec.amperage()));
+          ACE_DEBUG((LM_INFO, "=== (%T) Receiving power from \"%C\" -- %f Amps...\n", from.c_str(), ec.amperage()));
         }
         break;
       }
