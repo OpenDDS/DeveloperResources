@@ -196,6 +196,7 @@ void ElectricCurrentDataReaderListenerImpl::on_data_available(DDS::DataReader_pt
       for (const auto& out_dev : connected_devices_out) {
         powersim::ElectricCurrent relay_ec = ec;
         relay_ec.power_path().push_back(out_dev.id());
+        relay_ec.amperage() = out_amps;
         const DDS::ReturnCode_t rc = dist_dev_.get_electric_current_data_writer()->write(relay_ec, DDS::HANDLE_NIL);
         if (rc != DDS::RETCODE_OK) {
           ACE_ERROR((LM_WARNING, "(%P|%t) WARNING: ElectricCurrentDataReaderListenerImpl::on_data_available: "
