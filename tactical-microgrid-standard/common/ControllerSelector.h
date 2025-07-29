@@ -7,6 +7,8 @@
 #include <common/OpenDDS_TMS_export.h>
 
 #include <map>
+#include <tuple>
+#include <set>
 
 struct NewController {
   tms::Identity id;
@@ -25,7 +27,46 @@ struct NoControllers {
   static const char* name() { return "NoControllers"; }
 };
 
-class PowerDevice;
+class OpenDDS_TMS_Export ControllerCallbacks {
+public:
+  using IdCallback = std::function<void(const tms::Identity&)>;
+  using Callback = std::function<void()>;
+
+  explicit ControllerCallbacks(Mutex& lock) : cb_lock_(lock) {}
+
+  void set_new_controller_callback(IdCallback cb)
+  {
+    Guard g(cb_lock_);
+    new_controller_callback_ = cb;
+  }
+
+  void set_missed_heartbeat_callback(IdCallback cb)
+  {
+    Guard g(cb_lock_);
+    missed_heartbeat_callback_ = cb;
+  }
+
+  void set_lost_controller_callback(IdCallback cb)
+  {
+    Guard g(cb_lock_);
+    lost_controller_callback_ = cb;
+  }
+
+  void set_no_controllers_callback(Callback cb)
+  {
+    Guard g(cb_lock_);
+    no_controllers_callback_ = cb;
+  }
+
+protected:
+  IdCallback new_controller_callback_;
+  IdCallback missed_heartbeat_callback_;
+  IdCallback lost_controller_callback_;
+  Callback no_controllers_callback_;
+
+private:
+  Mutex& cb_lock_;
+};
 
 /**
  * Logic for determining what controller should be used, based on TMS A.7.5.
@@ -55,6 +96,7 @@ class PowerDevice;
  * S: If there's a selectable controller with a recent heartbeat
  */
 class OpenDDS_TMS_Export ControllerSelector :
+  public ControllerCallbacks,
   public TimerHandler<NewController, MissedHeartbeat, LostController, NoControllers> {
 public:
   explicit ControllerSelector(const tms::Identity& device_id);
@@ -73,12 +115,6 @@ public:
   {
     Guard g(lock_);
     return selected_ == id;
-  }
-
-  ACE_Reactor* get_reactor() const
-  {
-    Guard g(lock_);
-    return reactor_;
   }
 
   void set_ActiveMicrogridControllerState_writer(tms::ActiveMicrogridControllerStateDataWriter_var amcs_dw)
@@ -107,6 +143,22 @@ private:
 
   tms::Identity selected_;
   std::map<tms::Identity, TimePoint> all_controllers_;
+  struct Priority {
+    uint16_t priority;
+    tms::Identity id;
+
+    Priority(const tms::DeviceInfo& di)
+    : priority(di.controlService()->mc()->priorityRanking())
+    , id(di.deviceId())
+    {
+    }
+
+    bool operator<(const Priority& lhs) const
+    {
+      return std::tie(priority, id) < std::tie(lhs.priority, lhs.id);
+    }
+  };
+  std::set<Priority> all_controllers_by_priority_;
 
   // Device ID to which this controller selector belong.
   tms::Identity device_id_;

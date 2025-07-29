@@ -6,7 +6,11 @@
 
 class Controller : public Handshaking {
 public:
-  explicit Controller(const tms::Identity& id) : Handshaking(id) {}
+  explicit Controller(const tms::Identity& id, uint16_t priority= 0)
+  : Handshaking(id)
+  , priority_(priority)
+  {
+  }
 
   DDS::ReturnCode_t init(DDS::DomainId_t domain_id, int argc = 0, char* argv[] = nullptr);
   int run();
@@ -28,6 +32,7 @@ private:
 private:
   mutable std::mutex mut_;
   PowerDevices power_devices_;
+  uint16_t priority_;
 
   DDS::DomainId_t tms_domain_id_ = OpenDDS::DOMAIN_UNKNOWN;;
 };

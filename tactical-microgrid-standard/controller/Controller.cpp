@@ -100,7 +100,7 @@ tms::DeviceInfo Controller::populate_device_info() const
     tms::MicrogridControllerInfo mc_info;
     {
       mc_info.features().push_back(tms::MicrogridControllerFeature::MCF_GENERAL);
-      mc_info.priorityRanking(0);
+      mc_info.priorityRanking(priority_);
     }
     csi.mc() = mc_info;
   }
