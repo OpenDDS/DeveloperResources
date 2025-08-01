@@ -73,6 +73,11 @@ public:
     return essl_;
   }
 
+  ControllerCallbacks& controller_callbacks()
+  {
+    return controller_selector_;
+  }
+
 protected:
   virtual int run_i()
   {

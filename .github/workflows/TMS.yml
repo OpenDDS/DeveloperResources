@@ -226,7 +226,7 @@ jobs:
           cd OpenDDS
           . setenv.sh
           cd ../tactical-microgrid-standard
-          cmake -B build_static
+          cmake -B build_static -D BUILD_TESTING=TRUE
           cmake --build build_static
       - name: 'Build TMS application with shared libs (Linux /macOS)'
         if: runner.os == 'Linux' || runner.os == 'macOS'
@@ -235,7 +235,7 @@ jobs:
           cd OpenDDS
           . setenv.sh
           cd ../tactical-microgrid-standard
-          cmake -DBUILD_SHARED_LIBS=yes -B build_shared
+          cmake -DBUILD_SHARED_LIBS=yes -B build_shared -D BUILD_TESTING=TRUE
           cmake --build build_shared
       - name: 'Build TMS application with static libs (Windows)'
         if: runner.os == 'Windows'
@@ -244,7 +244,7 @@ jobs:
           cd OpenDDS
           call setenv.cmd
           cd ..\tactical-microgrid-standard
-          cmake -B build_static
+          cmake -B build_static -D BUILD_TESTING=TRUE
           cmake --build build_static
       - name: 'Build TMS application with shared libs (Windows)'
         if: runner.os == 'Windows'
@@ -253,5 +253,35 @@ jobs:
           cd OpenDDS
           call setenv.cmd
           cd ..\tactical-microgrid-standard
-          cmake -DBUILD_SHARED_LIBS=yes -B build_shared
+          cmake -DBUILD_SHARED_LIBS=yes -B build_shared -D BUILD_TESTING=TRUE
           cmake --build build_shared
+      - name: 'Run tests with static libs (Linux / macOS)'
+        if: runner.os == 'Linux' || runner.os == 'macOS'
+        run: |-
+          cd OpenDDS
+          . setenv.sh
+          cd ../tactical-microgrid-standard/build_static
+          ctest --verbose --output-on-failure
+      - name: 'Run tests with shared libs (Linux /macOS)'
+        if: runner.os == 'Linux' || runner.os == 'macOS'
+        run: |-
+          cd OpenDDS
+          . setenv.sh
+          cd ../tactical-microgrid-standard/build_shared
+          ctest --verbose --output-on-failure
+      - name: 'Run tests with static libs (Windows)'
+        if: runner.os == 'Windows'
+        shell: cmd
+        run: |-
+          cd OpenDDS
+          call setenv.cmd
+          cd ..\tactical-microgrid-standard\build_static
+          ctest --verbose --output-on-failure -C Debug
+      - name: 'Run tests with shared libs (Windows)'
+        if: runner.os == 'Windows'
+        shell: cmd
+        run: |-
+          cd OpenDDS
+          call setenv.cmd
+          cd ..\tactical-microgrid-standard\build_shared
+          ctest --verbose --output-on-failure -C Debug
