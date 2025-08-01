@@ -43,11 +43,7 @@ void ControllerSelector::got_device_info(const tms::DeviceInfo& di)
   if (di.role() == tms::DeviceRole::ROLE_MICROGRID_CONTROLLER &&
       !all_controllers_.count(di.deviceId())) {
     all_controllers_[di.deviceId()] = TimePoint::min();
-    all_controllers_by_priority_.insert(Priority(di));
-    ACE_DEBUG((LM_INFO, "Got %C\n", di.deviceId().c_str()));
-    for (auto it = all_controllers_by_priority_.begin(); it != all_controllers_by_priority_.end(); ++it) {
-      ACE_DEBUG((LM_INFO, "%d %C\n", it->priority, it->id.c_str()));
-    }
+    prioritized_controllers_.insert(PrioritizedController(di));
   }
 }
 
@@ -130,7 +126,7 @@ bool ControllerSelector::select_controller()
   const TimePoint now = Clock::now();
 
   // Select an available controller with smallest identity alphabetically
-  for (auto it = all_controllers_by_priority_.begin(); it != all_controllers_by_priority_.end(); ++it) {
+  for (auto it = prioritized_controllers_.begin(); it != prioritized_controllers_.end(); ++it) {
     auto mc_info = all_controllers_.find(it->id);
     const auto last_hb = now - mc_info->second;
     // TMS spec doesn't specify this. But it should make sure the controller is still available

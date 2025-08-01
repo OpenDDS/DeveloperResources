@@ -33,7 +33,7 @@ private:
   int handle_signal(int, siginfo_t*, ucontext_t*)
   {
     ACE_DEBUG((LM_INFO, "(%P|%t) SIGINT\n"));
-    exit(1);
+    exit(0);
     return -1;
   }
 };

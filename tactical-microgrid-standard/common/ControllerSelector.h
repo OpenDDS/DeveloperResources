@@ -144,22 +144,30 @@ private:
 
   tms::Identity selected_;
   std::map<tms::Identity, TimePoint> all_controllers_;
-  struct Priority {
-    uint16_t priority;
+
+  struct PrioritizedController {
+    uint16_t priority = 0;
     tms::Identity id;
 
-    Priority(const tms::DeviceInfo& di)
-    : priority(di.controlService()->mc()->priorityRanking())
+    explicit PrioritizedController(const tms::DeviceInfo& di)
+    : priority(0)
     , id(di.deviceId())
     {
+      const auto& cs = di.controlService();
+      if (cs) {
+        const auto& mc = cs->mc();
+        if (mc) {
+          priority = mc->priorityRanking();
+        }
+      }
     }
 
-    bool operator<(const Priority& lhs) const
+    bool operator<(const PrioritizedController& lhs) const
     {
       return std::tie(priority, id) < std::tie(lhs.priority, lhs.id);
     }
   };
-  std::set<Priority> all_controllers_by_priority_;
+  std::set<PrioritizedController> prioritized_controllers_;
 
   // Device ID to which this controller selector belong.
   tms::Identity device_id_;
