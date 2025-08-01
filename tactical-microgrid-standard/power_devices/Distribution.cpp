@@ -189,10 +189,14 @@ void ElectricCurrentDataReaderListenerImpl::on_data_available(DDS::DataReader_pt
         continue;
       }
 
+      // For simulation purpose, we just split the amperage evenly over all output ports
+      const auto out_amps = ec.amperage() / connected_devices_out.size();
+
       // Relay to all devices connected to the output power ports
       for (const auto& out_dev : connected_devices_out) {
         powersim::ElectricCurrent relay_ec = ec;
         relay_ec.power_path().push_back(out_dev.id());
+        relay_ec.amperage() = out_amps;
         const DDS::ReturnCode_t rc = dist_dev_.get_electric_current_data_writer()->write(relay_ec, DDS::HANDLE_NIL);
         if (rc != DDS::RETCODE_OK) {
           ACE_ERROR((LM_WARNING, "(%P|%t) WARNING: ElectricCurrentDataReaderListenerImpl::on_data_available: "
@@ -200,8 +204,8 @@ void ElectricCurrentDataReaderListenerImpl::on_data_available(DDS::DataReader_pt
         }
 
         if (dist_dev_.verbose()) {
-          std::cout << "=== Relaying power from device \"" << from << "\" to device \""
-                    << out_dev.id() << "\" -- " << ec.amperage() << "Amps ..." << std::endl;
+          ACE_DEBUG((LM_DEBUG, "=== (%T) Relaying power from device \"%C\" to device \"%C\" -- %f Amps...\n",
+                     from.c_str(), out_dev.id().c_str(), out_amps));
         }
       }
     }

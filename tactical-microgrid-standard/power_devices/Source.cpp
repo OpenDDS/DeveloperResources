@@ -120,7 +120,7 @@ public:
         powersim::ElectricCurrent ec;
         ec.power_path().push_back(get_device_id());
         ec.power_path().push_back(connected_devs[0].id());
-        ec.amperage() = 1.0f;
+        ec.amperage() = 10.0f;
         const DDS::ReturnCode_t rc = ec_dw_->write(ec, DDS::HANDLE_NIL);
         if (rc != DDS::RETCODE_OK) {
           ACE_ERROR((LM_WARNING, "(%P|%t) WARNING: SourceDevice::simulate_power_flow: "
@@ -128,7 +128,8 @@ public:
         }
 
         if (verbose_) {
-          std::cout << "=== Sending power to device \"" << connected_devs[0].id() << "\"..." << std::endl;
+          ACE_DEBUG((LM_DEBUG, "=== (%T) Sending power to device \"%C\" -- %f Amps...\n",
+                     connected_devs[0].id().c_str(), ec.amperage()));
         }
 
         // Frequency of messages can be proportional to the power measure?

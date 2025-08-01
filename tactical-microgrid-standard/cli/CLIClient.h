@@ -12,11 +12,6 @@
 #include <mutex>
 #include <unordered_set>
 
-struct UnavailableController {
-  tms::Identity id;
-  static const char* name() { return "UnavailableController"; }
-};
-
 struct ConnectedDeviceEqual {
   bool operator()(const powersim::ConnectedDevice& cd1, const powersim::ConnectedDevice& cd2) const
   {
@@ -31,7 +26,7 @@ struct ConnectedDeviceHash {
   }
 };
 
-class CLIClient : public TimerHandler<UnavailableController> {
+class CLIClient {
 public:
   explicit CLIClient(const tms::Identity& id);
   ~CLIClient() {}
@@ -39,8 +34,6 @@ public:
   DDS::ReturnCode_t init(DDS::DomainId_t domain_id, int argc = 0, char* argv[] = nullptr);
 
   void run();
-
-  void set_active_controller(const tms::Identity& device_id, const OPENDDS_OPTIONAL_NS::optional<tms::Identity>& master_id);
 
 private:
   // Initialize DDS entities in the TMS domain
@@ -57,8 +50,16 @@ private:
 
   void display_commands() const;
   std::string energy_level_to_string(tms::EnergyStartStopLevel essl) const;
+
+  enum class ControllerStatus {
+    AVAILABLE,
+    UNAVAILABLE,
+  };
+
+  ControllerStatus controller_status(TimePoint now, TimePoint last_heartbeat) const;
   void display_controllers() const;
-  void set_controller(const OpArgPair& op_arg);
+  bool collect_power_devices();
+  void display_power_devices() const;
   void list_power_devices();
   bool is_single_port_device(tms::DeviceRole role) const;
 
@@ -69,24 +70,23 @@ private:
   // Create a power connection between two devices
   void connect(const tms::Identity& id1, tms::DeviceRole role1,
     const tms::Identity& id2, tms::DeviceRole role2);
-
+  void consolidate_power_devices();
   void connect_power_devices();
-  bool send_power_devices_request();
-  void display_power_devices() const;
-  void send_start_device_cmd(const OpArgPair& op_arg) const;
-  void send_stop_device_cmd(const OpArgPair& op_arg) const;
-  void send_start_stop_request(const OpArgPair& op_arg, tms::OperatorPriorityType opt) const;
-  void send_stop_controller_cmd() const;
-  void send_resume_controller_cmd() const;
-  void send_terminate_controller_cmd() const;
-  void send_controller_cmd(cli::ControllerCmdType cmd_type) const;
+  bool send_power_devices_request(const tms::Identity& mc_id);
+  void send_start_device_cmd(const OpArgPair& op_arg);
+  void send_stop_device_cmd(const OpArgPair& op_arg);
+  void send_start_stop_request(const OpArgPair& op_arg, tms::OperatorPriorityType opt);
+  void send_suspend_controller_cmd(const OpArgPair& op_pair) const;
+  void send_resume_controller_cmd(const OpArgPair& op_pair) const;
+  void send_terminate_controller_cmd(const OpArgPair& op_pair) const;
+  void send_controller_cmd(const OpArgPair& op_pair, cli::ControllerCmdType cmd_type) const;
 
   void process_device_info(const tms::DeviceInfo& di, const DDS::SampleInfo& si);
   void process_heartbeat(const tms::Heartbeat& hb, const DDS::SampleInfo& si);
 
-  void any_timer_fired(TimerHandler<UnavailableController>::AnyTimer any_timer) final;
   int handle_signal(int, siginfo_t*, ucontext_t*);
 
+  ACE_Reactor* const reactor_ = ACE_Reactor::instance();
   DDS::DomainParticipant_var sim_participant_;
   Handshaking handshaking_;
   cli::PowerDevicesRequestDataWriter_var pdreq_dw_;
@@ -104,39 +104,30 @@ private:
   static constexpr Sec unavail_controller_delay = missed_controller_delay + lost_controller_delay;
 
   struct ControllerInfo {
-    enum class Status {
-      AVAILABLE,
-      UNAVAILABLE,
-    };
-
     tms::DeviceInfo info;
-    Status status;
     TimePoint last_hb;
   };
 
   mutable std::mutex cli_m_;
   bool stop_cli_;
 
+  // Mutex for the following data
   mutable std::mutex data_m_;
 
-  // Microgrid controllers to which the CLI client is connected
+  // Microgrid controllers that are (and were) reachable by the CLI
   std::unordered_map<tms::Identity, ControllerInfo> controllers_;
 
-  // The power devices that are connected to the current controller
+  // For each controller, cache the power devices that select it as the active controller.
+  // This mapping can change during the operation of the microgrid due to the availability of the MCs.
+  std::unordered_map<tms::Identity, PowerDevices> mc_to_devices_;
+
+  // All power devices in the microgrid, reported by the MCs.
   PowerDevices power_devices_;
 
   // Store the simulated power connections between power devices
-  using PowerConnection = std::unordered_map<tms::Identity, std::unordered_set<powersim::ConnectedDevice, ConnectedDeviceHash, ConnectedDeviceEqual>>;
+  using PowerConnection = std::unordered_map<tms::Identity,
+    std::unordered_set<powersim::ConnectedDevice, ConnectedDeviceHash, ConnectedDeviceEqual>>;
   PowerConnection power_connections_;
-
-  // The current microgrid controller with which the CLI client is interacting
-  tms::Identity curr_controller_;
-
-  mutable std::mutex active_controllers_m_;
-
-  // Active controller selected by each power device (power device => its controller).
-  // Can be used to check that all power devices will eventually select the same active controller.
-  std::map<tms::Identity, tms::Identity> active_controllers_;
 };
 
 #endif

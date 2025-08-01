@@ -17,7 +17,7 @@ void ActiveMicrogridControllerStateDataReaderListenerImpl::on_data_available(DDS
     if (info_seq[i].valid_data) {
       const tms::Identity& device_id = data[i].deviceId();
       auto master_id = data[i].masterId();
-      cli_client_.set_active_controller(device_id, master_id);
+      controller_.set_active_controller(device_id, master_id);
     }
   }
 }

@@ -9,7 +9,10 @@ include(opendds_testing)
 add_executable(basic-dev basic-dev.cpp)
 target_link_libraries(basic-dev PRIVATE PowerSim_Idl)
 
-add_executable(basic-mc ${CMAKE_SOURCE_DIR}/controller/Controller.cpp basic-mc.cpp)
+add_executable(basic-mc
+  ${CMAKE_SOURCE_DIR}/controller/Controller.cpp
+  ${CMAKE_SOURCE_DIR}/controller/ActiveMicrogridControllerStateDataReaderListenerImpl.cpp
+  basic-mc.cpp)
 target_link_libraries(basic-mc PRIVATE Commands_Idl)
 
 opendds_add_test(ARGS remove_dcs_after=0 test_verbose=1)

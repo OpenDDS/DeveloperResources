@@ -19,7 +19,7 @@ opendds_target_sources(TMS_Common
   PUBLIC
     common/mil-std-3071_data_model.idl
   INCLUDE_BASE ${CMAKE_CURRENT_SOURCE_DIR}
-  OPENDDS_IDL_OPTIONS -Lc++11
+  OPENDDS_IDL_OPTIONS -Lc++11 -Gxtypes-complete
 )
 target_link_libraries(TMS_Common PUBLIC OpenDDS::Rtps_Udp)
 target_compile_features(TMS_Common PUBLIC cxx_std_17)
@@ -29,7 +29,7 @@ add_library(Commands_Idl)
 opendds_target_sources(Commands_Idl
   PUBLIC
     cli_idl/CLICommands.idl
-  OPENDDS_IDL_OPTIONS -Lc++11 -I${CMAKE_CURRENT_SOURCE_DIR}
+  OPENDDS_IDL_OPTIONS -Lc++11 -Gxtypes-complete -I${CMAKE_CURRENT_SOURCE_DIR}
   INCLUDE_BASE ${CMAKE_CURRENT_SOURCE_DIR}
 )
 target_link_libraries(Commands_Idl PUBLIC TMS_Common)
@@ -43,7 +43,7 @@ opendds_export_header(PowerSim_Idl)
 opendds_target_sources(PowerSim_Idl
   PUBLIC
     power_devices/PowerSim.idl
-  OPENDDS_IDL_OPTIONS -Lc++11 -I${CMAKE_CURRENT_SOURCE_DIR}
+  OPENDDS_IDL_OPTIONS -Lc++11 -Gxtypes-complete -I${CMAKE_CURRENT_SOURCE_DIR}
   INCLUDE_BASE ${CMAKE_CURRENT_SOURCE_DIR}
 )
 target_link_libraries(PowerSim_Idl PUBLIC TMS_Common)
@@ -57,6 +57,7 @@ add_executable(Controller
   controller/ControllerCommandDataReaderListenerImpl.cpp
   controller/ReplyDataReaderListenerImpl.cpp
   controller/PowerTopologyDataReaderListenerImpl.cpp
+  controller/ActiveMicrogridControllerStateDataReaderListenerImpl.cpp
 )
 target_include_directories(Controller PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(Controller PRIVATE Commands_Idl PowerSim_Idl)
@@ -64,7 +65,6 @@ target_link_libraries(Controller PRIVATE Commands_Idl PowerSim_Idl)
 add_executable(CLI
   cli/main.cpp
   cli/CLIClient.cpp
-  cli/ActiveMicrogridControllerStateDataReaderListenerImpl.cpp
 )
 target_include_directories(CLI PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(CLI PRIVATE Commands_Idl PowerSim_Idl)
@@ -86,6 +86,17 @@ add_executable(Distribution
 )
 target_include_directories(Distribution PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(Distribution PRIVATE PowerSim_Idl)
+
+# Generated code with complete type objects enabled for the TMS IDL file
+# causes stack overflow on Windows.
+# Increase the stack size to 2MB (default is 1MB).
+if (MSVC)
+  target_link_options(Controller PRIVATE "/STACK:2097152")
+  target_link_options(CLI PRIVATE "/STACK:2097152")
+  target_link_options(Source PRIVATE "/STACK:2097152")
+  target_link_options(Load PRIVATE "/STACK:2097152")
+  target_link_options(Distribution PRIVATE "/STACK:2097152")
+endif()
 
 if(BUILD_TESTING)
   add_subdirectory(tests)

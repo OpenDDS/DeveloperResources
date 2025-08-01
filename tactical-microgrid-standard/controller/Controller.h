@@ -24,6 +24,8 @@ public:
     return tms_domain_id_;
   }
 
+  void set_active_controller(const tms::Identity& pd_id, const std::optional<tms::Identity>& master_id);
+
 private:
   void device_info_cb(const tms::DeviceInfo& di, const DDS::SampleInfo& si);
   void heartbeat_cb(const tms::Heartbeat& hb, const DDS::SampleInfo& si);

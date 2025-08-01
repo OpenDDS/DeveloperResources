@@ -139,6 +139,7 @@ private:
 
   void select(const tms::Identity& id, Sec last_hb = Sec(0));
 
+  bool select_controller();
   void send_controller_state();
 
   tms::Identity selected_;
