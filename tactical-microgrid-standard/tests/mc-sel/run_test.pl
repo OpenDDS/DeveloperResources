@@ -34,10 +34,21 @@ sub expect_new_mc {
   return $test->wait_for('dev', "new controller $name", max_wait => $max);
 }
 
+sub wait_until {
+  my $when = shift();
+
+  my $til = $when - time();
+  if ($til > 0) {
+    sleep($til);
+  }
+}
+
 sub expect_stop_mc {
   my $name = shift();
   my $ends_at = shift();
 
+  wait_until($ends_at);
+  kill('INT', PerlDDS::TestFramework::_getpid($test->{processes}->{process}->{$name}->{process}));
   $test->stop_process($ends_at - time() + $extra, $name);
 }
 

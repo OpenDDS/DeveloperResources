@@ -6,7 +6,7 @@
 
 class Controller : public Handshaking {
 public:
-  explicit Controller(const tms::Identity& id, uint16_t priority= 0)
+  explicit Controller(const tms::Identity& id, uint16_t priority = 0)
   : Handshaking(id)
   , priority_(priority)
   {

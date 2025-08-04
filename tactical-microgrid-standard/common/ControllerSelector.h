@@ -95,11 +95,12 @@ private:
  * A: If heartbeat is from selected
  * S: If there's a selectable controller with a recent heartbeat
  */
-class OpenDDS_TMS_Export ControllerSelector :
-  public ControllerCallbacks,
-  public TimerHandler<NewController, MissedHeartbeat, LostController, NoControllers> {
+class OpenDDS_TMS_Export ControllerSelector
+  : public TimerHandler<NewController, MissedHeartbeat, LostController, NoControllers>
+  , public ControllerCallbacks
+{
 public:
-  explicit ControllerSelector(const tms::Identity& device_id);
+  explicit ControllerSelector(const tms::Identity& device_id, ACE_Reactor* reactor = nullptr);
   ~ControllerSelector();
 
   void got_heartbeat(const tms::Heartbeat& hb);
@@ -150,8 +151,7 @@ private:
     tms::Identity id;
 
     explicit PrioritizedController(const tms::DeviceInfo& di)
-    : priority(0)
-    , id(di.deviceId())
+    : id(di.deviceId())
     {
       const auto& cs = di.controlService();
       if (cs) {

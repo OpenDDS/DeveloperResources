@@ -1,7 +1,8 @@
 #include "ControllerSelector.h"
 
-ControllerSelector::ControllerSelector(const tms::Identity& device_id)
-  : ControllerCallbacks(lock_)
+ControllerSelector::ControllerSelector(const tms::Identity& device_id, ACE_Reactor* reactor)
+  : TimerHandler(reactor)
+  , ControllerCallbacks(lock_)
   , device_id_(device_id)
 {
 }
