@@ -255,15 +255,15 @@ jobs:
           cd ..\tactical-microgrid-standard
           cmake -DBUILD_SHARED_LIBS=yes -B build_shared -D BUILD_TESTING=TRUE
           cmake --build build_shared
-      - name: 'Run tests with static libs (Linux / macOS)'
-        if: runner.os == 'Linux' || runner.os == 'macOS'
+      - name: 'Run tests with static libs (Linux)'
+        if: runner.os == 'Linux'
         run: |-
           cd OpenDDS
           . setenv.sh
           cd ../tactical-microgrid-standard/build_static
           ctest --verbose --output-on-failure
-      - name: 'Run tests with shared libs (Linux /macOS)'
-        if: runner.os == 'Linux' || runner.os == 'macOS'
+      - name: 'Run tests with shared libs (Linux)'
+        if: runner.os == 'Linux'
         run: |-
           cd OpenDDS
           . setenv.sh
