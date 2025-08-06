@@ -1,46 +1,22 @@
-#include "controller/Controller.h"
+#include "common.h"
 
-struct Timeout {
-  static const char* name() { return "Timeout"; }
-};
-
-class Test : public TimerHandler<Timeout> {
-public:
-  Test()
-  {
-    reactor_->register_handler(SIGINT, this);
-    schedule(Timeout{}, Sec(0), Sec(30));
-  }
-
-private:
-  void timer_fired(Timer<Timeout>& t)
-  {
-    ACE_DEBUG((LM_INFO, "(%P|%t) Timeout\n"));
-    t.exit_after = true;
-  }
-
-  void any_timer_fired(AnyTimer timer)
-  {
-    std::visit([&](auto&& value) { this->timer_fired(*value); }, timer);
-  }
-
-  int handle_signal(int, siginfo_t*, ucontext_t*)
-  {
-    ACE_DEBUG((LM_INFO, "(%P|%t) SIGINT\n"));
-    return end_event_loop();
-  }
-};
+#include <controller/Controller.h>
 
 int main(int argc, char* argv[])
 {
-  const int domain = std::stoi(argv[1]);
-  const std::string device_id = argv[2];
+  if (argc < 4) {
+    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: requires device id, priority, and time duration arguments\n"));
+    return 1;
+  }
+  const std::string device_id = argv[1];
+  const uint16_t priority = std::stoi(argv[2]);
+  const Sec exit_after(std::stoi(argv[3]));
 
-  Controller mc(device_id);
+  Controller mc(device_id, priority);
   if (mc.init(domain, argc, argv) != DDS::RETCODE_OK) {
     return 1;
   }
 
-  Test test;
+  Exiter exiter(mc, exit_after);
   return mc.run();
 }

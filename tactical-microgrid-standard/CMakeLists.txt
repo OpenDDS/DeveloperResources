@@ -98,5 +98,6 @@ if (MSVC)
   target_link_options(Distribution PRIVATE "/STACK:2097152")
 endif()
 
-
-add_subdirectory(tests)
+if(BUILD_TESTING)
+  add_subdirectory(tests)
+endif()
