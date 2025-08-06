@@ -6,7 +6,7 @@ use strict;
 use warnings;
 
 # Workaround https://github.com/OpenDDS/OpenDDS/pull/5071
-use Env (ACE_ROOT);
+use Env qw(ACE_ROOT);
 use lib "$ACE_ROOT/bin";
 
 use PerlDDS::Run_Test;
