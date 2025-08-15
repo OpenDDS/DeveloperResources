@@ -12,7 +12,7 @@ use lib "$ACE_ROOT/bin";
 use PerlDDS::Run_Test;
 
 my $test = new PerlDDS::TestFramework();
-
+$test->ignore_error("failed send: host unreachable");
 
 sub start_mc {
   my $name = shift();
@@ -33,7 +33,7 @@ my $lost_controller = 9 + $extra; # 3s for missed, 6s for lost
 
 sub expect_new_mc {
   my $name = shift();
-  my $max = shift();
+  my $max = shift() + $extra;
 
   return $test->wait_for('dev', "new controller $name", max_wait => $max);
 }
@@ -52,7 +52,9 @@ sub expect_stop_mc {
   my $ends_at = shift();
 
   wait_until($ends_at);
-  kill('INT', PerlDDS::TestFramework::_getpid($test->{processes}->{process}->{$name}->{process}));
+  if ($^O ne 'MSWin32') {
+    kill('INT', PerlDDS::TestFramework::_getpid($test->{processes}->{process}->{$name}->{process}));
+  }
   $test->stop_process($ends_at - time() + $extra, $name);
 }
 

@@ -58,11 +58,22 @@ jobs:
           fetch-depth: 1
           submodules: true
 
+      # Setup stacktrace
+      - name: install gdb
+        run: |
+          sudo apt-get update
+          sudo apt-get install gdb
+          echo 0 | sudo tee /proc/sys/kernel/yama/ptrace_scope
+      - name: change core file pattern
+        run: |
+          sudo sysctl -w kernel.core_pattern=core.%e.%p
+          echo Core file pattern set to:
+          cat /proc/sys/kernel/core_pattern
+
       # Get 3rd-party Dependencies
       - name: 'Install openssl, xerces (Linux)'
         if: runner.os == 'Linux'
         run: |-
-          sudo apt-get update
           sudo apt-get -y install libssl-dev libxerces-c-dev
       - name: 'Install xerces (macOS)'
         if: runner.os == 'macOS'
@@ -258,6 +269,7 @@ jobs:
       - name: 'Run tests with static libs (Linux)'
         if: runner.os == 'Linux'
         run: |-
+          ulimit -c unlimited
           cd OpenDDS
           . setenv.sh
           cd ../tactical-microgrid-standard/build_static
@@ -265,6 +277,7 @@ jobs:
       - name: 'Run tests with shared libs (Linux)'
         if: runner.os == 'Linux'
         run: |-
+          ulimit -c unlimited
           cd OpenDDS
           . setenv.sh
           cd ../tactical-microgrid-standard/build_shared
