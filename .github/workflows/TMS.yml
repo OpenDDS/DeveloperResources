@@ -60,11 +60,13 @@ jobs:
 
       # Setup stacktrace
       - name: install gdb
+        if: runner.os == 'Linux'
         run: |
           sudo apt-get update
           sudo apt-get install gdb
           echo 0 | sudo tee /proc/sys/kernel/yama/ptrace_scope
       - name: change core file pattern
+        if: runner.os == 'Linux'
         run: |
           sudo sysctl -w kernel.core_pattern=core.%e.%p
           echo Core file pattern set to:
