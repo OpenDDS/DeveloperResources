@@ -5,6 +5,11 @@ eval '(exit $?0)' && eval 'exec perl -S $0 ${1+"$@"}'
 use strict;
 use warnings;
 
+if ($^O eq 'MSWin32') {
+  eval('use Win32::Process;');
+  die($@) if ($@);
+}
+
 # Workaround https://github.com/OpenDDS/OpenDDS/pull/5071
 use Env qw(ACE_ROOT);
 use lib "$ACE_ROOT/bin";
@@ -52,8 +57,12 @@ sub expect_stop_mc {
   my $ends_at = shift();
 
   wait_until($ends_at);
-  if ($^O ne 'MSWin32') {
-    kill('INT', PerlDDS::TestFramework::_getpid($test->{processes}->{process}->{$name}->{process}));
+  my $proc = $test->{processes}->{process}->{$name}->{process}->{PROCESS};
+  if ($^O eq 'MSWin32') {
+    Win32::Process::Kill($proc, 0);
+  }
+  else {
+    kill('INT', $proc);
   }
   $test->stop_process($ends_at - time() + $extra, $name);
 }
