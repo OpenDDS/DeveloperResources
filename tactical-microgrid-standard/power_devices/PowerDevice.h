@@ -92,6 +92,11 @@ protected:
     return ret;
   }
 
+  void delete_extra_entities()
+  {
+    delete_entities(sim_participant_);
+  }
+
   // Concrete power device should override this function depending on their role.
   virtual tms::DeviceInfo populate_device_info() const;
 

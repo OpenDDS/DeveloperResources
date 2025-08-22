@@ -24,7 +24,7 @@ sub start_mc {
   my $priority = shift();
   my $time = shift();
 
-  $test->process($name, 'basic-mc', "$name $priority $time");
+  $test->process($name, 'basic-mc', "$name $priority");
   $test->start_process($name);
 
   return $name, time() + $time;

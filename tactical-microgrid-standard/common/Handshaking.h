@@ -61,7 +61,12 @@ public:
     return device_id_;
   }
 
+  void delete_all_entities();
+
 protected:
+  void delete_entities(DDS::DomainParticipant_var& part);
+  virtual void delete_extra_entities();
+
   virtual tms::DeviceInfo get_device_info() const
   {
     tms::DeviceInfo device_info;

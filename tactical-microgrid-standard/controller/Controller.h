@@ -31,7 +31,6 @@ private:
   void heartbeat_cb(const tms::Heartbeat& hb, const DDS::SampleInfo& si);
   tms::DeviceInfo populate_device_info() const;
 
-private:
   mutable std::mutex mut_;
   PowerDevices power_devices_;
   uint16_t priority_;
