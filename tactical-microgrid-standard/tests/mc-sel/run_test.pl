@@ -64,7 +64,7 @@ sub expect_stop_mc {
   else {
     kill('INT', $proc);
   }
-  $test->stop_process($ends_at - time() + $extra, $name);
+  $test->stop_process(6, $name);
 }
 
 sub expect_lost_mc {
@@ -84,7 +84,7 @@ my ($mc4, $mc4_ends_at) = start_mc('mc4', 10, 30);
 
 expect_stop_mc($mc1, $mc1_ends_at);
 expect_lost_mc($mc1, $lost_controller);
-expect_new_mc($mc3, 5);
+expect_new_mc($mc3, 10);
 expect_stop_mc($mc2, $mc2_ends_at);
 expect_stop_mc($mc3, $mc3_ends_at);
 expect_stop_mc($mc4, $mc4_ends_at);

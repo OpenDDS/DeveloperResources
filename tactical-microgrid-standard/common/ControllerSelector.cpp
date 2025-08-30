@@ -1,5 +1,7 @@
 #include "ControllerSelector.h"
 
+#include <sstream>
+
 ControllerSelector::ControllerSelector(const tms::Identity& device_id, ACE_Reactor* reactor)
   : TimerHandler(reactor)
   , ControllerCallbacks(lock_)
@@ -16,6 +18,9 @@ void ControllerSelector::got_heartbeat(const tms::Heartbeat& hb)
   Guard g(lock_);
   auto it = all_controllers_.find(hb.deviceId());
   if (it != all_controllers_.end()) {
+    ACE_DEBUG((LM_DEBUG, "(%P|%t) ControllerSelector::got_heartbeat: from mc \"%C\"\n",
+      hb.deviceId().c_str()));
+
     it->second = Clock::now(); // Update last heartbeat
     cancel<NoControllers>();
 
@@ -32,6 +37,9 @@ void ControllerSelector::got_heartbeat(const tms::Heartbeat& hb)
         schedule_once(MissedHeartbeat{}, heartbeat_deadline);
       }
     }
+  } else {
+    ACE_DEBUG((LM_DEBUG, "(%P|%t) ControllerSelector::got_heartbeat: from unknown \"%C\"\n",
+      hb.deviceId().c_str()));
   }
 }
 
@@ -129,12 +137,18 @@ bool ControllerSelector::select_controller()
   // Select an available controller with smallest identity alphabetically
   for (auto it = prioritized_controllers_.begin(); it != prioritized_controllers_.end(); ++it) {
     auto mc_info = all_controllers_.find(it->id);
+    const auto& id = mc_info->first;
     const auto last_hb = now - mc_info->second;
     // TMS spec doesn't specify this. But it should make sure the controller is still available
     // i.e., last heartbeat received within 3 seconds.
     if (last_hb < heartbeat_deadline) {
       select(mc_info->first, std::chrono::duration_cast<Sec>(last_hb));
       break;
+    } else {
+      std::ostringstream oss;
+      oss << std::chrono::duration_cast<Sec>(last_hb - heartbeat_deadline).count();
+      ACE_DEBUG((LM_DEBUG, "(%P|%t) ControllerSelector::select_controller: \"%C\" missed heatbeat by %Cs\n",
+        id.c_str(), oss.str().c_str()));
     }
   }
   return false;

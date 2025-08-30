@@ -16,7 +16,7 @@
 #include <stdexcept>
 #include <iostream>
 
-using Sec = std::chrono::seconds;
+using Sec = std::chrono::duration<double>;
 using Clock = std::chrono::system_clock;
 using TimePoint = std::chrono::time_point<Clock>;
 using TimerId = long;
@@ -24,6 +24,18 @@ using TimerKey = std::string;
 constexpr TimerId null_timer_id = 0;
 using Mutex = std::recursive_mutex;
 using Guard = std::lock_guard<Mutex>;
+
+// Workaround https://github.com/DOCGroup/ACE_TAO/pull/2462
+template<class Rep, class Period>
+inline ACE_Time_Value to_time_value(const std::chrono::duration<Rep, Period>& duration)
+{
+  using namespace std::chrono;
+
+  const seconds s{duration_cast<seconds>(duration)};
+  const microseconds usec{duration_cast<microseconds>(duration  - s)};
+  return ACE_Time_Value(ACE_Utils::truncate_cast<time_t>(s.count()),
+    ACE_Utils::truncate_cast<suseconds_t>(usec.count()));
+}
 
 // EventType must implement: static const char* name();
 template <typename EventType>
@@ -172,7 +184,7 @@ public:
     Guard g(lock_);
     assert_inactive<EventType>(timer);
     const TimerId id = reactor_->schedule_timer(
-      this, &timer->key, ACE_Time_Value(timer->delay), ACE_Time_Value(timer->period));
+      this, &timer->key, to_time_value(timer->delay), to_time_value(timer->period));
     timer->activate(id);
     active_timers_[timer->key] = timer;
   }
