@@ -17,7 +17,6 @@ use lib "$ACE_ROOT/bin";
 use PerlDDS::Run_Test;
 
 my $test = new PerlDDS::TestFramework();
-$test->ignore_error("failed send: host unreachable");
 
 sub start_mc {
   my $name = shift();

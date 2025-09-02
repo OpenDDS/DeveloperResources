@@ -137,7 +137,7 @@ jobs:
           echo "TAO_ROOT=$GITHUB_WORKSPACE\\ACE_TAO\\TAO" >> $GITHUB_ENV
           echo "DDS_ROOT=$GITHUB_WORKSPACE\\OpenDDS" >> $GITHUB_ENV
           echo "MPC_ROOT=$GITHUB_WORKSPACE\\MPC" >> $GITHUB_ENV
-          CONFIG_OPTIONS+=" --no-tests --std=c++17 --ipv6 --security --xerces3=\"$VCPKG_INSTALLED_DIR\\x64-windows\" --openssl=\"$VCPKG_INSTALLED_DIR\\x64-windows\""
+          CONFIG_OPTIONS+=" --no-tests --std=c++17 --security --xerces3=\"$VCPKG_INSTALLED_DIR\\x64-windows\" --openssl=\"$VCPKG_INSTALLED_DIR\\x64-windows\""
           echo "CONFIG_OPTIONS=$CONFIG_OPTIONS" >> $GITHUB_ENV
           export COMPILER_VERSION=$("C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe" -property catalog_productDisplayVersion)
           echo "COMPILER_VERSION=$COMPILER_VERSION" >> $GITHUB_ENV
