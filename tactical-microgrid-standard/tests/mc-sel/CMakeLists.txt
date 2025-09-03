@@ -15,4 +15,7 @@ add_executable(basic-mc
   basic-mc.cpp)
 target_link_libraries(basic-mc PRIVATE Commands_Idl)
 
-opendds_add_test(ARGS remove_dcs_after=0 test_verbose=1)
+opendds_add_test(
+  EXTRA_LIB_DIRS "$<TARGET_RUNTIME_DLL_DIRS:basic-dev>"
+  ARGS remove_dcs_after=0 test_verbose=1
+)
