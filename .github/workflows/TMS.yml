@@ -109,13 +109,15 @@ jobs:
           echo "DDS_ROOT=$GITHUB_WORKSPACE/OpenDDS" >> $GITHUB_ENV
           echo "MPC_ROOT=$GITHUB_WORKSPACE/MPC" >> $GITHUB_ENV
           echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$GITHUB_WORKSPACE/ACE_TAO/ACE/lib:$GITHUB_WORKSPACE/OpenDDS/lib" >> $GITHUB_ENV
-          CONFIG_OPTIONS+=" --no-tests --std=c++17 --ipv6 --security"
+          CONFIG_OPTIONS+=" --no-tests --std=c++17 --security"
           if [ '${{ runner.os }}' == 'macOS' ]; then
             if [ '${{ matrix.runner }}' == 'macos-13' ]; then
               CONFIG_OPTIONS+=" --xerces3=$(brew --prefix xerces-c) --openssl=/usr/local/opt/openssl@1.1"
             else
               CONFIG_OPTIONS+=" --xerces3=$(brew --prefix xerces-c) --openssl=$(brew --prefix openssl)"
             fi
+          else
+            CONFIG_OPTIONS+=" --ipv6"
           fi
           echo "CONFIG_OPTIONS=$CONFIG_OPTIONS" >> $GITHUB_ENV
           export COMPILER_VERSION=$(c++ --version 2>&1 | head -n 1)
@@ -268,16 +270,16 @@ jobs:
           cd ..\tactical-microgrid-standard
           cmake -DBUILD_SHARED_LIBS=yes -B build_shared -D BUILD_TESTING=TRUE
           cmake --build build_shared
-      - name: 'Run tests with static libs (Linux)'
-        if: runner.os == 'Linux'
+      - name: 'Run tests with static libs (Linux/macOS)'
+        if: runner.os == 'Linux' || runner.os == 'macOS'
         run: |-
           ulimit -c unlimited
           cd OpenDDS
           . setenv.sh
           cd ../tactical-microgrid-standard/build_static
           ctest --verbose --output-on-failure
-      - name: 'Run tests with shared libs (Linux)'
-        if: runner.os == 'Linux'
+      - name: 'Run tests with shared libs (Linux/macOS)'
+        if: runner.os == 'Linux' || runner.os == 'macOS'
         run: |-
           ulimit -c unlimited
           cd OpenDDS
