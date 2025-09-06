@@ -4,6 +4,7 @@
 #include "TimerHandler.h"
 
 #include <common/mil-std-3071_data_modelTypeSupportImpl.h>
+#include <common/Configurable.h>
 #include <common/OpenDDS_TMS_export.h>
 
 #include <map>
@@ -98,10 +99,14 @@ private:
 class OpenDDS_TMS_Export ControllerSelector
   : public TimerHandler<NewController, MissedHeartbeat, LostController, NoControllers>
   , public ControllerCallbacks
+  , public Configurable
 {
 public:
   explicit ControllerSelector(const tms::Identity& device_id, ACE_Reactor* reactor = nullptr);
   ~ControllerSelector();
+
+  bool got_config(const std::string& name, const OpenDDS::DCPS::ConfigPair& pair);
+  void set_debug(bool value);
 
   void got_heartbeat(const tms::Heartbeat& hb);
   void got_device_info(const tms::DeviceInfo& di);
@@ -137,6 +142,8 @@ private:
   {
     std::visit([&](auto&& value) { this->timer_fired(*value); }, timer);
   }
+
+  bool debug_ = false;
 
   void select(const tms::Identity& id, Sec last_hb = Sec(0));
 

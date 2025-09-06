@@ -5,6 +5,7 @@
 ControllerSelector::ControllerSelector(const tms::Identity& device_id, ACE_Reactor* reactor)
   : TimerHandler(reactor)
   , ControllerCallbacks(lock_)
+  , Configurable("TMS_SELECTOR")
   , device_id_(device_id)
 {
 }
@@ -13,13 +14,33 @@ ControllerSelector::~ControllerSelector()
 {
 }
 
+bool ControllerSelector::got_config(const std::string& name, const OpenDDS::DCPS::ConfigPair& pair)
+{
+  if (name == "DEBUG") {
+    bool tmp;
+    if (convert_bool(pair, tmp)) {
+      set_debug(tmp);
+    }
+    return true;
+  }
+  return false;
+}
+
+void ControllerSelector::set_debug(bool value)
+{
+  Guard g(lock_);
+  debug_ = value;
+}
+
 void ControllerSelector::got_heartbeat(const tms::Heartbeat& hb)
 {
   Guard g(lock_);
   auto it = all_controllers_.find(hb.deviceId());
   if (it != all_controllers_.end()) {
-    ACE_DEBUG((LM_DEBUG, "(%P|%t) ControllerSelector::got_heartbeat: from mc \"%C\"\n",
-      hb.deviceId().c_str()));
+    if (debug_) {
+      ACE_DEBUG((LM_DEBUG, "(%P|%t) ControllerSelector::got_heartbeat: from mc \"%C\"\n",
+        hb.deviceId().c_str()));
+    }
 
     it->second = Clock::now(); // Update last heartbeat
     cancel<NoControllers>();
@@ -37,7 +58,7 @@ void ControllerSelector::got_heartbeat(const tms::Heartbeat& hb)
         schedule_once(MissedHeartbeat{}, heartbeat_deadline);
       }
     }
-  } else {
+  } else if (debug_) {
     ACE_DEBUG((LM_DEBUG, "(%P|%t) ControllerSelector::got_heartbeat: from unknown \"%C\"\n",
       hb.deviceId().c_str()));
   }
@@ -60,8 +81,11 @@ void ControllerSelector::timer_fired(Timer<NewController>& timer)
 {
   Guard g(lock_);
   const auto& mc_id = timer.arg.id;
-  ACE_DEBUG((LM_INFO, "(%P|%t) INFO: ControllerSelector::timed_event(NewController): "
-    "triggered by \"%C\" heartbeat\n", mc_id.c_str()));
+
+  if (debug_) {
+    ACE_DEBUG((LM_DEBUG, "(%P|%t) ControllerSelector::timed_event(NewController): "
+      "triggered by \"%C\" heartbeat\n", mc_id.c_str()));
+  }
 
   if (all_controllers_.find(mc_id) == all_controllers_.end()) {
     ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: ControllerSelector::timed_event(NewController): Controller \"%C\" not found!\n",
@@ -81,8 +105,10 @@ void ControllerSelector::timer_fired(Timer<MissedHeartbeat>& timer)
 {
   Guard g(lock_);
   const auto& timer_id = timer.id;
-  ACE_DEBUG((LM_INFO, "(%P|%t) INFO: ControllerSelector::timed_event(MissedHeartbeat): "
-    "\"%C\". Timer id: %d\n", selected_.c_str(), timer_id));
+  if (debug_) {
+    ACE_DEBUG((LM_DEBUG, "(%P|%t) ControllerSelector::timed_event(MissedHeartbeat): "
+      "\"%C\". Timer id: %d\n", selected_.c_str(), timer_id));
+  }
   if (missed_heartbeat_callback_) {
     missed_heartbeat_callback_(selected_);
   }
@@ -121,7 +147,7 @@ void ControllerSelector::timer_fired(Timer<LostController>&)
 void ControllerSelector::timer_fired(Timer<NoControllers>&)
 {
   Guard g(lock_);
-  ACE_DEBUG((LM_INFO, "(%P|%t) INFO: ControllerSelector::timed_event(NoControllers)\n"));
+  ACE_ERROR((LM_WARNING, "(%P|%t) WARNING: ControllerSelector::timed_event(NoControllers)\n"));
   if (no_controllers_callback_) {
     no_controllers_callback_();
   }
@@ -144,7 +170,7 @@ bool ControllerSelector::select_controller()
     if (last_hb < heartbeat_deadline) {
       select(mc_info->first, std::chrono::duration_cast<Sec>(last_hb));
       break;
-    } else {
+    } else if (debug_) {
       std::ostringstream oss;
       oss << std::chrono::duration_cast<Sec>(last_hb - heartbeat_deadline).count();
       ACE_DEBUG((LM_DEBUG, "(%P|%t) ControllerSelector::select_controller: \"%C\" missed heatbeat by %Cs\n",

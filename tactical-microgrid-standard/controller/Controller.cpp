@@ -1,7 +1,8 @@
 #include "Controller.h"
 #include "ActiveMicrogridControllerStateDataReaderListenerImpl.h"
-#include "common/Utils.h"
-#include "common/QosHelper.h"
+
+#include <common/Utils.h>
+#include <common/QosHelper.h>
 
 #include <dds/DCPS/Marked_Default_Qos.h>
 
@@ -11,6 +12,8 @@ DDS::ReturnCode_t Controller::init(DDS::DomainId_t domain_id, int argc, char* ar
   if (rc != DDS::RETCODE_OK) {
     return rc;
   }
+
+  setup_config();
 
   rc = create_subscribers(
     [&](const auto& di, const auto& si) { device_info_cb(di, si); },
@@ -29,7 +32,7 @@ DDS::ReturnCode_t Controller::init(DDS::DomainId_t domain_id, int argc, char* ar
   // Subscribe to the tms::ActiveMicrogridControllerState topic
   tms::ActiveMicrogridControllerStateTypeSupport_var amcs_ts = new tms::ActiveMicrogridControllerStateTypeSupportImpl;
   if (DDS::RETCODE_OK != amcs_ts->register_type(dp, "")) {
-    ACE_ERROR((LM_ERROR, "(%P|%t) CLIClient::init: register_type ActiveMicrogridControllerState failed\n"));
+    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: Controller::init: register_type ActiveMicrogridControllerState failed\n"));
     return DDS::RETCODE_ERROR;
   }
 
@@ -40,7 +43,7 @@ DDS::ReturnCode_t Controller::init(DDS::DomainId_t domain_id, int argc, char* ar
                                                nullptr,
                                                ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
   if (!amcs_topic) {
-    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIClient::init: create_topic \"%C\" failed\n",
+    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: Controller::init: create_topic \"%C\" failed\n",
                tms::topic::TOPIC_ACTIVE_MICROGRID_CONTROLLER_STATE.c_str()));
     return DDS::RETCODE_ERROR;
   }
@@ -50,7 +53,7 @@ DDS::ReturnCode_t Controller::init(DDS::DomainId_t domain_id, int argc, char* ar
                                                       nullptr,
                                                       ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
   if (!tms_sub) {
-    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIClient::init: create_subscriber with TMS QoS failed\n"));
+    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: Controller::init: create_subscriber with TMS QoS failed\n"));
     return DDS::RETCODE_ERROR;
   }
 
@@ -61,7 +64,7 @@ DDS::ReturnCode_t Controller::init(DDS::DomainId_t domain_id, int argc, char* ar
                                                                 amcs_listener,
                                                                 ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
   if (!amcs_dr_base) {
-    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: CLIClient::init: create_datareader for topic \"%C\" failed\n",
+    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: Controller::init: create_datareader for topic \"%C\" failed\n",
                tms::topic::TOPIC_ACTIVE_MICROGRID_CONTROLLER_STATE.c_str()));
     return DDS::RETCODE_ERROR;
   }
@@ -82,6 +85,24 @@ void Controller::terminate()
 {
   stop_heartbeats();
   reactor_->end_reactor_event_loop();
+}
+
+bool Controller::got_config(const std::string& name, const OpenDDS::DCPS::ConfigPair& pair)
+{
+  if (name == "DEBUG") {
+    bool tmp;
+    if (convert_bool(pair, tmp)) {
+      set_debug(tmp);
+    }
+    return true;
+  }
+  return false;
+}
+
+void Controller::set_debug(bool value)
+{
+  std::lock_guard<std::mutex> guard(mut_);
+  debug_ = value;
 }
 
 tms::Identity Controller::id() const
@@ -110,12 +131,14 @@ void Controller::device_info_cb(const tms::DeviceInfo& di, const DDS::SampleInfo
     return;
   }
 
-  ACE_DEBUG((LM_INFO, "(%P|%t) INFO: Controller::device_info_cb: device: \"%C\"\n", di.deviceId().c_str()));
+  std::lock_guard<std::mutex> guard(mut_);
+  if (debug_) {
+    ACE_DEBUG((LM_DEBUG, "(%P|%t) Controller::device_info_cb: device: \"%C\"\n", di.deviceId().c_str()));
+  }
 
   // Ignore other control devices, such as microgrid controllers.
   // Store all power devices, including those that select a different MC as its active MC.
   if (di.role() != tms::DeviceRole::ROLE_MICROGRID_CONTROLLER) {
-    std::lock_guard<std::mutex> guard(mut_);
     power_devices_.insert(std::make_pair(di.deviceId(),
                                          cli::PowerDeviceInfo(di, tms::EnergyStartStopLevel::ESSL_OPERATIONAL,
                                                               std::optional<tms::Identity>())));
@@ -128,16 +151,11 @@ void Controller::heartbeat_cb(const tms::Heartbeat& hb, const DDS::SampleInfo& s
     return;
   }
 
-  const tms::Identity& id = hb.deviceId();
-  const uint32_t seqnum = hb.sequenceNumber();
-
-  if (OpenDDS::DCPS::DCPS_debug_level >= 8) {
-    std::lock_guard<std::mutex> guard(mut_);
-    if (power_devices_.count(id) > 0) {
-      ACE_DEBUG((LM_INFO, "(%P|%t) INFO: Controller::heartbeat_cb: known device: \"%C\", seqnum: %u\n", id.c_str(), seqnum));
-    } else {
-      ACE_DEBUG((LM_INFO, "(%P|%t) INFO: Controller::heartbeat_cb: unknown device: \"%C\", seqnum: %u\n", id.c_str(), seqnum));
-    }
+  std::lock_guard<std::mutex> guard(mut_);
+  if (debug_) {
+    const tms::Identity& id = hb.deviceId();
+    ACE_DEBUG((LM_DEBUG, "(%P|%t) Controller::heartbeat_cb: %C device: \"%C\", seqnum: %u\n",
+      power_devices_.count(id) > 0 ? "known" : "other", id.c_str(), hb.sequenceNumber()));
   }
 }
 

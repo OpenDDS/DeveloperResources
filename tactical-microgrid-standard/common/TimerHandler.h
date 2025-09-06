@@ -262,7 +262,7 @@ public:
   {
     Guard g(lock_);
     auto key = *reinterpret_cast<const std::string*>(arg);
-    ACE_DEBUG((LM_DEBUG, "(%P|%t) TimerHandler::handle_timeout: %C\n", key.c_str()));
+    // ACE_DEBUG((LM_DEBUG, "(%P|%t) TimerHandler::handle_timeout: %C\n", key.c_str()));
     if (active_timers_.count(key) == 0) {
       ACE_ERROR((LM_WARNING, "(%P|%t) WARNING: TimerHandler::handle_timeout: timer key %C does NOT exist\n", key.c_str()));
     }
