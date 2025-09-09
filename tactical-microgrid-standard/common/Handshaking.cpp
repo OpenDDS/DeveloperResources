@@ -14,11 +14,27 @@
 
 Handshaking::~Handshaking()
 {
-  if (participant_) {
-    participant_->delete_contained_entities();
-  }
-  if (dpf_) {
-    dpf_->delete_participant(participant_);
+  delete_all_entities();
+}
+
+void Handshaking::delete_all_entities()
+{
+  delete_extra_entities();
+  delete_entities(participant_);
+}
+
+void Handshaking::delete_extra_entities()
+{
+}
+
+void Handshaking::delete_entities(DDS::DomainParticipant_var& part)
+{
+  if (part) {
+    part->delete_contained_entities();
+    if (dpf_) {
+      dpf_->delete_participant(part);
+    }
+    part = nullptr;
   }
 }
 

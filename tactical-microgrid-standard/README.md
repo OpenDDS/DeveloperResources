@@ -32,7 +32,7 @@ cmake --build <build_dir>
 - `cli/`: Command-line interface implementation
 - `cli_idl/`: Interface definition files for CLI commands
 - `common/`: Shared libraries and utilities
-  - TMS data model definitions (mil-std-3071_data_model.idl)
+  - TMS data model definitions (`mil-std-3071_data_model.idl`)
   - TMS Handshaking function
   - TMS microgrid controller selection
   - TMS QoS profiles
@@ -46,12 +46,26 @@ cmake --build <build_dir>
 
 ## Testing
 
-Tests can be run using CTest after building the project:
+Tests can be run using CTest after building the project with `-D BUILD_TESTING=TRUE`:
 
 ```bash
 cd <build_dir>
 ctest
 ```
+
+## Configuration
+
+These programs support the following OpenDDS configuration properties. There
+are multiple ways to set these, see
+[OpenDDS runtime configuration](https://opendds.readthedocs.io/en/master/devguide/run_time_configuration.html)
+for more info.
+
+- `TMS_SELECTOR_DEBUG=<boolean>`
+  - Enables debug logging of the microgrid controller selection process of power devices.
+  - Command line option example: `-OpenDDS-tms-selector-debug true`
+- `TMS_CONTROLLER_DEBUG=<boolean>`
+  - Enables debug logging of what devices the controller has learned about.
+  - Command line option example: `-OpenDDS-tms-controller-debug true`
 
 ## References
 

@@ -73,6 +73,11 @@ public:
     return essl_;
   }
 
+  ControllerCallbacks& controller_callbacks()
+  {
+    return controller_selector_;
+  }
+
 protected:
   virtual int run_i()
   {
@@ -85,6 +90,11 @@ protected:
     const int ret = controller_selector_.get_reactor()->run_reactor_event_loop() == 0 ? 0 : 1;
     handshaking_thr.join();
     return ret;
+  }
+
+  void delete_extra_entities()
+  {
+    delete_entities(sim_participant_);
   }
 
   // Concrete power device should override this function depending on their role.

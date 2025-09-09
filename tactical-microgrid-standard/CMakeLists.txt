@@ -24,6 +24,12 @@ opendds_target_sources(TMS_Common
 target_link_libraries(TMS_Common PUBLIC OpenDDS::Rtps_Udp)
 target_compile_features(TMS_Common PUBLIC cxx_std_17)
 opendds_bigobj(TMS_Common)
+# Generated code with complete type objects enabled for the TMS IDL file
+# causes stack overflow on Windows.
+# Increase the stack size to 2MB (default is 1MB).
+if (MSVC)
+  target_link_options(TMS_Common PUBLIC "/STACK:2097152")
+endif()
 
 add_library(Commands_Idl)
 opendds_target_sources(Commands_Idl
@@ -87,16 +93,6 @@ add_executable(Distribution
 target_include_directories(Distribution PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(Distribution PRIVATE PowerSim_Idl)
 
-# Generated code with complete type objects enabled for the TMS IDL file
-# causes stack overflow on Windows.
-# Increase the stack size to 2MB (default is 1MB).
-if (MSVC)
-  target_link_options(Controller PRIVATE "/STACK:2097152")
-  target_link_options(CLI PRIVATE "/STACK:2097152")
-  target_link_options(Source PRIVATE "/STACK:2097152")
-  target_link_options(Load PRIVATE "/STACK:2097152")
-  target_link_options(Distribution PRIVATE "/STACK:2097152")
+if(BUILD_TESTING)
+  add_subdirectory(tests)
 endif()
-
-
-add_subdirectory(tests)
