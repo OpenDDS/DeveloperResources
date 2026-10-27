@@ -32,7 +32,7 @@ DDS::ReturnCode_t PowerDevice::init(DDS::DomainId_t domain, int argc, char* argv
   // Subscribe to tms::EnergyStartStopRequest topic
   tms::EnergyStartStopRequestTypeSupport_var essr_ts = new tms::EnergyStartStopRequestTypeSupportImpl;
   if (DDS::RETCODE_OK != essr_ts->register_type(dp, "")) {
-    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: SourceDevice::init: register_type EnergyStartStopRequest failed\n"));
+    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: PowerDevice::init: register_type EnergyStartStopRequest failed\n"));
     return DDS::RETCODE_ERROR;
   }
 
@@ -43,7 +43,7 @@ DDS::ReturnCode_t PowerDevice::init(DDS::DomainId_t domain, int argc, char* argv
                                                nullptr,
                                                ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
   if (!essr_topic) {
-    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: SourceDevice::init: create_topic \"%C\" failed\n",
+    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: PowerDevice::init: create_topic \"%C\" failed\n",
                tms::topic::TOPIC_ENERGY_START_STOP_REQUEST.c_str()));
     return DDS::RETCODE_ERROR;
   }
@@ -53,7 +53,7 @@ DDS::ReturnCode_t PowerDevice::init(DDS::DomainId_t domain, int argc, char* argv
                                                       nullptr,
                                                       ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
   if (!tms_sub) {
-    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: SourceDevice::init: create_subscriber with TMS QoS failed\n"));
+    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: PowerDevice::init: create_subscriber with TMS QoS failed\n"));
     return DDS::RETCODE_ERROR;
   }
 
@@ -64,7 +64,7 @@ DDS::ReturnCode_t PowerDevice::init(DDS::DomainId_t domain, int argc, char* argv
                                                                 essr_dr_listener,
                                                                 ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
   if (!essr_dr_base) {
-    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: SourceDevice::init: create_datareader for topic \"%C\" failed\n",
+    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: PowerDevice::init: create_datareader for topic \"%C\" failed\n",
                tms::topic::TOPIC_ENERGY_START_STOP_REQUEST.c_str()));
     return DDS::RETCODE_ERROR;
   }
@@ -72,7 +72,7 @@ DDS::ReturnCode_t PowerDevice::init(DDS::DomainId_t domain, int argc, char* argv
   // Publish to tms::Reply topic
   tms::ReplyTypeSupport_var reply_ts = new tms::ReplyTypeSupportImpl;
   if (DDS::RETCODE_OK != reply_ts->register_type(dp, "")) {
-    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: SourceDevice::init: register_type tms::Reply failed\n"));
+    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: PowerDevice::init: register_type tms::Reply failed\n"));
     return DDS::RETCODE_ERROR;
   }
 
@@ -83,7 +83,7 @@ DDS::ReturnCode_t PowerDevice::init(DDS::DomainId_t domain, int argc, char* argv
                                                 nullptr,
                                                 ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
   if (!reply_topic) {
-    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: SourceDevice::init: create_topic \"%C\" failed\n",
+    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: PowerDevice::init: create_topic \"%C\" failed\n",
                tms::topic::TOPIC_REPLY.c_str()));
     return DDS::RETCODE_ERROR;
   }
@@ -93,7 +93,7 @@ DDS::ReturnCode_t PowerDevice::init(DDS::DomainId_t domain, int argc, char* argv
                                                     nullptr,
                                                     ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
   if (!tms_pub) {
-    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: SourceDevice::init: create_publisher with TMS QoS failed\n"));
+    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: PowerDevice::init: create_publisher with TMS QoS failed\n"));
     return DDS::RETCODE_ERROR;
   }
 
@@ -103,14 +103,50 @@ DDS::ReturnCode_t PowerDevice::init(DDS::DomainId_t domain, int argc, char* argv
                                                                  nullptr,
                                                                  ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
   if (!reply_dw_base) {
-    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: SourceDevice::init: create_datawriter for topic \"%C\" failed\n",
+    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: PowerDevice::init: create_datawriter for topic \"%C\" failed\n",
                tms::topic::TOPIC_REPLY.c_str()));
     return DDS::RETCODE_ERROR;
   }
 
   reply_dw_ = tms::ReplyDataWriter::_narrow(reply_dw_base);
   if (!reply_dw_) {
-    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: SourceDevice::init: ReplyDataWriter narrow failed\n"));
+    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: PowerDevice::init: ReplyDataWriter narrow failed\n"));
+    return DDS::RETCODE_ERROR;
+  }
+
+  // Publish to tms::EnergyStartStopState topic (PublishLast profile)
+  tms::EnergyStartStopStateTypeSupport_var esss_ts = new tms::EnergyStartStopStateTypeSupportImpl;
+  if (DDS::RETCODE_OK != esss_ts->register_type(dp, "")) {
+    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: PowerDevice::init: register_type EnergyStartStopState failed\n"));
+    return DDS::RETCODE_ERROR;
+  }
+
+  CORBA::String_var esss_type_name = esss_ts->get_type_name();
+  DDS::Topic_var esss_topic = dp->create_topic(tms::topic::TOPIC_ENERGY_START_STOP_STATE.c_str(),
+                                               esss_type_name,
+                                               TOPIC_QOS_DEFAULT,
+                                               nullptr,
+                                               ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
+  if (!esss_topic) {
+    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: PowerDevice::init: create_topic \"%C\" failed\n",
+               tms::topic::TOPIC_ENERGY_START_STOP_STATE.c_str()));
+    return DDS::RETCODE_ERROR;
+  }
+
+  const DDS::DataWriterQos& esss_dw_qos = Qos::DataWriter::fn_map.at(tms::topic::TOPIC_ENERGY_START_STOP_STATE)(device_id_);
+  DDS::DataWriter_var esss_dw_base = tms_pub->create_datawriter(esss_topic,
+                                                                esss_dw_qos,
+                                                                nullptr,
+                                                                ::OpenDDS::DCPS::DEFAULT_STATUS_MASK);
+  if (!esss_dw_base) {
+    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: PowerDevice::init: create_datawriter for topic \"%C\" failed\n",
+               tms::topic::TOPIC_ENERGY_START_STOP_STATE.c_str()));
+    return DDS::RETCODE_ERROR;
+  }
+
+  esss_dw_ = tms::EnergyStartStopStateDataWriter::_narrow(esss_dw_base);
+  if (!esss_dw_) {
+    ACE_ERROR((LM_ERROR, "(%P|%t) ERROR: PowerDevice::init: EnergyStartStopStateDataWriter narrow failed\n"));
     return DDS::RETCODE_ERROR;
   }
 
@@ -207,9 +243,35 @@ DDS::ReturnCode_t PowerDevice::init(DDS::DomainId_t domain, int argc, char* argv
     return DDS::RETCODE_ERROR;
   }
 
+  // Publish baseline initial EnergyStartStopState sample
+  send_energy_start_stop_state(energy_level());
+
   // Advertise its device information and start heartbeats
   auto di = populate_device_info();
   return send_device_info(di);
+}
+
+void PowerDevice::send_energy_start_stop_state(tms::EnergyStartStopLevel level)
+{
+  if (!esss_dw_) {
+    return;
+  }
+
+  tms::EnergyStartStopState esss;
+  esss.deviceId(device_id_);
+  esss.presentLevel(level);
+  esss.futureLevel(level);
+  esss.requestLock(false);
+  esss.elapsedTime(0.0f);
+  esss.remainingTime(0.0f);
+  esss.presentLevelReason(tms::PowerSwitchReason::PSR_AUTO);
+  esss.futureLevelReason(tms::PowerSwitchTransitionCode::PSTC_NONE);
+
+  const DDS::ReturnCode_t rc = esss_dw_->write(esss, DDS::HANDLE_NIL);
+  if (rc != DDS::RETCODE_OK) {
+    ACE_ERROR((LM_WARNING, "(%P|%t) WARNING: PowerDevice::send_energy_start_stop_state: "
+               "write failed: %C\n", OpenDDS::DCPS::retcode_to_string(rc)));
+  }
 }
 
 tms::DeviceInfo PowerDevice::populate_device_info() const

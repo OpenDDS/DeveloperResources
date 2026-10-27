@@ -40,9 +40,10 @@ private:
   mutable std::mutex mut_;
   bool debug_ = false;
   PowerDevices power_devices_;
+  std::unordered_map<tms::Identity, tms::EnergyStartStopLevel> cached_essl_;
   uint16_t priority_;
 
-  DDS::DomainId_t tms_domain_id_ = OpenDDS::DOMAIN_UNKNOWN;;
+  DDS::DomainId_t tms_domain_id_ = OpenDDS::DOMAIN_UNKNOWN;
 };
 
-#endif
+#endif // CONTROLLER_CONTROLLER_H

@@ -64,6 +64,7 @@ add_executable(Controller
   controller/ReplyDataReaderListenerImpl.cpp
   controller/PowerTopologyDataReaderListenerImpl.cpp
   controller/ActiveMicrogridControllerStateDataReaderListenerImpl.cpp
+  controller/EnergyStartStopStateDataReaderListenerImpl.cpp
 )
 target_include_directories(Controller PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(Controller PRIVATE Commands_Idl PowerSim_Idl)

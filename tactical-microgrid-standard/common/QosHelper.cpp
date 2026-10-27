@@ -18,6 +18,7 @@ const FnMap fn_map = {
   {tms::topic::TOPIC_DEVICE_INFO, get_PublishLast},
   {tms::topic::TOPIC_OPERATOR_INTENT_REQUEST, get_Command},
   {tms::topic::TOPIC_ENERGY_START_STOP_REQUEST, get_Command},
+  {tms::topic::TOPIC_ENERGY_START_STOP_STATE, get_PublishLast},
   {tms::topic::TOPIC_REPLY, get_Reply},
   {tms::topic::TOPIC_ACTIVE_MICROGRID_CONTROLLER_STATE, get_PublishLast} };
 }
@@ -29,6 +30,7 @@ const FnMap fn_map = {
   {tms::topic::TOPIC_DEVICE_INFO, get_PublishLast},
   {tms::topic::TOPIC_OPERATOR_INTENT_REQUEST, get_Command},
   {tms::topic::TOPIC_ENERGY_START_STOP_REQUEST, get_Command},
+  {tms::topic::TOPIC_ENERGY_START_STOP_STATE, get_PublishLast},
   {tms::topic::TOPIC_REPLY, get_Reply},
   {tms::topic::TOPIC_ACTIVE_MICROGRID_CONTROLLER_STATE, get_PublishLast} };
 }

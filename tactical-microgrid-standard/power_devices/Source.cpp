@@ -97,8 +97,7 @@ public:
 
   void energy_level(tms::EnergyStartStopLevel essl) override
   {
-    std::lock_guard<std::mutex> guard(essl_m_);
-    essl_ = essl;
+    PowerDevice::energy_level(essl);
     essl_cv_.notify_one();
   }
 
@@ -132,7 +131,6 @@ public:
                      connected_devs[0].id().c_str(), ec.amperage()));
         }
 
-        // Frequency of messages can be proportional to the power measure?
         std::this_thread::sleep_for(std::chrono::seconds(1));
       }
     }
@@ -152,11 +150,10 @@ private:
     auto device_info = get_device_info();
     device_info.role() = tms::DeviceRole::ROLE_SOURCE;
     device_info.product() = Utils::get_ProductInfo();
-    device_info.topics() = Utils::get_TopicInfo({}, {}, { tms::topic::TOPIC_ENERGY_START_STOP_REQUEST });
+    device_info.topics() = Utils::get_TopicInfo({ tms::topic::TOPIC_ENERGY_START_STOP_STATE }, {}, { tms::topic::TOPIC_ENERGY_START_STOP_REQUEST });
 
     tms::PowerDeviceInfo pdi;
     {
-      // The spec require 1 power port entry for source device
       pdi.powerPorts() = { tms::PowerPortInfo() };
       tms::SourceInfo source_info;
       {
@@ -179,7 +176,6 @@ private:
 
   powersim::ElectricCurrentDataWriter_var ec_dw_;
 };
-
 
 int main(int argc, char *argv[])
 {

@@ -12,6 +12,7 @@ target_link_libraries(basic-dev PRIVATE PowerSim_Idl)
 add_executable(basic-mc
   ${CMAKE_SOURCE_DIR}/controller/Controller.cpp
   ${CMAKE_SOURCE_DIR}/controller/ActiveMicrogridControllerStateDataReaderListenerImpl.cpp
+  ${CMAKE_SOURCE_DIR}/controller/EnergyStartStopStateDataReaderListenerImpl.cpp
   basic-mc.cpp)
 target_link_libraries(basic-mc PRIVATE Commands_Idl)
 

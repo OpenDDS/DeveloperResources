@@ -63,8 +63,11 @@ public:
   // the change in energy level for that particular power device.
   virtual void energy_level(tms::EnergyStartStopLevel essl)
   {
-    std::lock_guard<std::mutex> guard(essl_m_);
-    essl_ = essl;
+    {
+      std::lock_guard<std::mutex> guard(essl_m_);
+      essl_ = essl;
+    }
+    send_energy_start_stop_state(essl);
   }
 
   tms::EnergyStartStopLevel energy_level() const
@@ -77,6 +80,8 @@ public:
   {
     return controller_selector_;
   }
+
+  void send_energy_start_stop_state(tms::EnergyStartStopLevel essl);
 
 protected:
   virtual int run_i()
@@ -117,8 +122,11 @@ protected:
   // Data writer for sending tms::Reply. Used for tms::EnergyStartStopRequest, for example.
   tms::ReplyDataWriter_var reply_dw_;
 
+  // Data writer for broadcasting tms::EnergyStartStopState.
+  tms::EnergyStartStopStateDataWriter_var esss_dw_;
+
   mutable std::mutex essl_m_;
-  tms::EnergyStartStopLevel essl_ = tms::EnergyStartStopLevel::ESSL_OPERATIONAL;
+  tms::EnergyStartStopLevel essl_ = tms::EnergyStartStopLevel::ESSL_OFF;
 
   // Whether to print power simulation messages
   bool verbose_;
@@ -131,4 +139,4 @@ private:
   tms::DeviceRole role_;
 };
 
-#endif
+#endif // TMS_POWER_DEVICE_H
