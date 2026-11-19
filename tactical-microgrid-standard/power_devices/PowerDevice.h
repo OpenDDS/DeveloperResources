@@ -86,7 +86,13 @@ protected:
       return reactor_->run_reactor_event_loop() == 0 ? 0 : 1;
     }
 
-    std::thread handshaking_thr([&] { reactor_->run_reactor_event_loop(); });
+    std::thread handshaking_thr([&] {
+      // The reactor was created on the constructing thread. A Select_Reactor (the default off Windows) only runs
+      // events for its owner thread, so make this thread the owner first, or run_reactor_event_loop() returns at once
+      // and the Heartbeat timer never fires (#33).
+      reactor_->owner(ACE_Thread::self());
+      reactor_->run_reactor_event_loop();
+    });
     const int ret = controller_selector_.get_reactor()->run_reactor_event_loop() == 0 ? 0 : 1;
     handshaking_thr.join();
     return ret;
