@@ -25,32 +25,33 @@ jobs:
         runner:
           - windows-2025
           - windows-2022
+          - ubuntu-26.04
           - ubuntu-24.04
           - ubuntu-22.04
-          - macos-14
-          - macos-13
+          - macos-15
+          - macos-15-intel
 
     runs-on: ${{ matrix.runner }}
 
     steps:
       # Clone git repositories
       - name: 'Checkout TMS project'
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: 'Checkout MPC'
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: DOCGroup/MPC
           path: MPC
           fetch-depth: 1
       - name: 'Checkout ACE_TAO'
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: DOCGroup/ACE_TAO
           ref: ace6tao2
           path: ACE_TAO
           fetch-depth: 1
       - name: 'Checkout OpenDDS'
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: OpenDDS/OpenDDS
           ref: ${{ matrix.opendds_branch }}
@@ -93,7 +94,7 @@ jobs:
         uses: lukka/run-vcpkg@v11
         with:
           vcpkgDirectory: '${{ github.workspace }}/vcpkg'
-          vcpkgGitCommitId: 898b728edc5e0d12b50015f9cd18247c4257a3eb
+          vcpkgGitCommitId: 9eec002df1cd109f8f104cd966a763daf9751489
           runVcpkgInstall: true
 
       # Set Up Build Environments
@@ -111,11 +112,7 @@ jobs:
           echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$GITHUB_WORKSPACE/ACE_TAO/ACE/lib:$GITHUB_WORKSPACE/OpenDDS/lib" >> $GITHUB_ENV
           CONFIG_OPTIONS+=" --no-tests --std=c++17 --ipv6 --security"
           if [ '${{ runner.os }}' == 'macOS' ]; then
-            if [ '${{ matrix.runner }}' == 'macos-13' ]; then
-              CONFIG_OPTIONS+=" --xerces3=$(brew --prefix xerces-c) --openssl=/usr/local/opt/openssl@1.1"
-            else
-              CONFIG_OPTIONS+=" --xerces3=$(brew --prefix xerces-c) --openssl=$(brew --prefix openssl)"
-            fi
+            CONFIG_OPTIONS+=" --xerces3=$(brew --prefix xerces-c) --openssl=$(brew --prefix openssl)"
           fi
           echo "CONFIG_OPTIONS=$CONFIG_OPTIONS" >> $GITHUB_ENV
           export COMPILER_VERSION=$(c++ --version 2>&1 | head -n 1)
@@ -165,7 +162,7 @@ jobs:
       # Configure and build OpenDDS (using cache)
       - name: 'Check Build Cache'
         id: cache-build
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ${{ env.MATRIX_MD5 }}.tar.xz
           key: c01_${{ env.MATRIX_MD5 }}_${{ env.COMPILER_MD5 }}_${{ env.ACE_COMMIT }}_${{ env.DDS_COMMIT }}_${{ env.CONFIG_MD5 }}
@@ -226,10 +223,10 @@ jobs:
       # Set up problem matchers
       - name: 'Set Up Problem Matcher (Linux / macOS)'
         if: runner.os == 'Linux' || runner.os == 'macOS'
-        uses: ammaraskar/gcc-problem-matcher@0.3.0
+        uses: ammaraskar/gcc-problem-matcher@cb2e3f949c41b7818628f35f8484a9b0acf90cf9
       - name: 'Set Up Problem Matcher (Windows)'
         if: runner.os == 'Windows'
-        uses: ammaraskar/msvc-problem-matcher@0.3.0
+        uses: ammaraskar/msvc-problem-matcher@6f13a233141205f22d55108179122239db0ef5b8
 
       # Build TMS application
       - name: 'Build TMS application with static libs (Linux / macOS)'
